@@ -1,0 +1,81 @@
+# ==========================
+# 🐍 Django + ⚛️ React
+# ==========================
+
+# --- Python / Django ---
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.log
+*.pot
+*.py~ 
+*.mo
+*.egg-info/
+*.egg
+*.idea/
+*.vscode/
+*.DS_Store
+
+# Django stuff:
+local_settings.py
+db.sqlite3
+media/
+staticfiles/
+static_cdn/
+*.env
+.env*
+venv/
+env/
+ENV/
+venv.bak/
+venv*/
+*.bak
+
+# --- React / Frontend ---
+# If React is in a folder like frontend/ or client/
+node_modules/
+build/
+dist/
+.npm/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+coverage/
+.cache/
+*.tsbuildinfo
+
+# --- OS / IDE ---
+Thumbs.db
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# --- Backup or misc ---
+*.zip
+*.tar
+*.gz
+*.tgz
+*.rar
+*.bak
+*.tmp
+*.log
+*.pid
+
+# --- Deployment or private files ---
+/public/static/
+/public/media/
+/static/
+/media/
+__MACOSX/
+secrets.json
+.env.local
+.env.production
+.env.development
+*.crt
+*.key
