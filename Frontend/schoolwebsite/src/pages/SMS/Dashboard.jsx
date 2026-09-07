@@ -1,7 +1,7 @@
 import React from "react";
 import Sidebar from "../../components/layout/Sidebar";
 
-import HeadTeacherDashboard from "./HeadTeacherDashboard";
+import HeadTeacherDashboard from "./HeadteacherPages/HeadTeacherDashboard";
 
 export default function DashboardLayout() {
   return (

@@ -1,18 +1,29 @@
-import React from "react";
-
-function TeamCard({ name, role, image, desc }) {
+export default function TeamCard({ name, role, image, onViewMore }) {
   return (
-    <div className="bg-white rounded-xl shadow-md p-6 text-center hover:shadow-xl transition-shadow">
-      <img
-        src={image}
-        alt={name}
-        className="w-24 h-24 object-cover rounded-full mx-auto mb-4"
-      />
-      <h3 className="text-xl font-semibold text-gray-900">{name}</h3>
-      <p className="text-blue-600 font-medium">{role}</p>
-      <p className="text-gray-600 mt-2 text-sm">{desc}</p>
+    <div className="flex flex-col items-center p-6 bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer">
+
+      {/* PROFILE IMAGE */}
+      <div className="w-32 h-32 mb-4">
+        <img
+          src={image}
+          alt={name}
+          className="w-full h-full object-cover rounded-full border-4 border-red-500 shadow-md"
+        />
+      </div>
+
+      {/* NAME */}
+      <h3 className="text-xl font-bold text-gray-900 text-center">{name}</h3>
+
+      {/* ROLE */}
+      <p className="text-red-600 font-semibold mb-3 text-center">{role}</p>
+
+      {/* VIEW MORE BUTTON */}
+      <button
+        onClick={onViewMore}
+        className="text-sm text-red-600 underline hover:text-red-800"
+      >
+        View More
+      </button>
     </div>
   );
 }
-
-export default TeamCard;

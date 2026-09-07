@@ -1,37 +1,91 @@
-"""
-URL configuration for school_backend project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
-from django.contrib import admin 
+from django.contrib import admin
 from django.conf import settings
-from django.urls import path, include
 from django.conf.urls.static import static
+from django.contrib.auth import views as auth_views
+from django.urls import path, include
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/', include('websiteApi.urls')),
-    path('api/', include('accounts.urls')),
-    path('api/students/', include('students.urls')),
-    path('api/teachers/', include('teachers.urls')),
-    path('api/fees/', include('fees.urls')),
-    path("api/dashboard/", include("dashboardReports.urls")),
-    path('api/portfolio/', include('Portfolio.urls')),
 
-    # path('api/library/', include('library.urls')),
+    # --------------------------------------------------
+    # DJANGO AUTH
+    # --------------------------------------------------
+
+    path(
+        "logout/",
+        auth_views.LogoutView.as_view(),
+        name="logout",
+    ),
+
+    # --------------------------------------------------
+    # DJANGO ADMIN
+    # --------------------------------------------------
+
+    path(
+        "admin/",
+        admin.site.urls,
+    ),
+
+    # --------------------------------------------------
+    # REST API
+    # --------------------------------------------------
+
+    # Website API
+    path(
+        "api/",
+        include("websiteApi.urls"),
+    ),
+
+    # Authentication API
+    path(
+        "api/",
+        include("accounts.urls"),
+    ),
+
+    # Students
+    path(
+        "api/students/",
+        include("SMS_apps.students.urls"),
+    ),
+
+    # Teachers
+    path(
+        "api/teachers/",
+        include("SMS_apps.teachers.urls"),
+    ),
+
+    # Fees
+    path(
+        "api/fees/",
+        include("SMS_apps.fees.urls"),
+    ),
+
+    # Dashboard
+    path(
+        "api/dashboard/",
+        include("dashboards.dashboardReports.urls"),
+    ),
+
+    # Portfolio
+    path(
+        "api/portfolio/",
+        include("Portfolio.urls"),
+    ),
+
+    # Receipts
+    path(
+        "api/receipts/",
+        include("SMS_apps.Receipts.urls"),
+    ),
 ]
-# Only serve media files when DEBUG is True (i.e., in development)
+
+
+# --------------------------------------------------
+# MEDIA FILES - DEVELOPMENT ONLY
+# --------------------------------------------------
+
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(
+        settings.MEDIA_URL,
+        document_root=settings.MEDIA_ROOT,
+    )

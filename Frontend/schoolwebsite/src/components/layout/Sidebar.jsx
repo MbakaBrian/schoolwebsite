@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Users, UserPlus, Bus, Wallet, BookOpen, LibraryBig } from "lucide-react";
+import { Users, UserPlus, Bus, Wallet, BookOpen, LibraryBig ,  Receipt} from "lucide-react";
 
 const menuItems = {
   headteacher: [
@@ -12,6 +12,11 @@ const menuItems = {
     { label: "Transport Routes", path: "/fees/transport/routes", icon: <Bus className="w-5 h-5" /> },
     { label: "Fee Structure", path: "/fees/GradeFeeStructure", icon: <Wallet className="w-5 h-5" /> },
     { label: "Streams", path: "/streams", icon: <Wallet className="w-5 h-5" /> },
+{
+    label: "Receipts",
+    path: "/receipts",
+    icon: <Receipt className="w-5 h-5" />
+},
   ],
   teacher: [
     { label: "Dashboard", path: "/dashboard/teacher", icon: <BookOpen className="w-5 h-5" /> },

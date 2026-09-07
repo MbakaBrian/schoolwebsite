@@ -1,133 +1,3 @@
-from rest_framework import serializers
-from .models import Enrollment, GalleryImage, Event, TeamMember,Facility, Program
-
-from .models import AboutHistory, AboutHistoryImage
-
-
-class EnrollmentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Enrollment
-        fields = "__all__"
-
-
-class GalleryImageSerializer(serializers.ModelSerializer):
-    # CRITICAL FIX: The base 'image' field is implicitly included via fields='__all__', 
-    # but we must use a *different* field name for the read-only absolute URL.
-    # We define a custom read-only field for the URL output:
-    absolute_image_url = serializers.SerializerMethodField(read_only=True)
-
-    class Meta:
-        model = GalleryImage
-        # 2. Include all fields, including the writeable 'image' field and the read-only 'absolute_image_url' field.
-        fields = "__all__"
-        # Ensure the custom URL field is set to read-only
-        read_only_fields = ['absolute_image_url'] 
-
-    # 3. Method to construct the absolute URL, now for the 'absolute_image_url' field.
-    def get_absolute_image_url(self, obj):
-        # Check if an image file exists
-        if obj.image:
-            # Get the request context passed from the ViewSet
-            request = self.context.get('request')
-            
-            # Use request.build_absolute_uri to create the full URL
-            if request is not None:
-                return request.build_absolute_uri(obj.image.url)
-            
-            # Fallback 
-            return obj.image.url
-        return None # Return None if no image is attached
-
-class EventSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Event
-        fields = "__all__"
-
-
-# In your serializers.py
-
-class TeamMemberSerializer(serializers.ModelSerializer):
-    # 1. Define the read-only field for the absolute URL
-    absolute_image_url = serializers.SerializerMethodField(read_only=True)
-
-    class Meta:
-        model = TeamMember
-        # 2. Use __all__ to include the base 'image' field (for writing)
-        #    and our new 'absolute_image_url' (for reading)
-        fields = "__all__"
-        read_only_fields = ['absolute_image_url'] # Make the new URL field read-only
-
-    # 3. Method to generate the absolute URL
-    def get_absolute_image_url(self, obj):
-        if obj.image:
-            request = self.context.get('request')
-            if request:
-                return request.build_absolute_uri(obj.image.url)
-            # Fallback if request context isn't passed
-            return obj.image.url
-        return None # Return None if no image is attached
-
-class ProgramSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Program
-        fields = "__all__"
-
-
-class FacilitySerializer(serializers.ModelSerializer):
-    # 1. Nested serialization for related Programs
-    programs = ProgramSerializer(many=True, read_only=True)
-    
-    # 2. Define a *read-only* field for the absolute image URL
-    # This replaces the custom logic you had on the primary 'image' field.
-    absolute_image_url = serializers.SerializerMethodField(read_only=True) 
-
-    class Meta:
-        model = Facility
-        # 3. CRITICAL: The base 'image' field MUST be in the fields list
-        # This allows the ModelSerializer to handle incoming file uploads.
-        fields = ['id', 'title', 'longDesc','shortDesc', 'image', 'slug', 'programs', 'absolute_image_url']
-        read_only_fields = ['slug', 'absolute_image_url'] # slug is auto-generated, URL is output only
-
-    # 4. This method now handles the output for the new field 'absolute_image_url'
-    def get_absolute_image_url(self, obj):
-        if obj.image:
-            request = self.context.get('request')
-            if request:
-                return request.build_absolute_uri(obj.image.url)
-            return obj.image.url
-        return None
-
-    # Note: You do NOT need a custom 'update' method now. 
-    # The default ModelSerializer 'update' method will see 'image' in the fields 
-    # and use the file found in request.FILES to update the model instance.
-
-
-
-class AboutHistoryImageSerializer(serializers.ModelSerializer):
-    absolute_image_url = serializers.SerializerMethodField(read_only=True)
-
-    class Meta:
-        model = AboutHistoryImage
-        fields = ['id', 'image', 'caption', 'absolute_image_url']
-        read_only_fields = ['absolute_image_url']
-
-    def get_absolute_image_url(self, obj):
-        if obj.image:
-            request = self.context.get('request')
-            if request:
-                return request.build_absolute_uri(obj.image.url)
-            return obj.image.url
-        return None
-
-
-class AboutHistorySerializer(serializers.ModelSerializer):
-    images = AboutHistoryImageSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = AboutHistory
-        fields = ['id', 'title', 'content', 'updated_at', 'images']
-
-
 from rest_framework import viewsets
 from .models import Enrollment, GalleryImage, Event, TeamMember, Facility, Program
 from .serializers import (
@@ -139,11 +9,65 @@ from .serializers import (
     ProgramSerializer
 )
 from rest_framework.permissions import AllowAny
+from django.conf import settings
+from django.core.mail import send_mail
+from .models import Facility
+from .serializers import FacilitySerializer
+
+from rest_framework import viewsets, status
+from rest_framework.permissions import AllowAny
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from django.db.models import Value
+from django.db.models.functions import Trim
+
+from .models import Facility
+from .serializers import FacilitySerializer
+
 class EnrollmentViewSet(viewsets.ModelViewSet):
     queryset = Enrollment.objects.all().order_by("-submitted_at")
     serializer_class = EnrollmentSerializer
     permission_classes = [AllowAny]
 
+    def perform_create(self, serializer):
+        enrollment = serializer.save()
+        self.send_notification_emails(enrollment)
+
+    def send_notification_emails(self, enrollment):
+        admin_email = "info@peppercornpremierschools.sc.ke"
+        guardian_email = enrollment.guardian_email
+
+        # 1️⃣ Email to admin
+        send_mail(
+            subject="New Enrollment Submitted",
+            message=(
+                f"New Enrollment Received:\n\n"
+                f"Student: {enrollment.student_name}\n"
+                f"Guardian: {enrollment.guardian_name}\n"
+                f"Grade Interested: {enrollment.grade_interested}\n"
+                f"Boarding/Day: {enrollment.boarder_or_day}\n"
+                f"Email: {enrollment.guardian_email}\n"
+                f"Phone: {enrollment.guardian_phone}"
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[admin_email],
+            fail_silently=False,
+        )
+
+        # 2️⃣ Confirmation email to guardian
+        send_mail(
+            subject="Enrollment Received - Peppercorn Premier School",
+            message=(
+                f"Dear {enrollment.guardian_name},\n\n"
+                f"Thank you for enrolling {enrollment.student_name} at Peppercorn Premier School.\n"
+                f"We have received your enrollment details successfully and our admissions team "
+                f"will contact you soon.\n\n"
+                f"Warm regards,\nPeppercorn Premier School"
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[guardian_email],
+            fail_silently=False,
+        )
 
 class GalleryImageViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
@@ -176,29 +100,130 @@ class TeamMemberViewSet(viewsets.ModelViewSet):
 
 #---------- Facilities ViewSet --------
 
-from .models import Facility
-from .serializers import FacilitySerializer
+
+from rest_framework.permissions import AllowAny, IsAuthenticated
+
 
 class FacilityViewSet(viewsets.ModelViewSet):
-    permission_classes = [AllowAny]
+    """
+    Facility API
+    - Public: list, retrieve
+    - Admin: create, update, delete
+    - Categories derived from Facility.category field
+    """
+
     queryset = Facility.objects.all()
     serializer_class = FacilitySerializer
-    lookup_field = 'slug'  # ✅ use slug instead of id
+    lookup_field = "slug"  # ✅ Use slug instead of ID
+
+    # --------------------------------------------------
+    # PERMISSIONS
+    # --------------------------------------------------
+    def get_permissions(self):
+        """
+        Allow public read access.
+        Restrict write actions to authenticated users.
+        """
+        if self.action in ["list", "retrieve", "categories"]:
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    # --------------------------------------------------
+    # SERIALIZER CONTEXT (for image absolute URLs)
+    # --------------------------------------------------
     def get_serializer_context(self):
-        # <--- THIS IS CRITICAL for build_absolute_uri to work
-        return {'request': self.request}
+        return {"request": self.request}
+
+    # --------------------------------------------------
+    # CREATE
+    # --------------------------------------------------
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    # --------------------------------------------------
+    # UPDATE (with optional image debugging)
+    # --------------------------------------------------
     def update(self, request, *args, **kwargs):
-        # --- TEMPORARY DEBUGGING CODE ---
-        print("--- FILE CHECK ---")
-        # Check if the file is present in request.FILES (for MultiPartParser)
-        print(f"FILES dictionary keys: {request.FILES.keys()}")
-        
-        # Check if the image key is present in the request data
-        print(f"Request Data Image field: {request.data.get('image')}")
-        print("------------------")
-        # --- END DEBUGGING CODE ---
-        
+        # 🔧 Debugging — safe to remove later
+        print("---- FACILITY UPDATE DEBUG ----")
+        print("FILES:", request.FILES)
+        print("Image field:", request.data.get("image"))
+        print("--------------------------------")
+
         return super().update(request, *args, **kwargs)
+
+    # --------------------------------------------------
+    # CATEGORY MANAGEMENT (NO SEPARATE MODEL)
+    # --------------------------------------------------
+
+    @action(detail=False, methods=["get"], permission_classes=[AllowAny])
+    def categories(self, request):
+        """
+        GET /api/facilities/categories/
+        Returns distinct category names
+        """
+        categories = (
+            Facility.objects
+            .exclude(category="")
+            .annotate(category_clean=Trim("category"))
+            .values_list("category_clean", flat=True)
+            .distinct()
+        )
+
+        return Response(
+            [{"name": c} for c in categories],
+            status=status.HTTP_200_OK
+        )
+
+    @action(detail=False, methods=["patch"], permission_classes=[IsAuthenticated])
+    def rename_category(self, request):
+        """
+        PATCH /api/facilities/rename_category/
+        {
+            "old": "Science",
+            "new": "Science Labs"
+        }
+        """
+        old = request.data.get("old")
+        new = request.data.get("new")
+
+        if not old or not new:
+            return Response(
+                {"error": "Both old and new category names are required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        Facility.objects.filter(category=old).update(category=new)
+
+        return Response(
+            {"success": True, "message": "Category renamed successfully"},
+            status=status.HTTP_200_OK
+        )
+
+    @action(detail=False, methods=["delete"], permission_classes=[IsAuthenticated])
+    def delete_category(self, request):
+        """
+        DELETE /api/facilities/delete_category/
+        {
+            "name": "Science"
+        }
+        """
+        name = request.data.get("name")
+
+        if not name:
+            return Response(
+                {"error": "Category name is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        Facility.objects.filter(category=name).update(category="")
+
+        return Response(
+            {"success": True, "message": "Category deleted successfully"},
+            status=status.HTTP_200_OK
+        )
+
+
 
 #---------- Programs ViewSet --------
 class ProgramViewSet(viewsets.ModelViewSet):

@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Expenditure Summary - School I/O System</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+</head>
+
+
+<body class="bg-light">
+
+
+<!-- =====================================================
+     NAVBAR
+===================================================== -->
+
+<nav class="navbar navbar-dark bg-dark mb-4">
+
+    <div class="container">
+
+        <a
+            class="navbar-brand"
+            href="{% url 'receipt_list' %}"
+        >
+            School I/O System
+        </a>
+
+
+        <div class="text-white">
+
+            Welcome, {{ request.user.username }}
+
+       <a
+        href="http://localhost:3000/login"
+        class="btn btn-outline-light btn-sm ms-3"
+    >
+        Logout
+    </a>
+
+        </div>
+
+    </div>
+
+</nav>
+
+
+
+<div class="container pb-5">
+
+
+    <!-- =====================================================
+         PAGE HEADER
+    ===================================================== -->
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+
+            <h2 class="mb-1">
+                Expenditure Summary
+            </h2>
+
+            <p class="text-muted mb-0">
+                Analyse school expenditure by date and department.
+            </p>
+
+        </div>
+
+
+        <a
+            href="{% url 'receipt_list' %}"
+            class="btn btn-secondary"
+        >
+            ← Receipts
+        </a>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         FILTER CARD
+    ===================================================== -->
+
+    <div class="card shadow-sm mb-4">
+
+        <div class="card-header">
+
+            <h5 class="mb-0">
+                Filter Summary
+            </h5>
+
+        </div>
+
+
+        <div class="card-body">
+
+            <form
+                method="GET"
+                action="{% url 'receipt_summary' %}"
+            >
+
+                <div class="row g-3 align-items-end">
+
+
+                    <!-- DATE FROM -->
+
+                    <div class="col-md-3">
+
+                        <label
+                            for="date_from"
+                            class="form-label fw-semibold"
+                        >
+                            Date From
+                        </label>
+
+                        <input
+                            type="date"
+                            id="date_from"
+                            name="date_from"
+                            class="form-control"
+                            value="{{ date_from|default:'' }}"
+                        >
+
+                    </div>
+
+
+
+                    <!-- DATE TO -->
+
+                    <div class="col-md-3">
+
+                        <label
+                            for="date_to"
+                            class="form-label fw-semibold"
+                        >
+                            Date To
+                        </label>
+
+                        <input
+                            type="date"
+                            id="date_to"
+                            name="date_to"
+                            class="form-control"
+                            value="{{ date_to|default:'' }}"
+                        >
+
+                    </div>
+
+
+
+                    <!-- DEPARTMENT -->
+
+                    <div class="col-md-3">
+
+                        <label
+                            for="department"
+                            class="form-label fw-semibold"
+                        >
+                            Department
+                        </label>
+
+                        <select
+                            id="department"
+                            name="department"
+                            class="form-select"
+                        >
+
+                            <option value="">
+                                All Departments
+                            </option>
+
+
+                            {% for value, label in departments %}
+
+                                <option
+                                    value="{{ value }}"
+                                    {% if selected_department == value %}
+                                        selected
+                                    {% endif %}
+                                >
+                                    {{ label }}
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+
+
+                    <!-- FILTER BUTTONS -->
+
+                    <div class="col-md-3">
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary"
+                        >
+                            Filter
+                        </button>
+
+
+                        <a
+                            href="{% url 'receipt_summary' %}"
+                            class="btn btn-outline-secondary"
+                        >
+                            Reset
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         ACTIVE FILTERS
+    ===================================================== -->
+
+    {% if date_from or date_to or selected_department %}
+
+        <div class="alert alert-info mb-4">
+
+            <div class="d-flex flex-wrap align-items-center">
+
+                <strong class="me-2">
+                    Active Filters:
+                </strong>
+
+
+                {% if date_from %}
+
+                    <span class="badge bg-primary me-2 mb-1">
+
+                        From:
+                        {{ date_from }}
+
+                    </span>
+
+                {% endif %}
+
+
+                {% if date_to %}
+
+                    <span class="badge bg-primary me-2 mb-1">
+
+                        To:
+                        {{ date_to }}
+
+                    </span>
+
+                {% endif %}
+
+
+                {% if selected_department %}
+
+                    <span class="badge bg-primary me-2 mb-1">
+
+                        Department:
+
+                        {% for value, label in departments %}
+
+                            {% if value == selected_department %}
+                                {{ label }}
+                            {% endif %}
+
+                        {% endfor %}
+
+                    </span>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    {% endif %}
+
+
+
+    <!-- =====================================================
+         EXPORT OPTIONS
+    ===================================================== -->
+
+    <div class="card shadow-sm mb-4">
+
+        <div class="card-body">
+
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+
+                <div>
+
+                    <h5 class="mb-1">
+                        Export Reports
+                    </h5>
+
+                    <p class="text-muted mb-0">
+                        Download the current report as an Excel workbook.
+                    </p>
+
+                </div>
+
+
+                <div class="d-flex flex-wrap gap-2">
+
+
+                    <!--
+                        EXPORT RECEIPT SUMMARY
+
+                        Uses the selected DATE filters.
+                        Department is intentionally NOT included.
+                    -->
+
+                    <a
+                        href="{% url 'export_receipt_summary' %}?date_from={{ date_from|default:'' }}&date_to={{ date_to|default:'' }}"
+                        class="btn btn-success"
+                    >
+                        Export Receipt Summary
+                    </a>
+
+
+                    <!--
+                        EXPORT FILTERED DETAILS
+
+                        Uses ALL CURRENT FILTERS.
+                    -->
+
+                    <a
+                        href="{% url 'export_filtered_summary' %}?date_from={{ date_from|default:'' }}&date_to={{ date_to|default:'' }}&department={{ selected_department|default:'' }}"
+                        class="btn btn-outline-success"
+                    >
+                        Export Filtered Details
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         SUMMARY CARDS
+    ===================================================== -->
+
+    <div class="row mb-4">
+
+
+        <!-- TOTAL EXPENDITURE -->
+
+        <div class="col-md-4 mb-3">
+
+            <div class="card shadow-sm h-100">
+
+                <div class="card-body">
+
+                    <div class="text-muted small mb-2">
+                        Total Expenditure
+                    </div>
+
+                    <h3 class="mb-0">
+
+                        KSh
+                        {{ total_expenditure|floatformat:2 }}
+
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- TOTAL RECEIPTS -->
+
+        <div class="col-md-4 mb-3">
+
+            <div class="card shadow-sm h-100">
+
+                <div class="card-body">
+
+                    <div class="text-muted small mb-2">
+                        Number of Receipts
+                    </div>
+
+                    <h3 class="mb-0">
+                        {{ total_receipts }}
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- TOTAL ITEMS -->
+
+        <div class="col-md-4 mb-3">
+
+            <div class="card shadow-sm h-100">
+
+                <div class="card-body">
+
+                    <div class="text-muted small mb-2">
+                        Number of Items
+                    </div>
+
+                    <h3 class="mb-0">
+                        {{ total_items }}
+                    </h3>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         DEPARTMENT BREAKDOWN
+    ===================================================== -->
+
+    <div class="card shadow-sm mb-4">
+
+
+        <div class="card-header">
+
+            <h5 class="mb-0">
+                Department Expenditure
+            </h5>
+
+        </div>
+
+
+        <div class="card-body p-0">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover mb-0">
+
+
+                    <thead class="table-dark">
+
+                        <tr>
+
+                            <th>
+                                #
+                            </th>
+
+                            <th>
+                                Department
+                            </th>
+
+                            <th>
+                                Number of Items
+                            </th>
+
+                            <th>
+                                Total Expenditure
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+
+                        {% for department in department_summary %}
+
+                            <tr>
+
+                                <td>
+                                    {{ forloop.counter }}
+                                </td>
+
+
+                                <td>
+
+                                    {% for value, label in departments %}
+
+                                        {% if value == department.department %}
+
+                                            {{ label }}
+
+                                        {% endif %}
+
+                                    {% endfor %}
+
+                                </td>
+
+
+                                <td>
+                                    {{ department.item_count }}
+                                </td>
+
+
+                                <td>
+
+                                    <strong>
+
+                                        KSh
+                                        {{ department.total|floatformat:2 }}
+
+                                    </strong>
+
+                                </td>
+
+                            </tr>
+
+
+                        {% empty %}
+
+                            <tr>
+
+                                <td
+                                    colspan="4"
+                                    class="text-center py-4 text-muted"
+                                >
+
+                                    No expenditure records
+                                    found for the selected filters.
+
+                                </td>
+
+                            </tr>
+
+                        {% endfor %}
+
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         DETAILED EXPENDITURE
+    ===================================================== -->
+
+    <div class="card shadow-sm mb-5">
+
+
+        <div class="card-header">
+
+            <h5 class="mb-0">
+                Detailed Expenditure
+            </h5>
+
+        </div>
+
+
+        <div class="card-body p-0">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover table-striped mb-0">
+
+
+                    <thead class="table-dark">
+
+                        <tr>
+
+                            <th>
+                                Receipt
+                            </th>
+
+                            <th>
+                                Date
+                            </th>
+
+                            <th>
+                                Store
+                            </th>
+
+                            <th>
+                                Item
+                            </th>
+
+                            <th>
+                                Department
+                            </th>
+
+                            <th>
+                                Quantity
+                            </th>
+
+                            <th>
+                                Unit Price
+                            </th>
+
+                            <th>
+                                Total
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+
+                        {% for item in items %}
+
+                            <tr>
+
+
+                                <!-- RECEIPT -->
+
+                                <td>
+
+                                    <a
+                                        href="{% url 'receipt_detail' item.receipt.receipt_id %}"
+                                        class="text-decoration-none fw-semibold"
+                                    >
+
+                                        {{ item.receipt.receipt_id }}
+
+                                    </a>
+
+                                </td>
+
+
+
+                                <!-- DATE -->
+
+                                <td>
+
+                                    {{ item.receipt.date|date:"d M Y" }}
+
+                                </td>
+
+
+
+                                <!-- STORE -->
+
+                                <td>
+
+                                    {{ item.receipt.store }}
+
+                                </td>
+
+
+
+                                <!-- ITEM -->
+
+                                <td>
+
+                                    {{ item.item_name }}
+
+                                </td>
+
+
+
+                                <!-- DEPARTMENT -->
+
+                                <td>
+
+                                    {% for value, label in departments %}
+
+                                        {% if value == item.department %}
+
+                                            {{ label }}
+
+                                        {% endif %}
+
+                                    {% endfor %}
+
+                                </td>
+
+
+
+                                <!-- QUANTITY -->
+
+                                <td>
+
+                                    {{ item.quantity }}
+                                    {{ item.get_unit_display }}
+
+                                </td>
+
+
+
+                                <!-- UNIT PRICE -->
+
+                                <td>
+
+                                    KSh
+                                    {{ item.unit_price|floatformat:2 }}
+
+                                </td>
+
+
+
+                                <!-- TOTAL -->
+
+                                <td>
+
+                                    <strong>
+
+                                        KSh
+                                        {{ item.total|floatformat:2 }}
+
+                                    </strong>
+
+                                </td>
+
+
+                            </tr>
+
+
+                        {% empty %}
+
+                            <tr>
+
+                                <td
+                                    colspan="8"
+                                    class="text-center py-5"
+                                >
+
+                                    <h5 class="text-muted">
+                                        No records found
+                                    </h5>
+
+                                    <p class="text-muted mb-0">
+                                        Try changing your date
+                                        or department filters.
+                                    </p>
+
+                                </td>
+
+                            </tr>
+
+                        {% endfor %}
+
+
+                    </tbody>
+
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+
+<!-- =====================================================
+     BOOTSTRAP JS
+===================================================== -->
+
+<script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+></script>
+
+
+</body>
+
+</html>

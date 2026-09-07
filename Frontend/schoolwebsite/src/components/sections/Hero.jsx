@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "framer-motion"; // 👈 Import Framer Motion
 import heroimage from "../../assets/images/hero/heroimage.jpg";
 import PurpleBg from "../../assets/images/vector-purple.jpg";
+import {Link } from "react-router-dom";
 
 function Hero() {
   return (
@@ -27,6 +28,8 @@ function Hero() {
           We believe every child has limitless potential, and we’re here to nurture curiosity,
           creativity, and character.
         </p>
+
+      <Link to="/enroll">
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -34,6 +37,8 @@ function Hero() {
         >
           Enroll Now
         </motion.button>
+      </Link>
+
       </motion.div>
 
       {/* Right Column - Image */}

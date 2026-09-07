@@ -60,6 +60,7 @@ class Facility(models.Model):
     longDesc = models.TextField()
     image = models.ImageField(upload_to='facilities/')
     slug = models.SlugField(unique=True, blank=True)
+    category = models.CharField(max_length=50 , blank=True)
 
     def save(self, *args, **kwargs):
         # Auto-generate slug from title if it’s not manually provided

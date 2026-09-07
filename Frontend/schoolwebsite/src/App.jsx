@@ -2,33 +2,43 @@ import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route ,useLocation } from "react-router-dom";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/sections/Footer";
-import Home from "./pages/Home";
-import About from "./pages/About";
-import Gallery from "./pages/Gallery";
-import Events from "./pages/Events";
-import Enroll from "./pages/Enroll";
-import Contact from "./pages/Contact";
-import Login from "./pages/Login";
+import Home from "./pages/WebsitePages/Home";
+import About from "./pages/WebsitePages/About";
+import Gallery from "./pages/WebsitePages/Gallery";
+import Events from "./pages/WebsitePages/Events";
+import Enroll from "./pages/WebsitePages/Enroll";
+import Contact from "./pages/WebsitePages/Contact";
+import Login from "./pages/WebsitePages/Login";
 import axios from "axios";
-import EventsPanel from "./pages/EventsPanel";
-import AdminDashboard from "./pages/AdminDashboard";
-import GalleryPanel from "./pages/GalleryPanel";
+import EventsPanel from "./pages/SMS/WebsiteManagementPages/EventsPanel";
+import AdminDashboard from "./pages/SMS/WebsiteManagementPages/AdminDashboard";
+import GalleryPanel from "./pages/SMS/WebsiteManagementPages/GalleryPanel";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./pages/SMS/Dashboard";
-import CreateStudent from "./pages/SMS/CreateStudent";
-import CreateParent from "./pages/SMS/CreateParent";
-import CreateTeacher from "./pages/SMS/CreateTeacher";
-import GradeFeeStructurePage from "./pages/SMS/GradeFeeStructurePage";
-import TransportRoutesPage from "./pages/SMS/TransportRoutes";
-import ManageTeachers from "./pages/SMS/ManageTeachers";
-import StreamsPage from "./pages/SMS/StreamsPage";
-import FacilitiesPanel from "./pages/AdminFacilities";
+import CreateStudent from "./pages/SMS/HeadteacherPages/CreateStudent";
+import CreateParent from "./pages/SMS/HeadteacherPages/CreateParent";
+import CreateTeacher from "./pages/SMS/HeadteacherPages/CreateTeacher";
+import GradeFeeStructurePage from "./pages/SMS/HeadteacherPages/GradeFeeStructurePage";
+import TransportRoutesPage from "./pages/SMS/HeadteacherPages/TransportRoutes";
+import ManageTeachers from "./pages/SMS/HeadteacherPages/ManageTeachers";
+import StreamsPage from "./pages/SMS/HeadteacherPages/StreamsPage";
+import FacilitiesPanel from "./pages/SMS/WebsiteManagementPages/AdminFacilities";
 import axiosInstance from "./utils/axiosInstance";
-import AdminTeamManagement from "./pages/AdminTeamManagement";
-import FacilityPage from "./pages/FacilityPage";
-import AdminAboutUs from "./pages/AdminAboutUs";
+import AdminTeamManagement from "./pages/SMS/WebsiteManagementPages/AdminTeamManagement";
+import FacilityPage from "./pages/WebsitePages/FacilityPage";
+import AdminAboutUs from "./pages/SMS/WebsiteManagementPages/AdminAboutUs";
 import PortfolioPage from "./pages/PortfolioPage";
+
+
+import ReceiptsPage from "./pages/SMS/HeadteacherPages/ReceiptsPage";
+import ReceiptDetailPage from "./pages/SMS/HeadteacherPages/ReceiptDetailPage";
+import ReceiptFormPage from "./pages/SMS/HeadteacherPages/ReceiptFormPage";
+import ReceiptItemsPage from "./pages/SMS/HeadteacherPages/ReceiptItemsPage";
+import ReceiptSummaryPage from "./pages/SMS/HeadteacherPages/ReceiptSummaryPage";
+
+// inside your <Routes>:
+
 
 
 function AppContent() {
@@ -63,13 +73,21 @@ function AppContent() {
           }
         />
         <Route
-          path="/HeadTeacherDashboard"
+          path="/headteacher/dashboard"
           element={
             <ProtectedRoute allowedRoles={["Head Teacher"]}>
               <DashboardLayout />
             </ProtectedRoute>
           }
         />
+
+        {/* Receipts Routes */}
+        <Route path="/receipts" element={<ReceiptsPage />} />
+        <Route path="/receipts/add" element={<ReceiptFormPage />} />
+        <Route path="/receipts/summary" element={<ReceiptSummaryPage />} />
+        <Route path="/receipts/:receiptId" element={<ReceiptDetailPage />} />
+        <Route path="/receipts/:receiptId/edit" element={<ReceiptFormPage />} />
+        <Route path="/receipts/:receiptId/items" element={<ReceiptItemsPage />} />
 
         {/* Admin Pages */}
         <Route path="/admin/events" element={<EventsPanel />} />

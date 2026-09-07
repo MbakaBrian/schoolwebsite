@@ -38,10 +38,10 @@ class MyTokenObtainPairView(APIView):
 
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            print("Serializer valid ✅")
+            print("Serializer valid")
             print("Validated data:", serializer.validated_data)
             return Response(serializer.validated_data, status=status.HTTP_200_OK)
         else:
-            print("Serializer errors ❌")
+            print("Serializer errors")
             print(serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

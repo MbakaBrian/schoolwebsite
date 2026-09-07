@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-4-w6_$=#!cywxt5@-&zjwi&ruds81c(*(1=wlr0)&vxaq%$(h8
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["127.0.0.1","peppercornpremierschools.sc.ke", "www.peppercornpremierschools.sc.ke"]
+ALLOWED_HOSTS = ["127.0.0.1","peppercornpremierschools.sc.ke", "www.peppercornpremierschools.sc.ke","api.peppercornpremierschools.sc.ke"]
 
 
 # Application definition
@@ -41,15 +41,16 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'websiteApi',
-    'academics',
+    'SMS_apps.academics',
     'accounts',
-    'students',
-    'teachers',
-    'fees',
-    'library',
-    'schoolcalendar',
-    'attendance',
+    'SMS_apps.students',
+    'SMS_apps.teachers',
+    'SMS_apps.fees',
+    'SMS_apps.library',
+    'SMS_apps.schoolcalendar',
+    'SMS_apps.attendance',
     'Portfolio',
+    'SMS_apps.Receipts',
     
 
 ]
@@ -91,10 +92,14 @@ SIMPLE_JWT = {
 # Allow React frontend to talk to backend
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # React dev server
-    "https://peppercornpremierschools.sc.ke", 
-    "https://www.peppercornpremierschools.sc.ke"
+    # "https://peppercornpremierschools.sc.ke", 
+    # "https://www.peppercornpremierschools.sc.ke",
+    # # "https://api.peppercornpremierschools.sc.ke/"
 ]
-CSRF_TRUSTED_ORIGINS = ["http://localhost:3000","https://peppercornpremierschools.sc.ke", "https://www.peppercornpremierschools.sc.ke"]
+CSRF_TRUSTED_ORIGINS = ["http://localhost:3000"]
+                        # "https://peppercornpremierschools.sc.ke", 
+                        # "https://www.peppercornpremierschools.sc.ke",
+                        # "https://api.peppercornpremierschools.sc.ke/"
 
 ROOT_URLCONF = 'school_backend.urls'
 
@@ -173,3 +178,20 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# settings.py
+
+# settings.py
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp-relay.brevo.com'  # Correct
+EMAIL_PORT = 587                     # Correct
+EMAIL_USE_TLS = True                 # Correct
+
+# --- FIX THESE TWO LINES ---
+EMAIL_HOST_USER = '9b7bad001@smtp-brevo.com'  # MUST be the Brevo SMTP Login
+EMAIL_HOST_PASSWORD = 'bskB5cUlsVkf8BT'       # MUST be the Brevo SMTP Key
+# ---------------------------
+
+# Use your verified email as the *sender*, which is fine
+DEFAULT_FROM_EMAIL = 'info@peppercornpremierschools.sc.ke'

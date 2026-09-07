@@ -8,6 +8,9 @@ class EnrollmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Enrollment
         fields = "__all__"
+    def validate(self, data):
+        print("Incoming data:", data)
+        return data
 
 
 class GalleryImageSerializer(serializers.ModelSerializer):
@@ -85,7 +88,7 @@ class FacilitySerializer(serializers.ModelSerializer):
         model = Facility
         # 3. CRITICAL: The base 'image' field MUST be in the fields list
         # This allows the ModelSerializer to handle incoming file uploads.
-        fields = ['id', 'title', 'longDesc','shortDesc', 'image', 'slug', 'programs', 'absolute_image_url']
+        fields = ['id', 'title', 'longDesc','shortDesc', 'image', 'slug', 'programs', 'absolute_image_url','category']
         read_only_fields = ['slug', 'absolute_image_url'] # slug is auto-generated, URL is output only
 
     # 4. This method now handles the output for the new field 'absolute_image_url'
