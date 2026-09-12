@@ -3,26 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import axiosInstance from "../../../utils/axiosInstance";
 
 const RECEIPTS_URL = "receipts/";
-
-// Mirrors ReceiptItem.DEPARTMENT_CHOICES / UNIT_CHOICES from Django.
-const DEPARTMENTS = [
-  ["transport", "Transport"],
-  ["classes", "Classes"],
-  ["library", "Library"],
-  ["office", "Office"],
-  ["boarding", "Boarding"],
-  ["sports", "Sports"],
-  ["security", "Security"],
-  ["school_maintenance", "School Maintenance"],
-  ["catering_dining", "Catering / Dining"],
-  ["ict", "ICT"],
-  ["administration", "Administration"],
-  ["medical", "Medical"],
-  ["laboratory_science", "Laboratory / Science"],
-  ["human_resource", "Human Resource"],
-  ["agriculture", "Agriculture"],
-  ["utilities", "Utilities"],
-];
+const DEPARTMENTS_URL = "/receipts/departments/";
 
 const UNITS = [
   ["liters", "Liters"],
@@ -34,6 +15,7 @@ const UNITS = [
 const emptyForm = {
   item_name: "",
   department: "",
+  subdepartment: "",
   quantity: "",
   unit: "",
   unit_price: "",
@@ -43,23 +25,39 @@ export default function ReceiptItemsPage() {
   const { receiptId } = useParams();
 
   const [items, setItems] = useState([]);
+
+  const [departments, setDepartments] = useState([]);
+  const [subdepartments, setSubdepartments] = useState([]);
+
   const [loading, setLoading] = useState(true);
+  const [loadingDepartments, setLoadingDepartments] = useState(true);
+  const [loadingSubdepartments, setLoadingSubdepartments] =
+    useState(false);
+
   const [error, setError] = useState(null);
 
   const [form, setForm] = useState(emptyForm);
+
   const [editingItemId, setEditingItemId] = useState(null);
   const [saving, setSaving] = useState(false);
+
   const [fieldErrors, setFieldErrors] = useState({});
+
+  // ============================================================
+  // FETCH INITIAL DATA
+  // ============================================================
+
+  useEffect(() => {
+    fetchItems();
+    fetchDepartments();
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [receiptId]);
 
   // ============================================================
   // FETCH ITEMS
   // GET /api/receipts/<receipt_id>/items/add/
   // ============================================================
-  useEffect(() => {
-    fetchItems();
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [receiptId]);
 
   async function fetchItems() {
     setLoading(true);
@@ -70,9 +68,6 @@ export default function ReceiptItemsPage() {
         `${RECEIPTS_URL}${receiptId}/items/add/`
       );
 
-      // Django currently returns a plain array.
-      // This also supports a paginated response if pagination
-      // is introduced later.
       const fetchedItems = data?.results ?? data;
 
       setItems(
@@ -81,9 +76,20 @@ export default function ReceiptItemsPage() {
           : []
       );
     } catch (err) {
-      console.error("Failed to fetch receipt items:", err);
-      console.error("Status:", err.response?.status);
-      console.error("Backend response:", err.response?.data);
+      console.error(
+        "Failed to fetch receipt items:",
+        err
+      );
+
+      console.error(
+        "Status:",
+        err.response?.status
+      );
+
+      console.error(
+        "Backend response:",
+        err.response?.data
+      );
 
       const backendErrors = err.response?.data;
 
@@ -91,9 +97,13 @@ export default function ReceiptItemsPage() {
         backendErrors &&
         typeof backendErrors === "object"
       ) {
-        const messages = Object.entries(backendErrors)
+        const messages = Object.entries(
+          backendErrors
+        )
           .map(([field, errors]) => {
-            const errorMessages = Array.isArray(errors)
+            const errorMessages = Array.isArray(
+              errors
+            )
               ? errors.join(", ")
               : String(errors);
 
@@ -116,18 +126,161 @@ export default function ReceiptItemsPage() {
   }
 
   // ============================================================
+  // FETCH DEPARTMENTS
+  // GET /api/departments/
+  // ============================================================
+
+  async function fetchDepartments() {
+    setLoadingDepartments(true);
+
+    try {
+      const { data } = await axiosInstance.get(
+        DEPARTMENTS_URL
+      );
+
+      const departmentList = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.results)
+        ? data.results
+        : [];
+
+      setDepartments(departmentList);
+    } catch (err) {
+      console.error(
+        "Failed to fetch departments:",
+        err
+      );
+
+      setError(
+        err.response?.data?.detail ||
+          "Failed to load departments."
+      );
+    } finally {
+      setLoadingDepartments(false);
+    }
+  }
+
+  // ============================================================
+  // FETCH SUBDEPARTMENTS
+  // GET /api/departments/<id>/subdepartments/
+  // ============================================================
+
+  async function fetchSubdepartments(
+    departmentId,
+    preserveSelection = false
+  ) {
+    if (!departmentId) {
+      setSubdepartments([]);
+
+      if (!preserveSelection) {
+        setForm((prev) => ({
+          ...prev,
+          subdepartment: "",
+        }));
+      }
+
+      return;
+    }
+
+    setLoadingSubdepartments(true);
+
+    try {
+      const { data } = await axiosInstance.get(
+        `${DEPARTMENTS_URL}${departmentId}/subdepartments/`
+      );
+
+      const subdepartmentList = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.results)
+        ? data.results
+        : [];
+
+      setSubdepartments(subdepartmentList);
+
+      if (!preserveSelection) {
+        setForm((prev) => ({
+          ...prev,
+          subdepartment: "",
+        }));
+      }
+    } catch (err) {
+      console.error(
+        "Failed to fetch subdepartments:",
+        err
+      );
+
+      setSubdepartments([]);
+
+      if (!preserveSelection) {
+        setForm((prev) => ({
+          ...prev,
+          subdepartment: "",
+        }));
+      }
+
+      setError(
+        err.response?.data?.detail ||
+          "Failed to load subdepartments."
+      );
+    } finally {
+      setLoadingSubdepartments(false);
+    }
+  }
+
+  // ============================================================
   // FORM CHANGE
   // ============================================================
+
   function handleChange(e) {
     const { name, value } = e.target;
+
+    if (name === "department") {
+      setForm((prev) => ({
+        ...prev,
+        department: value,
+        subdepartment: "",
+      }));
+
+      setSubdepartments([]);
+
+      setFieldErrors((prev) => ({
+        ...prev,
+        department: null,
+        subdepartment: null,
+      }));
+
+      setError(null);
+
+      if (value) {
+        fetchSubdepartments(value);
+      }
+
+      return;
+    }
+
+    if (name === "subdepartment") {
+      setForm((prev) => ({
+        ...prev,
+        subdepartment: value,
+      }));
+
+      if (fieldErrors.subdepartment) {
+        setFieldErrors((prev) => ({
+          ...prev,
+          subdepartment: null,
+        }));
+      }
+
+      setError(null);
+
+      return;
+    }
 
     setForm((prev) => ({
       ...prev,
       [name]: value,
     }));
 
-    // Clear the field's validation error once
-    // the user starts correcting it.
     if (fieldErrors[name]) {
       setFieldErrors((prev) => ({
         ...prev,
@@ -135,7 +288,6 @@ export default function ReceiptItemsPage() {
       }));
     }
 
-    // Clear general error when user changes form.
     if (error) {
       setError(null);
     }
@@ -144,6 +296,7 @@ export default function ReceiptItemsPage() {
   // ============================================================
   // FORMAT BACKEND ERRORS
   // ============================================================
+
   function formatBackendErrors(backendErrors) {
     if (!backendErrors) {
       return "Please correct the errors in the form.";
@@ -154,7 +307,9 @@ export default function ReceiptItemsPage() {
     }
 
     if (backendErrors.detail) {
-      return Array.isArray(backendErrors.detail)
+      return Array.isArray(
+        backendErrors.detail
+      )
         ? backendErrors.detail.join(", ")
         : String(backendErrors.detail);
     }
@@ -178,7 +333,6 @@ export default function ReceiptItemsPage() {
             message = String(errors);
           }
 
-          // Make field names more readable.
           const readableField = field
             .replace(/_/g, " ")
             .replace(/\b\w/g, (char) =>
@@ -196,12 +350,28 @@ export default function ReceiptItemsPage() {
   // ============================================================
   // START EDIT
   // ============================================================
-  function startEdit(item) {
+
+  async function startEdit(item) {
     setEditingItemId(item.id);
+
+    const departmentId =
+      typeof item.department === "object"
+        ? item.department?.id
+        : item.department ??
+          item.department_id ??
+          "";
+
+    const subdepartmentId =
+      typeof item.subdepartment === "object"
+        ? item.subdepartment?.id
+        : item.subdepartment ??
+          item.subdepartment_id ??
+          "";
 
     setForm({
       item_name: item.item_name || "",
-      department: item.department || "",
+      department: departmentId || "",
+      subdepartment: subdepartmentId || "",
       quantity: item.quantity ?? "",
       unit: item.unit || "",
       unit_price: item.unit_price ?? "",
@@ -209,6 +379,20 @@ export default function ReceiptItemsPage() {
 
     setFieldErrors({});
     setError(null);
+
+    /*
+     * Load the subdepartments belonging to the selected
+     * department while preserving the item's current
+     * subdepartment.
+     */
+    if (departmentId) {
+      await fetchSubdepartments(
+        departmentId,
+        true
+      );
+    } else {
+      setSubdepartments([]);
+    }
 
     window.scrollTo({
       top: 0,
@@ -219,9 +403,11 @@ export default function ReceiptItemsPage() {
   // ============================================================
   // CANCEL EDIT
   // ============================================================
+
   function cancelEdit() {
     setEditingItemId(null);
     setForm(emptyForm);
+    setSubdepartments([]);
     setFieldErrors({});
     setError(null);
   }
@@ -229,6 +415,7 @@ export default function ReceiptItemsPage() {
   // ============================================================
   // SUBMIT
   // ============================================================
+
   async function handleSubmit(e) {
     e.preventDefault();
 
@@ -236,18 +423,14 @@ export default function ReceiptItemsPage() {
     setError(null);
     setFieldErrors({});
 
-    // Build a clean payload.
-    // Receipt is NOT included because Django gets it
-    // from the URL:
-    //
-    // /receipts/<receipt_id>/items/add/
-    //
-    // and then does:
-    //
-    // serializer.save(receipt=receipt)
     const payload = {
       item_name: form.item_name,
-      department: form.department,
+      department: form.department
+        ? Number(form.department)
+        : null,
+      subdepartment: form.subdepartment
+        ? Number(form.subdepartment)
+        : null,
       quantity: form.quantity,
       unit: form.unit,
       unit_price: form.unit_price,
@@ -281,51 +464,50 @@ export default function ReceiptItemsPage() {
         );
       }
 
-      // Reset form after successful save.
       setForm(emptyForm);
+      setSubdepartments([]);
       setEditingItemId(null);
       setFieldErrors({});
       setError(null);
 
-      // Reload items so the new/updated total is displayed.
       await fetchItems();
-
     } catch (err) {
       console.error(
         "================================="
       );
+
       console.error(
         "FAILED TO SAVE RECEIPT ITEM"
       );
+
       console.error(
         "Status:",
         err.response?.status
       );
+
       console.error(
         "Django validation errors:",
         err.response?.data
       );
+
       console.error(
         "Request payload:",
         payload
       );
+
       console.error(
         "Request URL:",
         err.config?.url
       );
+
       console.error(
         "================================="
       );
-
-      // ========================================================
-      // VALIDATION ERROR
-      // ========================================================
 
       if (err.response?.status === 400) {
         const backendErrors =
           err.response?.data || {};
 
-        // Save field-specific errors.
         setFieldErrors(
           backendErrors &&
           typeof backendErrors === "object"
@@ -333,35 +515,30 @@ export default function ReceiptItemsPage() {
             : {}
         );
 
-        // Convert Django errors into readable text.
         const formattedError =
           formatBackendErrors(
             backendErrors
           );
 
         setError(formattedError);
-
       } else if (
         err.response?.status === 401
       ) {
         setError(
           "Your session has expired. Please log in again."
         );
-
       } else if (
         err.response?.status === 403
       ) {
         setError(
           "You do not have permission to add or edit receipt items."
         );
-
       } else if (
         err.response?.status >= 500
       ) {
         setError(
           "The server encountered an error while saving the item. Please try again."
         );
-
       } else {
         setError(
           err.response?.data?.detail ||
@@ -375,8 +552,8 @@ export default function ReceiptItemsPage() {
 
   // ============================================================
   // DELETE
-  // DELETE /api/receipts/items/<item_id>/delete/
   // ============================================================
+
   async function handleDelete(
     itemId,
     itemName
@@ -396,9 +573,7 @@ export default function ReceiptItemsPage() {
         `${RECEIPTS_URL}items/${itemId}/delete/`
       );
 
-      // Reload items after deletion.
       await fetchItems();
-
     } catch (err) {
       console.error(
         "Failed to delete receipt item:",
@@ -413,8 +588,49 @@ export default function ReceiptItemsPage() {
   }
 
   // ============================================================
+  // HELPERS
+  // ============================================================
+
+  function getDepartmentName(item) {
+    return (
+      item?.department_display ||
+      item?.department?.name ||
+      departments.find(
+        (department) =>
+          Number(department.id) ===
+          Number(
+            typeof item?.department ===
+              "object"
+              ? item?.department?.id
+              : item?.department
+          )
+      )?.name ||
+      "Unknown department"
+    );
+  }
+
+  function getSubDepartmentName(item) {
+    return (
+      item?.subdepartment_display ||
+      item?.subdepartment?.name ||
+      subdepartments.find(
+        (subdepartment) =>
+          Number(subdepartment.id) ===
+          Number(
+            typeof item?.subdepartment ===
+              "object"
+              ? item?.subdepartment?.id
+              : item?.subdepartment
+          )
+      )?.name ||
+      ""
+    );
+  }
+
+  // ============================================================
   // TOTAL
   // ============================================================
+
   const itemsTotal = items.reduce(
     (sum, item) =>
       sum + Number(item.total || 0),
@@ -424,6 +640,7 @@ export default function ReceiptItemsPage() {
   // ============================================================
   // FORMAT MONEY
   // ============================================================
+
   function formatMoney(value) {
     return Number(value || 0).toLocaleString(
       "en-KE",
@@ -437,6 +654,7 @@ export default function ReceiptItemsPage() {
   // ============================================================
   // RENDER
   // ============================================================
+
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
@@ -444,12 +662,12 @@ export default function ReceiptItemsPage() {
         {/* ============================================================
             PAGE HEADER
         ============================================================ */}
+
         <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
 
           <div>
             <div className="mb-2 flex items-center gap-3">
 
-              {/* Receipt icon */}
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-100 text-purple-700">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -479,6 +697,7 @@ export default function ReceiptItemsPage() {
                   </span>
                 </p>
               </div>
+
             </div>
 
             <p className="text-sm text-gray-500">
@@ -486,7 +705,6 @@ export default function ReceiptItemsPage() {
             </p>
           </div>
 
-          {/* Back button */}
           <Link
             to={`/receipts/${receiptId}`}
             className="inline-flex w-fit items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
@@ -508,11 +726,13 @@ export default function ReceiptItemsPage() {
 
             Back to Receipt
           </Link>
+
         </div>
 
         {/* ============================================================
             ERROR MESSAGE
         ============================================================ */}
+
         {error && (
           <div className="mb-6 flex items-start justify-between rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-red-800 shadow-sm">
 
@@ -527,7 +747,7 @@ export default function ReceiptItemsPage() {
                   Unable to save receipt item
                 </p>
 
-                <p className="mt-1 text-sm whitespace-pre-wrap">
+                <p className="mt-1 whitespace-pre-wrap text-sm">
                   {error}
                 </p>
               </div>
@@ -549,13 +769,16 @@ export default function ReceiptItemsPage() {
         {/* ============================================================
             ADD / EDIT FORM
         ============================================================ */}
+
         <form
           onSubmit={handleSubmit}
           className="mb-8 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
         >
 
           {/* Form Header */}
+
           <div className="border-b border-gray-200 bg-gray-50 px-6 py-5">
+
             <div className="flex items-center gap-3">
 
               <div
@@ -565,6 +788,7 @@ export default function ReceiptItemsPage() {
                     : "bg-purple-100 text-purple-700"
                 }`}
               >
+
                 {editingItemId ? (
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -596,6 +820,7 @@ export default function ReceiptItemsPage() {
                     />
                   </svg>
                 )}
+
               </div>
 
               <div>
@@ -613,9 +838,11 @@ export default function ReceiptItemsPage() {
               </div>
 
             </div>
+
           </div>
 
           {/* Form Body */}
+
           <div className="p-6">
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -623,7 +850,9 @@ export default function ReceiptItemsPage() {
               {/* ======================================================
                   ITEM NAME
               ====================================================== */}
+
               <div>
+
                 <label
                   htmlFor="item_name"
                   className="mb-2 block text-sm font-semibold text-gray-700"
@@ -655,12 +884,15 @@ export default function ReceiptItemsPage() {
                       : fieldErrors.item_name}
                   </p>
                 )}
+
               </div>
 
               {/* ======================================================
                   DEPARTMENT
               ====================================================== */}
+
               <div>
+
                 <label
                   htmlFor="department"
                   className="mb-2 block text-sm font-semibold text-gray-700"
@@ -674,26 +906,31 @@ export default function ReceiptItemsPage() {
                   value={form.department}
                   onChange={handleChange}
                   required
-                  className={`w-full rounded-lg border bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition ${
+                  disabled={loadingDepartments}
+                  className={`w-full rounded-lg border bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition disabled:cursor-not-allowed disabled:bg-gray-100 ${
                     fieldErrors.department
                       ? "border-red-400 ring-2 ring-red-100"
                       : "border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
                   }`}
                 >
+
                   <option value="">
-                    Select department...
+                    {loadingDepartments
+                      ? "Loading departments..."
+                      : "Select department..."}
                   </option>
 
-                  {DEPARTMENTS.map(
-                    ([value, label]) => (
+                  {departments.map(
+                    (department) => (
                       <option
-                        key={value}
-                        value={value}
+                        key={department.id}
+                        value={department.id}
                       >
-                        {label}
+                        {department.name}
                       </option>
                     )
                   )}
+
                 </select>
 
                 {fieldErrors.department && (
@@ -705,12 +942,90 @@ export default function ReceiptItemsPage() {
                       : fieldErrors.department}
                   </p>
                 )}
+
+              </div>
+
+              {/* ======================================================
+                  SUBDEPARTMENT
+              ====================================================== */}
+
+              <div>
+
+                <label
+                  htmlFor="subdepartment"
+                  className="mb-2 block text-sm font-semibold text-gray-700"
+                >
+                  Subdepartment
+                  <span className="ml-1 text-xs font-normal text-gray-400">
+                    (Optional)
+                  </span>
+                </label>
+
+                <select
+                  id="subdepartment"
+                  name="subdepartment"
+                  value={form.subdepartment}
+                  onChange={handleChange}
+                  disabled={
+                    !form.department ||
+                    loadingSubdepartments
+                  }
+                  className={`w-full rounded-lg border bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition disabled:cursor-not-allowed disabled:bg-gray-100 ${
+                    fieldErrors.subdepartment
+                      ? "border-red-400 ring-2 ring-red-100"
+                      : "border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+                  }`}
+                >
+
+                  <option value="">
+                    {!form.department
+                      ? "Select department first..."
+                      : loadingSubdepartments
+                      ? "Loading subdepartments..."
+                      : subdepartments.length > 0
+                      ? "Select subdepartment..."
+                      : "No subdepartments"}
+                  </option>
+
+                  {subdepartments.map(
+                    (subdepartment) => (
+                      <option
+                        key={subdepartment.id}
+                        value={subdepartment.id}
+                      >
+                        {subdepartment.name}
+                      </option>
+                    )
+                  )}
+
+                </select>
+
+                {fieldErrors.subdepartment && (
+                  <p className="mt-1.5 text-xs font-medium text-red-600">
+                    {Array.isArray(
+                      fieldErrors.subdepartment
+                    )
+                      ? fieldErrors.subdepartment[0]
+                      : fieldErrors.subdepartment}
+                  </p>
+                )}
+
+                {form.department &&
+                  !loadingSubdepartments &&
+                  subdepartments.length === 0 && (
+                    <p className="mt-1.5 text-xs text-gray-400">
+                      This department has no subdepartments.
+                    </p>
+                  )}
+
               </div>
 
               {/* ======================================================
                   UNIT
               ====================================================== */}
+
               <div>
+
                 <label
                   htmlFor="unit"
                   className="mb-2 block text-sm font-semibold text-gray-700"
@@ -730,6 +1045,7 @@ export default function ReceiptItemsPage() {
                       : "border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
                   }`}
                 >
+
                   <option value="">
                     Select unit...
                   </option>
@@ -744,6 +1060,7 @@ export default function ReceiptItemsPage() {
                       </option>
                     )
                   )}
+
                 </select>
 
                 {fieldErrors.unit && (
@@ -755,12 +1072,15 @@ export default function ReceiptItemsPage() {
                       : fieldErrors.unit}
                   </p>
                 )}
+
               </div>
 
               {/* ======================================================
                   QUANTITY
               ====================================================== */}
+
               <div>
+
                 <label
                   htmlFor="quantity"
                   className="mb-2 block text-sm font-semibold text-gray-700"
@@ -794,12 +1114,15 @@ export default function ReceiptItemsPage() {
                       : fieldErrors.quantity}
                   </p>
                 )}
+
               </div>
 
               {/* ======================================================
                   UNIT PRICE
               ====================================================== */}
+
               <div>
+
                 <label
                   htmlFor="unit_price"
                   className="mb-2 block text-sm font-semibold text-gray-700"
@@ -841,12 +1164,15 @@ export default function ReceiptItemsPage() {
                       : fieldErrors.unit_price}
                   </p>
                 )}
+
               </div>
 
             </div>
+
           </div>
 
           {/* Form Footer */}
+
           <div className="flex flex-col-reverse gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4 sm:flex-row sm:justify-end">
 
             {editingItemId && (
@@ -862,7 +1188,10 @@ export default function ReceiptItemsPage() {
 
             <button
               type="submit"
-              disabled={saving}
+              disabled={
+                saving ||
+                loadingDepartments
+              }
               className="inline-flex items-center justify-center gap-2 rounded-lg bg-purple-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-purple-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
             >
 
@@ -924,17 +1253,21 @@ export default function ReceiptItemsPage() {
             </button>
 
           </div>
+
         </form>
 
         {/* ============================================================
             ITEMS SECTION
         ============================================================ */}
+
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
 
           {/* Section Header */}
+
           <div className="flex flex-col gap-4 border-b border-gray-200 bg-white px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
 
             <div>
+
               <h2 className="text-lg font-bold text-gray-900">
                 Items on this Receipt
               </h2>
@@ -945,9 +1278,9 @@ export default function ReceiptItemsPage() {
                   {receiptId}
                 </span>
               </p>
+
             </div>
 
-            {/* Total */}
             <div className="rounded-xl bg-purple-50 px-5 py-3 text-right">
 
               <p className="text-xs font-semibold uppercase tracking-wide text-purple-600">
@@ -965,6 +1298,7 @@ export default function ReceiptItemsPage() {
           {/* ==========================================================
               LOADING
           ========================================================== */}
+
           {loading && (
             <div className="py-16 text-center">
 
@@ -984,6 +1318,7 @@ export default function ReceiptItemsPage() {
           {/* ==========================================================
               ITEMS TABLE
           ========================================================== */}
+
           {!loading && items.length > 0 && (
             <div className="overflow-x-auto">
 
@@ -1023,147 +1358,178 @@ export default function ReceiptItemsPage() {
 
                 <tbody className="divide-y divide-gray-100 bg-white">
 
-                  {items.map((item) => (
-                    <tr
-                      key={item.id}
-                      className="transition hover:bg-purple-50/40"
-                    >
+                  {items.map((item) => {
 
-                      {/* Item */}
-                      <td className="px-6 py-4">
+                    const departmentName =
+                      getDepartmentName(item);
 
-                        <div className="flex items-center gap-3">
+                    const subdepartmentName =
+                      getSubDepartmentName(item);
 
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-sm font-bold text-purple-700">
-                            {item.item_name
-                              ?.charAt(0)
-                              ?.toUpperCase() || "I"}
+                    return (
+                      <tr
+                        key={item.id}
+                        className="transition hover:bg-purple-50/40"
+                      >
+
+                        {/* Item */}
+
+                        <td className="px-6 py-4">
+
+                          <div className="flex items-center gap-3">
+
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-sm font-bold text-purple-700">
+                              {item.item_name
+                                ?.charAt(0)
+                                ?.toUpperCase() ||
+                                "I"}
+                            </div>
+
+                            <div>
+
+                              <p className="font-semibold text-gray-900">
+                                {item.item_name}
+                              </p>
+
+                              <p className="text-xs text-gray-400">
+                                Item #{item.id}
+                              </p>
+
+                            </div>
+
                           </div>
 
-                          <div>
+                        </td>
 
-                            <p className="font-semibold text-gray-900">
-                              {item.item_name}
-                            </p>
+                        {/* Department */}
 
-                            <p className="text-xs text-gray-400">
-                              Item #{item.id}
-                            </p>
+                        <td className="px-6 py-4">
+
+                          <div className="flex flex-col gap-1">
+
+                            <span className="inline-flex w-fit rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+                              {departmentName}
+                            </span>
+
+                            {subdepartmentName && (
+                              <span className="text-xs font-medium text-purple-600">
+                                {subdepartmentName}
+                              </span>
+                            )}
 
                           </div>
 
-                        </div>
+                        </td>
 
-                      </td>
+                        {/* Quantity */}
 
-                      {/* Department */}
-                      <td className="whitespace-nowrap px-6 py-4">
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700">
 
-                        <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
-                          {item.department_display ||
-                            item.department}
-                        </span>
+                          <span className="font-semibold text-gray-900">
+                            {item.quantity}
+                          </span>{" "}
 
-                      </td>
+                          {item.unit_display ||
+                            item.unit}
 
-                      {/* Quantity */}
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700">
+                        </td>
 
-                        <span className="font-semibold text-gray-900">
-                          {item.quantity}
-                        </span>{" "}
+                        {/* Unit Price */}
 
-                        {item.unit_display ||
-                          item.unit}
-
-                      </td>
-
-                      {/* Unit Price */}
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-700">
-                        KSh{" "}
-                        {formatMoney(
-                          item.unit_price
-                        )}
-                      </td>
-
-                      {/* Total */}
-                      <td className="whitespace-nowrap px-6 py-4">
-
-                        <span className="font-bold text-gray-900">
+                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-700">
                           KSh{" "}
                           {formatMoney(
-                            item.total
+                            item.unit_price
                           )}
-                        </span>
+                        </td>
 
-                      </td>
+                        {/* Total */}
 
-                      {/* Actions */}
-                      <td className="whitespace-nowrap px-6 py-4">
+                        <td className="whitespace-nowrap px-6 py-4">
 
-                        <div className="flex justify-end gap-2">
+                          <span className="font-bold text-gray-900">
+                            KSh{" "}
+                            {formatMoney(
+                              item.total
+                            )}
+                          </span>
 
-                          {/* Edit */}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              startEdit(item)
-                            }
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-3.5 w-3.5"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth={2}
+                        </td>
+
+                        {/* Actions */}
+
+                        <td className="whitespace-nowrap px-6 py-4">
+
+                          <div className="flex justify-end gap-2">
+
+                            {/* Edit */}
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                startEdit(item)
+                              }
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"
-                              />
-                            </svg>
 
-                            Edit
-                          </button>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-3.5 w-3.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"
+                                />
+                              </svg>
 
-                          {/* Delete */}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleDelete(
-                                item.id,
-                                item.item_name
-                              )
-                            }
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-600 hover:text-white"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-3.5 w-3.5"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth={2}
+                              Edit
+
+                            </button>
+
+                            {/* Delete */}
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleDelete(
+                                  item.id,
+                                  item.item_name
+                                )
+                              }
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-600 hover:text-white"
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-7 0h10"
-                              />
-                            </svg>
 
-                            Delete
-                          </button>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-3.5 w-3.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-7 0h10"
+                                />
+                              </svg>
 
-                        </div>
+                              Delete
 
-                      </td>
+                            </button>
 
-                    </tr>
-                  ))}
+                          </div>
+
+                        </td>
+
+                      </tr>
+                    );
+                  })}
 
                 </tbody>
 
@@ -1175,6 +1541,7 @@ export default function ReceiptItemsPage() {
           {/* ==========================================================
               EMPTY STATE
           ========================================================== */}
+
           {!loading && items.length === 0 && (
             <div className="px-6 py-16 text-center">
 
@@ -1216,3 +1583,4 @@ export default function ReceiptItemsPage() {
     </div>
   );
 }
+

@@ -1,23 +1,35 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Users, UserPlus, Bus, Wallet, BookOpen, LibraryBig ,  Receipt} from "lucide-react";
+import { Users, UserPlus, Bus, Wallet, BookOpen, LibraryBig ,  Receipt , Package , Building2} from "lucide-react";
 
 const menuItems = {
-  headteacher: [
-    { label: "Dashboard", path: "/dashboard/headteacher", icon: <Users className="w-5 h-5" /> },
-    { label: "Add Student", path: "/students/create", icon: <UserPlus className="w-5 h-5" /> },
-    { label: "Add Parent", path: "/parents/create", icon: <UserPlus className="w-5 h-5" /> },
-    { label: "Add Teachers", path: "/teachers/create", icon: <UserPlus className="w-5 h-5" /> },
-    { label: "Manage Teachers", path: "/teachers/management", icon: <UserPlus className="w-5 h-5" /> },
-    { label: "Transport Routes", path: "/fees/transport/routes", icon: <Bus className="w-5 h-5" /> },
-    { label: "Fee Structure", path: "/fees/GradeFeeStructure", icon: <Wallet className="w-5 h-5" /> },
-    { label: "Streams", path: "/streams", icon: <Wallet className="w-5 h-5" /> },
-{
-    label: "Receipts",
+headteacher: [
+  { label: "Dashboard", path: "/dashboard/headteacher", icon: <Users className="w-5 h-5" /> },
+  { label: "Add Student", path: "/students/create", icon: <UserPlus className="w-5 h-5" /> },
+  { label: "Add Parent", path: "/parents/create", icon: <UserPlus className="w-5 h-5" /> },
+  { label: "Add Teachers", path: "/teachers/create", icon: <UserPlus className="w-5 h-5" /> },
+  { label: "Manage Teachers", path: "/teachers/management", icon: <UserPlus className="w-5 h-5" /> },
+  { label: "Transport Routes", path: "/fees/transport/routes", icon: <Bus className="w-5 h-5" /> },
+  { label: "Fee Structure", path: "/fees/GradeFeeStructure", icon: <Wallet className="w-5 h-5" /> },
+  { label: "Streams", path: "/streams", icon: <Wallet className="w-5 h-5" /> },
+
+  {
+    label: "Departments",
+    path: "/departments",
+    icon: <Building2 className="w-5 h-5" />
+  },
+
+  {
+    label: "Expense management",
     path: "/receipts",
     icon: <Receipt className="w-5 h-5" />
-},
-  ],
+  },
+  {
+    label: "Inventory",
+    path: "/inventory",
+    icon: <Package className="w-5 h-5" />
+  },
+],
   teacher: [
     { label: "Dashboard", path: "/dashboard/teacher", icon: <BookOpen className="w-5 h-5" /> },
     { label: "My Students", path: "/teacher/students", icon: <Users className="w-5 h-5" /> },

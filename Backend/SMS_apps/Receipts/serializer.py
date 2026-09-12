@@ -1,6 +1,73 @@
 from rest_framework import serializers
 
-from .models import Receipt, ReceiptItem
+from .models import (
+    Receipt,
+    ReceiptItem,
+    Department,
+    SubDepartment,
+)
+
+
+class SubDepartmentSerializer(serializers.ModelSerializer):
+    """
+    Serializer for subdepartments.
+
+    Used by the frontend to populate the subdepartment dropdown
+    based on the selected department.
+    """
+
+    class Meta:
+        model = SubDepartment
+
+        fields = [
+            "id",
+            "name",
+            "code",
+            "department",
+            "is_active",
+        ]
+
+        read_only_fields = [
+            "id",
+        ]
+
+
+class DepartmentSerializer(serializers.ModelSerializer):
+    """
+    Serializer for departments.
+
+    Includes only active subdepartments belonging to this department.
+    This allows the frontend to request a department and receive
+    only its respective subdepartments.
+    """
+
+    subdepartments = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Department
+
+        fields = [
+            "id",
+            "name",
+            "code",
+            "is_active",
+            "subdepartments",
+        ]
+
+        read_only_fields = [
+            "id",
+            "subdepartments",
+        ]
+
+    def get_subdepartments(self, obj):
+        subdepartments = obj.subdepartments.filter(
+            is_active=True
+        )
+
+        return SubDepartmentSerializer(
+            subdepartments,
+            many=True,
+        ).data
 
 
 class ReceiptItemSerializer(serializers.ModelSerializer):
@@ -8,19 +75,25 @@ class ReceiptItemSerializer(serializers.ModelSerializer):
     Serializer for individual receipt items.
 
     The receipt is determined by the URL when creating an item:
+
         POST /api/receipts/<receipt_id>/items/add/
 
-    Therefore, `receipt` is read-only from the client's perspective
-    and is assigned by the view using:
+    Therefore, `receipt` is read-only from the client's perspective.
 
-        serializer.save(receipt=receipt)
+    Department and subdepartment are selected by the frontend.
 
-    The total is also calculated by ReceiptItem.save(), so it should
-    never be supplied by the frontend.
+    The frontend should only display subdepartments belonging to the
+    selected department, but the relationship is also validated here
+    on the backend for security and data integrity.
     """
 
     department_display = serializers.CharField(
-        source="get_department_display",
+        source="department.name",
+        read_only=True,
+    )
+
+    subdepartment_display = serializers.CharField(
+        source="subdepartment.name",
         read_only=True,
     )
 
@@ -41,9 +114,15 @@ class ReceiptItemSerializer(serializers.ModelSerializer):
             "id",
             "receipt",
             "receipt_id",
+
             "item_name",
+
             "department",
             "department_display",
+
+            "subdepartment",
+            "subdepartment_display",
+
             "quantity",
             "unit",
             "unit_display",
@@ -55,24 +134,46 @@ class ReceiptItemSerializer(serializers.ModelSerializer):
             "id",
             "receipt",
             "receipt_id",
+
             "department_display",
+            "subdepartment_display",
+
             "unit_display",
             "total",
         ]
+
+    def validate(self, attrs):
+        """
+        Ensure the selected subdepartment belongs to
+        the selected department.
+        """
+
+        department = attrs.get("department")
+        subdepartment = attrs.get("subdepartment")
+
+        if subdepartment:
+            if subdepartment.department_id != department.id:
+                raise serializers.ValidationError({
+                    "subdepartment": (
+                        "The selected subdepartment does not "
+                        "belong to the selected department."
+                    )
+                })
+
+        return attrs
 
     def create(self, validated_data):
         """
         Create a ReceiptItem.
 
-        Normally the ReceiptItem is created through
-        ReceiptViewSet.items(), where the receipt is injected:
+        The receipt is normally injected by the view:
 
             serializer.save(receipt=receipt)
-
-        Because `receipt` is read-only, it will not be expected
-        from the frontend request.
         """
-        return ReceiptItem.objects.create(**validated_data)
+
+        return ReceiptItem.objects.create(
+            **validated_data
+        )
 
 
 class ReceiptSerializer(serializers.ModelSerializer):

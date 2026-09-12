@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'SMS_apps.attendance',
     'Portfolio',
     'SMS_apps.Receipts',
+    'SMS_apps.Inventory',
     
 
 ]

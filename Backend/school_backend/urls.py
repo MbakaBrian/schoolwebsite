@@ -53,6 +53,11 @@ urlpatterns = [
         "api/teachers/",
         include("SMS_apps.teachers.urls"),
     ),
+    #Inventory
+    path(
+        "api/inventory/",
+        include("SMS_apps.Inventory.urls"),
+    ),
 
     # Fees
     path(

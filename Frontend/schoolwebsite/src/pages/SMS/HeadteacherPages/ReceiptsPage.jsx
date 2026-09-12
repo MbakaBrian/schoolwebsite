@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import axiosInstance from "../../../utils/axiosInstance";
@@ -18,6 +17,21 @@ export default function ReceiptsPage() {
     location.state?.message || null
   );
 
+  // ============================================================
+  // CALCULATE TOTAL OF ALL ITEMS IN A RECEIPT
+  // ============================================================
+
+  const calculateReceiptTotal = (receipt) => {
+    return (receipt.items || []).reduce(
+      (sum, item) => sum + Number(item.total || 0),
+      0
+    );
+  };
+
+  // ============================================================
+  // FETCH RECEIPTS
+  // ============================================================
+
   useEffect(() => {
     fetchReceipts();
   }, []);
@@ -29,8 +43,26 @@ export default function ReceiptsPage() {
     try {
       const { data } = await axiosInstance.get(RECEIPTS_URL);
 
-      setReceipts(data.results ?? []);
-      setTotalExpenditure(data.total_expenditure ?? 0);
+      const receiptList = data.results ?? [];
+
+      setReceipts(receiptList);
+
+      // ========================================================
+      // TOTAL EXPENDITURE
+      //
+      // Calculate from ALL items in ALL receipts.
+      // Do not rely on data.total_expenditure because the
+      // backend receipt total may currently only contain the
+      // first item's total.
+      // ========================================================
+
+      const expenditureTotal = receiptList.reduce(
+        (receiptSum, receipt) =>
+          receiptSum + calculateReceiptTotal(receipt),
+        0
+      );
+
+      setTotalExpenditure(expenditureTotal);
     } catch (err) {
       setError(
         err.response?.data?.detail || "Failed to load receipts."
@@ -39,6 +71,10 @@ export default function ReceiptsPage() {
       setLoading(false);
     }
   }
+
+  // ============================================================
+  // DELETE RECEIPT
+  // ============================================================
 
   async function handleDelete(receiptId) {
     const confirmed = window.confirm(
@@ -50,9 +86,14 @@ export default function ReceiptsPage() {
     }
 
     try {
-      await axiosInstance.delete(`${RECEIPTS_URL}${receiptId}/delete/`);
+      await axiosInstance.delete(
+        `${RECEIPTS_URL}${receiptId}/delete/`
+      );
 
-      setFlashMessage(`Receipt ${receiptId} deleted successfully.`);
+      setFlashMessage(
+        `Receipt ${receiptId} deleted successfully.`
+      );
+
       fetchReceipts();
     } catch (err) {
       setError(
@@ -71,6 +112,7 @@ export default function ReceiptsPage() {
         {/* ============================================================
             FLASH MESSAGE
         ============================================================ */}
+
         {flashMessage && (
           <div className="mb-6 flex items-start justify-between rounded-xl border border-green-200 bg-green-50 px-5 py-4 text-green-800 shadow-sm">
             <div className="flex items-center gap-3">
@@ -96,6 +138,7 @@ export default function ReceiptsPage() {
         {/* ============================================================
             ERROR MESSAGE
         ============================================================ */}
+
         {error && (
           <div className="mb-6 flex items-start justify-between rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-red-800 shadow-sm">
             <div className="flex items-center gap-3">
@@ -121,6 +164,7 @@ export default function ReceiptsPage() {
         {/* ============================================================
             PAGE HEADER
         ============================================================ */}
+
         <div className="mb-8 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
 
           <div>
@@ -155,6 +199,7 @@ export default function ReceiptsPage() {
           <div className="flex flex-wrap gap-3">
 
             {/* Summary */}
+
             <Link
               to="/receipts/summary"
               className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
@@ -178,6 +223,7 @@ export default function ReceiptsPage() {
             </Link>
 
             {/* Add Receipt */}
+
             <Link
               to="/receipts/add"
               className="inline-flex items-center gap-2 rounded-lg bg-purple-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-purple-800 hover:shadow-md"
@@ -191,9 +237,11 @@ export default function ReceiptsPage() {
         {/* ============================================================
             STATISTICS
         ============================================================ */}
+
         <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-3">
 
           {/* Total Receipts */}
+
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:shadow-md">
             <div className="flex items-center justify-between">
 
@@ -232,6 +280,7 @@ export default function ReceiptsPage() {
           </div>
 
           {/* Total Expenditure */}
+
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:shadow-md">
             <div className="flex items-center justify-between">
 
@@ -241,7 +290,8 @@ export default function ReceiptsPage() {
                 </p>
 
                 <h2 className="mt-2 text-2xl font-bold text-gray-900">
-                  KSh {Number(totalExpenditure).toLocaleString("en-KE", {
+                  KSh{" "}
+                  {Number(totalExpenditure).toLocaleString("en-KE", {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
@@ -264,7 +314,7 @@ export default function ReceiptsPage() {
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 2 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
               </div>
@@ -273,6 +323,7 @@ export default function ReceiptsPage() {
           </div>
 
           {/* Current Year */}
+
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:shadow-md">
             <div className="flex items-center justify-between">
 
@@ -315,6 +366,7 @@ export default function ReceiptsPage() {
         {/* ============================================================
             LOADING
         ============================================================ */}
+
         {loading && (
           <div className="rounded-2xl border border-gray-200 bg-white py-16 text-center shadow-sm">
             <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-purple-700"></div>
@@ -332,10 +384,12 @@ export default function ReceiptsPage() {
         {/* ============================================================
             RECEIPTS TABLE
         ============================================================ */}
+
         {!loading && receipts.length > 0 && (
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
 
             {/* Table Header */}
+
             <div className="flex flex-col gap-3 border-b border-gray-200 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
 
               <div>
@@ -356,6 +410,7 @@ export default function ReceiptsPage() {
             </div>
 
             {/* Table */}
+
             <div className="overflow-x-auto">
 
               <table className="min-w-full divide-y divide-gray-200">
@@ -396,92 +451,109 @@ export default function ReceiptsPage() {
 
                 <tbody className="divide-y divide-gray-100 bg-white">
 
-                  {receipts.map((receipt) => (
-                    <tr
-                      key={receipt.receipt_id}
-                      className="transition hover:bg-purple-50/40"
-                    >
+                  {receipts.map((receipt) => {
+                    // Calculate total from ALL items
+                    const receiptTotal = calculateReceiptTotal(receipt);
 
-                      {/* Receipt ID */}
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <span className="font-semibold text-purple-700">
-                          {receipt.receipt_id}
-                        </span>
-                      </td>
+                    return (
+                      <tr
+                        key={receipt.receipt_id}
+                        className="transition hover:bg-purple-50/40"
+                      >
 
-                      {/* Store */}
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
-                        {receipt.store}
-                      </td>
+                        {/* Receipt ID */}
 
-                      {/* Payment Method */}
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
-                          {receipt.payment_method_display}
-                        </span>
-                      </td>
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <span className="font-semibold text-purple-700">
+                            {receipt.receipt_id}
+                          </span>
+                        </td>
 
-                      {/* Date */}
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
-                        {new Date(receipt.date).toLocaleDateString("en-GB", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </td>
+                        {/* Store */}
 
-                      {/* Total */}
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <span className="font-bold text-gray-900">
-                          KSh{" "}
-                          {Number(receipt.total).toLocaleString("en-KE", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
+                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
+                          {receipt.store}
+                        </td>
+
+                        {/* Payment Method */}
+
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+                            {receipt.payment_method_display}
+                          </span>
+                        </td>
+
+                        {/* Date */}
+
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
+                          {new Date(
+                            receipt.date
+                          ).toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
                           })}
-                        </span>
-                      </td>
+                        </td>
 
-                      {/* Recorded By */}
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
-                        {receipt.recorded_by}
-                      </td>
+                        {/* Total */}
 
-                      {/* Actions */}
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <div className="flex justify-end gap-2">
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <span className="font-bold text-gray-900">
+                            KSh{" "}
+                            {receiptTotal.toLocaleString("en-KE", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </span>
+                        </td>
 
-                          {/* View */}
-                          <Link
-                            to={`/receipts/${receipt.receipt_id}`}
-                            className="rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-semibold text-purple-700 transition hover:bg-purple-700 hover:text-white"
-                          >
-                            View
-                          </Link>
+                        {/* Recorded By */}
 
-                          {/* Edit */}
-                          <Link
-                            to={`/receipts/${receipt.receipt_id}/edit`}
-                            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-gray-400 hover:bg-gray-100"
-                          >
-                            Edit
-                          </Link>
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
+                          {receipt.recorded_by}
+                        </td>
 
-                          {/* Delete */}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleDelete(receipt.receipt_id)
-                            }
-                            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-600 hover:text-white"
-                          >
-                            Delete
-                          </button>
+                        {/* Actions */}
 
-                        </div>
-                      </td>
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <div className="flex justify-end gap-2">
 
-                    </tr>
-                  ))}
+                            {/* View */}
+
+                            <Link
+                              to={`/receipts/${receipt.receipt_id}`}
+                              className="rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-semibold text-purple-700 transition hover:bg-purple-700 hover:text-white"
+                            >
+                              View
+                            </Link>
+
+                            {/* Edit */}
+
+                            <Link
+                              to={`/receipts/${receipt.receipt_id}/edit`}
+                              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-gray-400 hover:bg-gray-100"
+                            >
+                              Edit
+                            </Link>
+
+                            {/* Delete */}
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleDelete(receipt.receipt_id)
+                              }
+                              className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-600 hover:text-white"
+                            >
+                              Delete
+                            </button>
+
+                          </div>
+                        </td>
+
+                      </tr>
+                    );
+                  })}
 
                 </tbody>
 
@@ -494,6 +566,7 @@ export default function ReceiptsPage() {
         {/* ============================================================
             NO RECEIPTS
         ============================================================ */}
+
         {!loading && receipts.length === 0 && (
           <div className="rounded-2xl border border-gray-200 bg-white px-6 py-16 text-center shadow-sm">
 
@@ -509,7 +582,7 @@ export default function ReceiptsPage() {
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a2.25 2.25 0 01.293.707V19a2 2 0 01-2 2h-9a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
             </div>
