@@ -53,7 +53,8 @@ urlpatterns = [
         "api/teachers/",
         include("SMS_apps.teachers.urls"),
     ),
-    #Inventory
+
+    # Inventory
     path(
         "api/inventory/",
         include("SMS_apps.Inventory.urls"),
@@ -63,6 +64,12 @@ urlpatterns = [
     path(
         "api/fees/",
         include("SMS_apps.fees.urls"),
+    ),
+
+    # Academics
+    path(
+        "api/academics/",
+        include("SMS_apps.academics.urls"),
     ),
 
     # Dashboard
@@ -94,3 +101,4 @@ if settings.DEBUG:
         settings.MEDIA_URL,
         document_root=settings.MEDIA_ROOT,
     )
+

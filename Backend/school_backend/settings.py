@@ -47,7 +47,6 @@ INSTALLED_APPS = [
     'SMS_apps.teachers',
     'SMS_apps.fees',
     'SMS_apps.library',
-    'SMS_apps.schoolcalendar',
     'SMS_apps.attendance',
     'Portfolio',
     'SMS_apps.Receipts',

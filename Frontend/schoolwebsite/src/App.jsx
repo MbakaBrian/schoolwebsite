@@ -61,6 +61,40 @@ import AdminAboutUs from "./pages/SMS/WebsiteManagementPages/AdminAboutUs";
 import DepartmentsPage from "./pages/SMS/HeadteacherPages/DepatmentManagement/DepartmentsPage";
 import DepartmentFormPage from "./pages/SMS/HeadteacherPages/DepatmentManagement/DepartmentFormPage";
 
+// ==================================================
+// ACADEMICS MANAGEMENT
+// ==================================================
+
+import AcademicsDashboard from "./pages/SMS/HeadteacherPages/AcademicsManagement/AcademicsDashboard";
+
+// Academic Years
+import AcademicYearsPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/years/AcademicYearsPage";
+import AcademicYearFormPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/years/AcademicYearFormPage";
+import AcademicYearDetailsPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/years/AcademicYearDetailsPage";
+
+// Academic Terms
+import AcademicTermsPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/terms/AcademicTermsPage";
+import AcademicTermFormPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/terms/AcademicTermFormPage";
+import AcademicTermDetailsPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/terms/AcademicTermDetailsPage";
+
+// Academic Calendar
+import AcademicCalendarPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/calendar/AcademicCalendarPage";
+import CalendarEventFormPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/calendar/CalendarEventFormPage";
+import CalendarEventDetailsPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/calendar/CalendarEventDetailsPage";
+
+// Class Levels
+import ClassLevelsPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/classes/ClassLevelsPage";
+import ClassLevelFormPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/classes/ClassLevelFormPage";
+import ClassLevelDetailsPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/classes/ClassLevelDetailsPage";
+
+// Streams
+// IMPORTANT:
+// These files are directly inside AcademicsManagement,
+// NOT inside AcademicsManagement/streams/
+import AcademicStreamsPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/streams/StreamsPage";
+import AcademicStreamFormPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/streams/StreamFormPage";
+import AcademicStreamDetailsPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/streams/StreamDetailsPage";
+
 import axiosInstance from "./utils/axiosInstance";
 
 // --------------------------------------------------
@@ -82,7 +116,7 @@ function AppContent() {
             PUBLIC WEBSITE ROUTES
         ================================================== */}
 
-        {/* HOME - DEFAULT LANDING PAGE */}
+        {/* HOME */}
         <Route path="/" element={<Home />} />
 
         <Route path="/about" element={<About />} />
@@ -95,13 +129,22 @@ function AppContent() {
 
         <Route path="/contact" element={<Contact />} />
 
-        <Route path="/facilities/:slug" element={<FacilityPage />} />
+        <Route
+          path="/facilities/:slug"
+          element={<FacilityPage />}
+        />
 
         {/* LOGIN */}
-        <Route path="/login" element={<Login />} />
+        <Route
+          path="/login"
+          element={<Login />}
+        />
 
         {/* PORTFOLIO */}
-        <Route path="/portfolio" element={<PortfolioPage />} />
+        <Route
+          path="/portfolio"
+          element={<PortfolioPage />}
+        />
 
         {/* ==================================================
             WEBSITE ADMIN
@@ -175,6 +218,240 @@ function AppContent() {
         />
 
         {/* ==================================================
+            ACADEMICS MANAGEMENT
+        ================================================== */}
+
+        {/* Academics Dashboard */}
+        <Route
+          path="/academics"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <AcademicsDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ==================================================
+            ACADEMIC YEARS
+        ================================================== */}
+
+        {/* Academic Years List */}
+        <Route
+          path="/academics/years"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <AcademicYearsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Create Academic Year */}
+        <Route
+          path="/academics/years/new"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <AcademicYearFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Academic Year Details */}
+        <Route
+          path="/academics/years/:id"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <AcademicYearDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Edit Academic Year */}
+        <Route
+          path="/academics/years/:id/edit"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <AcademicYearFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ==================================================
+            ACADEMIC TERMS
+        ================================================== */}
+
+        {/* Academic Terms List */}
+        <Route
+          path="/academics/terms"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <AcademicTermsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Create Academic Term */}
+        <Route
+          path="/academics/terms/new"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <AcademicTermFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Academic Term Details */}
+        <Route
+          path="/academics/terms/:id"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <AcademicTermDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Edit Academic Term */}
+        <Route
+          path="/academics/terms/:id/edit"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <AcademicTermFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ==================================================
+            ACADEMIC CALENDAR
+        ================================================== */}
+
+        {/* Academic Calendar */}
+        <Route
+          path="/academics/calendar"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <AcademicCalendarPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Create Calendar Event */}
+        <Route
+          path="/academics/calendar/new"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <CalendarEventFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Calendar Event Details */}
+        <Route
+          path="/academics/calendar/:id"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <CalendarEventDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Edit Calendar Event */}
+        <Route
+          path="/academics/calendar/:id/edit"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <CalendarEventFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ==================================================
+            CLASS LEVELS / GRADES
+        ================================================== */}
+
+        {/* Class Levels */}
+        <Route
+          path="/academics/classes"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <ClassLevelsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Create Class Level */}
+        <Route
+          path="/academics/classes/new"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <ClassLevelFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Class Level Details */}
+        <Route
+          path="/academics/classes/:id"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <ClassLevelDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Edit Class Level */}
+        <Route
+          path="/academics/classes/:id/edit"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <ClassLevelFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ==================================================
+            STREAMS
+        ================================================== */}
+
+        {/* Streams */}
+        <Route
+          path="/academics/streams"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <AcademicStreamsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Create Stream */}
+        <Route
+          path="/academics/streams/new"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <AcademicStreamFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Stream Details */}
+        <Route
+          path="/academics/streams/:id"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <AcademicStreamDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Edit Stream */}
+        <Route
+          path="/academics/streams/:id/edit"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <AcademicStreamFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ==================================================
             SCHOOL MANAGEMENT SYSTEM
         ================================================== */}
 
@@ -217,7 +494,10 @@ function AppContent() {
           }
         />
 
-        {/* Fees */}
+        {/* ==================================================
+            FEES
+        ================================================== */}
+
         <Route
           path="/fees/GradeFeeStructure"
           element={
@@ -236,7 +516,15 @@ function AppContent() {
           }
         />
 
-        {/* Streams */}
+        {/* ==================================================
+            OLD STREAMS ROUTE
+        ================================================== */}
+
+        {/* 
+          This is the old standalone Streams page.
+          Keep it temporarily if other parts of the application
+          still use /streams.
+        */}
         <Route
           path="/streams"
           element={
@@ -443,8 +731,10 @@ function AppContent() {
             FALLBACK
         ================================================== */}
 
-        {/* Any unknown frontend URL goes back to the Home page */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route
+          path="*"
+          element={<Navigate to="/" replace />}
+        />
       </Routes>
 
       {!hideLayout && <Footer />}
