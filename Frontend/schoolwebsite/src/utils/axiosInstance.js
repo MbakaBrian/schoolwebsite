@@ -4,7 +4,14 @@ const baseURL =
   process.env.REACT_APP_API_URL ||
   "https://api.peppercornpremierschools.sc.ke/api/";
 
-const axiosInstance = axios.create({ baseURL });
+const axiosInstance = axios.create({
+  baseURL,
+});
+
+
+// ============================================================
+// AUTH HELPERS
+// ============================================================
 
 function getAuthData() {
   const raw = localStorage.getItem("authData");
@@ -16,9 +23,14 @@ function getAuthData() {
   }
 }
 
+
 function setAuthData(next) {
-  localStorage.setItem("authData", JSON.stringify(next));
+  localStorage.setItem(
+    "authData",
+    JSON.stringify(next)
+  );
 }
+
 
 function clearAuthAndRedirect() {
   localStorage.removeItem("authData");
@@ -28,9 +40,10 @@ function clearAuthAndRedirect() {
   }
 }
 
-// --------------------------------------------------
+
+// ============================================================
 // ATTACH ACCESS TOKEN
-// --------------------------------------------------
+// ============================================================
 
 axiosInstance.interceptors.request.use(
   (config) => {
@@ -38,55 +51,92 @@ axiosInstance.interceptors.request.use(
 
     if (auth?.access) {
       config.headers = config.headers || {};
-      config.headers.Authorization = `Bearer ${auth.access}`;
+
+      config.headers.Authorization =
+        `Bearer ${auth.access}`;
     }
 
     return config;
   },
+
   (error) => Promise.reject(error)
 );
 
-// --------------------------------------------------
-// TOKEN REFRESH
-// --------------------------------------------------
+
+// ============================================================
+// TOKEN REFRESH STATE
+// ============================================================
 
 let isRefreshing = false;
+
 let pendingQueue = [];
 
+
+// ============================================================
+// RESOLVE QUEUED REQUESTS
+// ============================================================
+
 function resolveQueue(error, token) {
-  pendingQueue.forEach(({ resolve, reject }) => {
-    if (error) {
-      reject(error);
-    } else {
-      resolve(token);
+  pendingQueue.forEach(
+    ({ resolve, reject }) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(token);
+      }
     }
-  });
+  );
 
   pendingQueue = [];
 }
 
-// --------------------------------------------------
+
+// ============================================================
 // RESPONSE INTERCEPTOR
-// --------------------------------------------------
+// ============================================================
 
 axiosInstance.interceptors.response.use(
+
+  // ----------------------------------------------------------
+  // SUCCESS
+  // ----------------------------------------------------------
+
   (response) => response,
 
+
+  // ----------------------------------------------------------
+  // ERROR
+  // ----------------------------------------------------------
+
   async (error) => {
+
     const original = error.config;
 
-    // Only handle 401 responses
+
+    // --------------------------------------------------------
+    // Only handle 401 errors
+    // --------------------------------------------------------
+
     if (error.response?.status !== 401) {
       return Promise.reject(error);
     }
 
-    // Don't retry the same request infinitely
-    if (original?._retry) {
+
+    // --------------------------------------------------------
+    // No original request
+    // --------------------------------------------------------
+
+    if (!original) {
       return Promise.reject(error);
     }
 
-    // Don't try to refresh while already dealing with login/token endpoints
-    const requestUrl = original?.url || "";
+
+    // --------------------------------------------------------
+    // Never refresh these endpoints
+    // --------------------------------------------------------
+
+    const requestUrl =
+      original.url || "";
 
     if (
       requestUrl.includes("token/") ||
@@ -95,72 +145,153 @@ axiosInstance.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const auth = getAuthData();
 
-    // No refresh token = user is not authenticated
-    if (!auth?.refresh) {
-      clearAuthAndRedirect();
+    // --------------------------------------------------------
+    // Prevent infinite retry
+    // --------------------------------------------------------
+
+    if (original._retry) {
       return Promise.reject(error);
     }
 
-    // --------------------------------------------------
-    // Another request is already refreshing
-    // --------------------------------------------------
 
-    if (isRefreshing) {
-      return new Promise((resolve, reject) => {
-        pendingQueue.push({
-          resolve,
-          reject,
-        });
-      }).then((newAccess) => {
-        original.headers = original.headers || {};
-        original.headers.Authorization = `Bearer ${newAccess}`;
+    // --------------------------------------------------------
+    // Get authentication data
+    // --------------------------------------------------------
 
-        return axiosInstance(original);
-      });
+    const auth = getAuthData();
+
+
+    /*
+     * IMPORTANT:
+     *
+     * If there is NO authentication data at all,
+     * this is simply an unauthenticated request.
+     *
+     * Do NOT automatically redirect the user to Login.
+     *
+     * This allows public pages such as:
+     *
+     * /
+     * /about
+     * /gallery
+     * /events
+     * /contact
+     *
+     * to make public API requests safely.
+     */
+
+    if (!auth?.refresh) {
+      return Promise.reject(error);
     }
 
-    // --------------------------------------------------
-    // Start refresh
-    // --------------------------------------------------
+
+    // --------------------------------------------------------
+    // Another request is already refreshing
+    // --------------------------------------------------------
+
+    if (isRefreshing) {
+
+      return new Promise(
+        (resolve, reject) => {
+
+          pendingQueue.push({
+            resolve,
+            reject,
+          });
+
+        }
+      ).then(
+        (newAccess) => {
+
+          original.headers =
+            original.headers || {};
+
+          original.headers.Authorization =
+            `Bearer ${newAccess}`;
+
+          return axiosInstance(original);
+
+        }
+      );
+
+    }
+
+
+    // --------------------------------------------------------
+    // Start token refresh
+    // --------------------------------------------------------
 
     original._retry = true;
+
     isRefreshing = true;
 
+
     try {
-      const { data } = await axios.post(
+
+      const response = await axios.post(
         `${baseURL}token/refresh/`,
         {
           refresh: auth.refresh,
         }
       );
 
+
+      const newAccess =
+        response.data.access;
+
+
       const updatedAuth = {
         ...auth,
-        access: data.access,
+        access: newAccess,
       };
 
+
+      // Save new access token
       setAuthData(updatedAuth);
 
-      resolveQueue(null, data.access);
 
-      original.headers = original.headers || {};
-      original.headers.Authorization = `Bearer ${data.access}`;
+      // Resolve waiting requests
+      resolveQueue(
+        null,
+        newAccess
+      );
+
+
+      // Retry original request
+      original.headers =
+        original.headers || {};
+
+      original.headers.Authorization =
+        `Bearer ${newAccess}`;
+
 
       return axiosInstance(original);
 
     } catch (refreshError) {
-      resolveQueue(refreshError, null);
 
+      // Reject waiting requests
+      resolveQueue(
+        refreshError,
+        null
+      );
+
+
+      // Refresh token is invalid/expired
       clearAuthAndRedirect();
 
-      return Promise.reject(refreshError);
+
+      return Promise.reject(
+        refreshError
+      );
 
     } finally {
+
       isRefreshing = false;
+
     }
   }
 );
+
 
 export default axiosInstance;

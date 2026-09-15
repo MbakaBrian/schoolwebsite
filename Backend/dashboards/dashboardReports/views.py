@@ -1,21 +1,20 @@
 # dashboard/views.py
 
-from django.db.models import Sum
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from SMS_apps.students.models import Student
-from SMS_apps.teachers.models import Teacher
-from SMS_apps.fees.models import FeePayment, GradeFeeStructure
+from SMS_apps.students.models import (
+    Student,
+    StudentEnrollment,
+)
+
 from SMS_apps.academics.models import (
     AcademicYear,
     AcademicTerm,
 )
 
 from .serializers import (
-    StudentSummarySerializer,
-    TeacherSummarySerializer,
     HeadTeacherDashboardSerializer,
 )
 
@@ -24,53 +23,22 @@ class HeadTeacherDashboardView(APIView):
     """
     Dashboard for the Head Teacher.
 
-    Academic information is now obtained from the
-    SMS_apps.academics application.
+    Currently uses only the completed Student and Academics
+    foundations.
 
-    The Academics app is the source of truth for:
-        - Current academic year
-        - Current academic term
-        - Previous academic term
+    The following modules will be added later when their new
+    foundations are completed:
+
+        - Teachers
+        - Fees
+        - Inventory
+        - Attendance
+        - Library
     """
 
     permission_classes = [AllowAny]
 
     def get(self, request):
-
-        # ============================================================
-        # HERO SECTION
-        # ============================================================
-
-        students = Student.objects.order_by("-id")[:5]
-
-        students_data = StudentSummarySerializer(
-            students,
-            many=True
-        ).data
-
-        teachers = Teacher.objects.order_by("-id")[:5]
-
-        teachers_data = TeacherSummarySerializer(
-            teachers,
-            many=True
-        ).data
-
-        # Temporary inventory data.
-        # This should later come from the inventory app.
-        inventory_removed = [
-            {
-                "name": "Desk",
-                "removed_on": "2025-09-20"
-            },
-            {
-                "name": "Projector",
-                "removed_on": "2025-09-15"
-            },
-            {
-                "name": "Chairs",
-                "removed_on": "2025-09-10"
-            }
-        ]
 
         # ============================================================
         # CURRENT ACADEMIC YEAR
@@ -80,7 +48,7 @@ class HeadTeacherDashboardView(APIView):
             AcademicYear.objects
             .filter(
                 is_current=True,
-                is_active=True
+                is_active=True,
             )
             .first()
         )
@@ -96,7 +64,7 @@ class HeadTeacherDashboardView(APIView):
                 AcademicTerm.objects
                 .filter(
                     academic_year=current_year,
-                    is_current=True
+                    is_current=True,
                 )
                 .first()
             )
@@ -105,13 +73,16 @@ class HeadTeacherDashboardView(APIView):
         # ACADEMIC INFORMATION
         # ============================================================
 
-        if current_year and current_term:
+        year = current_year
+        term = current_term
 
-            year = current_year
-            term = current_term
+        previous_year = None
+        previous_term = None
+
+        if year and term:
 
             # --------------------------------------------------------
-            # Find previous term
+            # Determine previous term
             # --------------------------------------------------------
 
             term_order = {
@@ -124,9 +95,6 @@ class HeadTeacherDashboardView(APIView):
                 term.term
             )
 
-            previous_term = None
-            previous_year = None
-
             if current_term_number:
 
                 # ----------------------------------------------------
@@ -138,25 +106,17 @@ class HeadTeacherDashboardView(APIView):
                     previous_term = (
                         AcademicTerm.objects
                         .filter(
-                            academic_year=current_year,
-                            term__in=[
-                                "term_1",
-                                "term_2",
-                                "term_3",
-                            ]
+                            academic_year=year,
+                            start_date__lt=term.start_date,
                         )
-                        .order_by("start_date")
+                        .order_by("-start_date")
+                        .first()
                     )
 
-                    previous_term = previous_term.filter(
-                        start_date__lt=term.start_date
-                    ).order_by("-start_date").first()
-
-                    previous_year = current_year
+                    previous_year = year
 
                 # ----------------------------------------------------
-                # If current term is Term 1, use Term 3 of
-                # previous academic year
+                # Term 1 → Term 3 of previous academic year
                 # ----------------------------------------------------
 
                 else:
@@ -164,8 +124,8 @@ class HeadTeacherDashboardView(APIView):
                     previous_year = (
                         AcademicYear.objects
                         .filter(
-                            name__lt=current_year.name,
-                            is_active=True
+                            name__lt=year.name,
+                            is_active=True,
                         )
                         .order_by("-name")
                         .first()
@@ -177,17 +137,32 @@ class HeadTeacherDashboardView(APIView):
                             AcademicTerm.objects
                             .filter(
                                 academic_year=previous_year,
-                                term="term_3"
+                                term="term_3",
                             )
                             .first()
                         )
 
-        else:
+        # ============================================================
+        # RECENT STUDENTS
+        # ============================================================
 
-            year = None
-            term = None
-            previous_year = None
-            previous_term = None
+        recent_students = (
+            Student.objects
+            .filter(
+                status="active"
+            )
+            .order_by("-id")[:5]
+        )
+
+        recent_students_data = []
+
+        for student in recent_students:
+            recent_students_data.append({
+                "student_id": student.student_id,
+                "admission_number": student.admission_number,
+                "name": student.full_name,
+                "status": student.status,
+            })
 
         # ============================================================
         # STUDENT STATISTICS
@@ -199,40 +174,40 @@ class HeadTeacherDashboardView(APIView):
         if year and term:
 
             # --------------------------------------------------------
-            # CURRENT TERM STUDENTS
+            # Students currently enrolled in the current term/year
             #
-            # NOTE:
-            # This section currently assumes the existing Student
-            # model still has:
-            #
-            #     term_registered
-            #     year_registered
-            #
-            # Once StudentEnrollment is implemented, this query
-            # should be moved to StudentEnrollment.
+            # StudentEnrollment is now the source of truth for
+            # academic placement.
             # --------------------------------------------------------
 
             current_students = (
-                Student.objects
+                StudentEnrollment.objects
                 .filter(
-                    term_registered=term.term,
-                    year_registered=year.name
+                    academic_year=year,
+                    status="active",
                 )
+                .values("student")
+                .distinct()
                 .count()
             )
 
             # --------------------------------------------------------
-            # PREVIOUS TERM STUDENTS
+            # Previous term/year students
+            #
+            # Since enrollment is currently modeled by academic year,
+            # we use the previous academic year's enrollment count
+            # when a previous year exists.
             # --------------------------------------------------------
 
-            if previous_year and previous_term:
+            if previous_year:
 
                 previous_students = (
-                    Student.objects
+                    StudentEnrollment.objects
                     .filter(
-                        term_registered=previous_term.term,
-                        year_registered=previous_year.name
+                        academic_year=previous_year,
                     )
+                    .values("student")
+                    .distinct()
                     .count()
                 )
 
@@ -252,66 +227,6 @@ class HeadTeacherDashboardView(APIView):
             ) * 100
 
         # ============================================================
-        # FEES STATISTICS
-        # ============================================================
-
-        expected = 0
-        collected = 0
-
-        if year and term:
-
-            # --------------------------------------------------------
-            # Expected fees
-            # --------------------------------------------------------
-
-            expected = (
-                GradeFeeStructure.objects
-                .filter(
-                    term=term.term,
-                    year=year.name
-                )
-                .aggregate(
-                    total=Sum("total_fees")
-                )["total"] or 0
-            )
-
-            # --------------------------------------------------------
-            # Collected fees
-            # --------------------------------------------------------
-
-            collected = (
-                FeePayment.objects
-                .filter(
-                    term=term.term,
-                    date__year=year.name
-                )
-                .aggregate(
-                    total=Sum("total_amount")
-                )["total"] or 0
-            )
-
-        # ============================================================
-        # FEE BALANCE
-        # ============================================================
-
-        balance = expected - collected
-
-        if balance < 0:
-            balance = 0
-
-        # ============================================================
-        # COLLECTION RATE
-        # ============================================================
-
-        collection_rate = 0
-
-        if expected > 0:
-
-            collection_rate = (
-                collected / expected
-            ) * 100
-
-        # ============================================================
         # PACKAGE DASHBOARD RESPONSE
         # ============================================================
 
@@ -323,11 +238,13 @@ class HeadTeacherDashboardView(APIView):
 
             "hero": {
 
-                "recent_students": students_data,
+                "recent_students": recent_students_data,
 
-                "recent_teachers": teachers_data,
+                # Teachers will be added later.
+                "recent_teachers": [],
 
-                "recent_inventory_removed": inventory_removed,
+                # Inventory integration will be added later.
+                "recent_inventory_removed": [],
 
             },
 
@@ -381,7 +298,7 @@ class HeadTeacherDashboardView(APIView):
 
                 "growth": round(
                     student_growth,
-                    2
+                    2,
                 ),
 
             },
@@ -389,19 +306,21 @@ class HeadTeacherDashboardView(APIView):
             # --------------------------------------------------------
             # FEE STATS
             # --------------------------------------------------------
+            #
+            # Fees is currently being rebuilt, so we deliberately
+            # return empty/zero values instead of querying the old
+            # Fee models.
+            #
 
             "fee_stats": {
 
-                "expected_fees": expected,
+                "expected_fees": 0,
 
-                "collected_fees": collected,
+                "collected_fees": 0,
 
-                "outstanding_balance": balance,
+                "outstanding_balance": 0,
 
-                "collection_rate": round(
-                    collection_rate,
-                    2
-                ),
+                "collection_rate": 0,
 
             },
 

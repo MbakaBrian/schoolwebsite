@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+
 import {
   Users,
   UserPlus,
@@ -10,29 +11,30 @@ import {
   Receipt,
   Package,
   Building2,
-  CalendarDays,
   Layers,
 } from "lucide-react";
 
+
 const menuItems = {
+
+  // ============================================================
+  // HEADTEACHER
+  // ============================================================
+
   headteacher: [
+    // ========================================================
+    // STUDENT MANAGEMENT
+    // ========================================================
+
     {
-      label: "Dashboard",
-      path: "/dashboard/headteacher",
+      label: "Student Management",
+      path: "/student-management",
       icon: <Users className="w-5 h-5" />,
     },
 
-    {
-      label: "Add Student",
-      path: "/students/create",
-      icon: <UserPlus className="w-5 h-5" />,
-    },
-
-    {
-      label: "Add Parent",
-      path: "/parents/create",
-      icon: <UserPlus className="w-5 h-5" />,
-    },
+    // ========================================================
+    // TEACHERS
+    // ========================================================
 
     {
       label: "Add Teachers",
@@ -46,11 +48,19 @@ const menuItems = {
       icon: <UserPlus className="w-5 h-5" />,
     },
 
+    // ========================================================
+    // TRANSPORT
+    // ========================================================
+
     {
       label: "Transport Routes",
       path: "/fees/transport/routes",
       icon: <Bus className="w-5 h-5" />,
     },
+
+    // ========================================================
+    // FEES
+    // ========================================================
 
     {
       label: "Fee Structure",
@@ -58,18 +68,19 @@ const menuItems = {
       icon: <Wallet className="w-5 h-5" />,
     },
 
-    // Academic Management
-    {
-      label: "Academic Years",
-      path: "/academics/years",
-      icon: <CalendarDays className="w-5 h-5" />,
-    },
+    // ========================================================
+    // ACADEMIC MANAGEMENT
+    // ========================================================
 
     {
-      label: "Stream Management",
-      path: "/academics/streams",
+      label: "Academic Years & Streams",
+      path: "/academics",
       icon: <Layers className="w-5 h-5" />,
     },
+
+    // ========================================================
+    // DEPARTMENTS
+    // ========================================================
 
     {
       label: "Departments",
@@ -77,11 +88,19 @@ const menuItems = {
       icon: <Building2 className="w-5 h-5" />,
     },
 
+    // ========================================================
+    // EXPENSE MANAGEMENT
+    // ========================================================
+
     {
       label: "Expense Management",
       path: "/receipts",
       icon: <Receipt className="w-5 h-5" />,
     },
+
+    // ========================================================
+    // INVENTORY
+    // ========================================================
 
     {
       label: "Inventory",
@@ -90,7 +109,13 @@ const menuItems = {
     },
   ],
 
+
+  // ============================================================
+  // TEACHER
+  // ============================================================
+
   teacher: [
+
     {
       label: "Dashboard",
       path: "/dashboard/teacher",
@@ -110,7 +135,13 @@ const menuItems = {
     },
   ],
 
+
+  // ============================================================
+  // PARENT
+  // ============================================================
+
   parent: [
+
     {
       label: "Dashboard",
       path: "/dashboard/parent",
@@ -130,7 +161,13 @@ const menuItems = {
     },
   ],
 
+
+  // ============================================================
+  // ACCOUNTANT
+  // ============================================================
+
   accountant: [
+
     {
       label: "Dashboard",
       path: "/dashboard/accountant",
@@ -150,7 +187,13 @@ const menuItems = {
     },
   ],
 
+
+  // ============================================================
+  // LIBRARIAN
+  // ============================================================
+
   librarian: [
+
     {
       label: "Dashboard",
       path: "/dashboard/librarian",
@@ -171,31 +214,44 @@ const menuItems = {
   ],
 };
 
+
 export default function Sidebar({ role = "headteacher" }) {
+
   const items = menuItems[role] || menuItems.headteacher;
 
   return (
     <aside className="flex h-screen w-64 flex-shrink-0 flex-col bg-gray-900 text-white">
+
       {/* ==================================================
           SIDEBAR HEADER
       ================================================== */}
+
       <div className="flex-shrink-0 border-b border-gray-800 p-4">
+
         <h2 className="text-lg font-bold">
           School System
         </h2>
+
       </div>
+
 
       {/* ==================================================
           SCROLLABLE NAVIGATION
       ================================================== */}
+
       <nav className="min-h-0 flex-1 overflow-y-auto p-4">
+
         <ul className="space-y-2">
+
           {items.map((item, index) => (
+
             <li key={`${item.path}-${index}`}>
+
               <Link
                 to={item.path}
                 className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-200 transition hover:bg-gray-700 hover:text-white"
               >
+
                 <span className="flex-shrink-0">
                   {item.icon}
                 </span>
@@ -203,11 +259,18 @@ export default function Sidebar({ role = "headteacher" }) {
                 <span className="truncate">
                   {item.label}
                 </span>
+
               </Link>
+
             </li>
+
           ))}
+
         </ul>
+
       </nav>
+
     </aside>
   );
 }
+

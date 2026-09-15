@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -26,97 +26,275 @@ import ProtectedRoute from "./components/ProtectedRoute";
 
 import DashboardLayout from "./pages/SMS/Dashboard";
 
-import CreateStudent from "./pages/SMS/HeadteacherPages/CreateStudent";
-import CreateParent from "./pages/SMS/HeadteacherPages/CreateParent";
-import CreateTeacher from "./pages/SMS/HeadteacherPages/CreateTeacher";
-import GradeFeeStructurePage from "./pages/SMS/HeadteacherPages/GradeFeeStructurePage";
-import TransportRoutesPage from "./pages/SMS/HeadteacherPages/TransportRoutes";
-import ManageTeachers from "./pages/SMS/HeadteacherPages/ManageTeachers";
-import StreamsPage from "./pages/SMS/HeadteacherPages/StreamsPage";
 
-import ReceiptsPage from "./pages/SMS/HeadteacherPages/ReceiptsPage";
-import ReceiptDetailPage from "./pages/SMS/HeadteacherPages/ReceiptDetailPage";
-import ReceiptFormPage from "./pages/SMS/HeadteacherPages/ReceiptFormPage";
-import ReceiptItemsPage from "./pages/SMS/HeadteacherPages/ReceiptItemsPage";
-import ReceiptSummaryPage from "./pages/SMS/HeadteacherPages/ReceiptSummaryPage";
+// ============================================================
+// STUDENT & FAMILY MANAGEMENT
+// ============================================================
 
-import InventoryDashboard from "./pages/SMS/HeadteacherPages/InventoryManagement/InventoryDashboard";
-import StoresPage from "./pages/SMS/HeadteacherPages/InventoryManagement/StoresPage";
-import InventoryLocationsPage from "./pages/SMS/HeadteacherPages/InventoryManagement/InventoryLocationsPage";
-import InventoryItemsPage from "./pages/SMS/HeadteacherPages/InventoryManagement/InventoryItemsPage";
-import InventoryStockPage from "./pages/SMS/HeadteacherPages/InventoryManagement/InventoryStockPage";
-import AddStockPage from "./pages/SMS/HeadteacherPages/InventoryManagement/AddStockPage";
-import RemoveStockPage from "./pages/SMS/HeadteacherPages/InventoryManagement/RemoveStockPage";
-import TransferStockPage from "./pages/SMS/HeadteacherPages/InventoryManagement/TransferStockPage";
-import AdjustStockPage from "./pages/SMS/HeadteacherPages/InventoryManagement/AdjustStockPage";
-import InventoryTransactionsPage from "./pages/SMS/HeadteacherPages/InventoryManagement/InventoryTransactionsPage";
+// Student Management
+import StudentsDashboard
+  from "./pages/SMS/HeadteacherPages/StudentManagement/StudentsDashboard";
 
-import EventsPanel from "./pages/SMS/WebsiteManagementPages/EventsPanel";
-import AdminDashboard from "./pages/SMS/WebsiteManagementPages/AdminDashboard";
-import GalleryPanel from "./pages/SMS/WebsiteManagementPages/GalleryPanel";
-import FacilitiesPanel from "./pages/SMS/WebsiteManagementPages/AdminFacilities";
-import AdminTeamManagement from "./pages/SMS/WebsiteManagementPages/AdminTeamManagement";
-import AdminAboutUs from "./pages/SMS/WebsiteManagementPages/AdminAboutUs";
+import StudentsPage
+  from "./pages/SMS/HeadteacherPages/StudentManagement/Students/StudentsPage";
 
-import DepartmentsPage from "./pages/SMS/HeadteacherPages/DepatmentManagement/DepartmentsPage";
-import DepartmentFormPage from "./pages/SMS/HeadteacherPages/DepatmentManagement/DepartmentFormPage";
+import StudentFormPage
+  from "./pages/SMS/HeadteacherPages/StudentManagement/Students/StudentFormPage";
 
-// ==================================================
+import StudentDetailsPage
+  from "./pages/SMS/HeadteacherPages/StudentManagement/Students/StudentDetailsPage";
+
+import EditStudentPage
+  from "./pages/SMS/HeadteacherPages/StudentManagement/Students/EditStudentPage";
+
+
+// Families
+import FamiliesPage
+  from "./pages/SMS/HeadteacherPages/StudentManagement/Families/FamiliesPage";
+
+import FamilyDetailsPage
+  from "./pages/SMS/HeadteacherPages/StudentManagement/Families/FamilyDetailsPage";
+
+import FamilyFormPage
+    from "./pages/SMS/HeadteacherPages/StudentManagement/Families/FamilyFormPage";
+
+
+// Existing parent page - kept temporarily
+import ParentsPage
+    from "./pages/SMS/HeadteacherPages/StudentManagement/Parents/ParentsPage";
+import ParentFormPage
+    from "./pages/SMS/HeadteacherPages/StudentManagement/Parents/ParentFormPage";
+
+import ParentDetailsPage
+    from "./pages/SMS/HeadteacherPages/StudentManagement/Parents/ParentDetailsPage";
+
+// StudentParent
+import StudentParentRelationshipsPage
+    from "./pages/SMS/HeadteacherPages/StudentManagement/StudentParents/StudentParentRelationshipsPage";
+import StudentParentFormPage
+    from "./pages/SMS/HeadteacherPages/StudentManagement/StudentParents/StudentParentFormPage";
+
+import StudentParentDetailsPage
+    from "./pages/SMS/HeadteacherPages/StudentManagement/StudentParents/StudentParentDetailsPage";
+
+    
+    // Enrollments
+import EnrollmentsPage
+    from "./pages/SMS/HeadteacherPages/StudentManagement/Enrollments/EnrollmentsPage";
+import EnrollmentFormPage
+    from "./pages/SMS/HeadteacherPages/StudentManagement/Enrollments/EnrollmentFormPage";
+import EnrollmentDetailsPage
+    from "./pages/SMS/HeadteacherPages/StudentManagement/Enrollments/EnrollmentDetailsPage";
+
+  // Emergency Contacts
+  import EmergencyContactsPage
+    from "./pages/SMS/HeadteacherPages/StudentManagement/EmergencyContacts/EmergencyContactsPage";
+import EmergencyContactFormPage
+    from "./pages/SMS/HeadteacherPages/StudentManagement/EmergencyContacts/EmergencyContactFormPage";
+import EmergencyContactDetailsPage
+    from "./pages/SMS/HeadteacherPages/StudentManagement/EmergencyContacts/EmergencyContactDetailsPage";
+// Student Documents
+import StudentDocumentsPage
+    from "./pages/SMS/HeadteacherPages/StudentManagement/StudentDocuments/StudentDocumentsPage";
+import StudentDocumentFormPage
+    from "./pages/SMS/HeadteacherPages/StudentManagement/StudentDocuments/StudentDocumentFormPage";
+
+
+// ============================================================
+// OTHER HEAD TEACHER MANAGEMENT
+// ============================================================
+
+import CreateTeacher
+  from "./pages/SMS/HeadteacherPages/CreateTeacher";
+
+import GradeFeeStructurePage
+  from "./pages/SMS/HeadteacherPages/GradeFeeStructurePage";
+
+import TransportRoutesPage
+  from "./pages/SMS/HeadteacherPages/TransportRoutes";
+
+import ManageTeachers
+  from "./pages/SMS/HeadteacherPages/ManageTeachers";
+
+import StreamsPage
+  from "./pages/SMS/HeadteacherPages/StreamsPage";
+
+
+// ============================================================
+// RECEIPTS
+// ============================================================
+
+import ReceiptsPage
+  from "./pages/SMS/HeadteacherPages/ReceiptsPage";
+
+import ReceiptDetailPage
+  from "./pages/SMS/HeadteacherPages/ReceiptDetailPage";
+
+import ReceiptFormPage
+  from "./pages/SMS/HeadteacherPages/ReceiptFormPage";
+
+import ReceiptItemsPage
+  from "./pages/SMS/HeadteacherPages/ReceiptItemsPage";
+
+import ReceiptSummaryPage
+  from "./pages/SMS/HeadteacherPages/ReceiptSummaryPage";
+
+
+// ============================================================
+// INVENTORY
+// ============================================================
+
+import InventoryDashboard
+  from "./pages/SMS/HeadteacherPages/InventoryManagement/InventoryDashboard";
+
+import StoresPage
+  from "./pages/SMS/HeadteacherPages/InventoryManagement/StoresPage";
+
+import InventoryLocationsPage
+  from "./pages/SMS/HeadteacherPages/InventoryManagement/InventoryLocationsPage";
+
+import InventoryItemsPage
+  from "./pages/SMS/HeadteacherPages/InventoryManagement/InventoryItemsPage";
+
+import InventoryStockPage
+  from "./pages/SMS/HeadteacherPages/InventoryManagement/InventoryStockPage";
+
+import AddStockPage
+  from "./pages/SMS/HeadteacherPages/InventoryManagement/AddStockPage";
+
+import RemoveStockPage
+  from "./pages/SMS/HeadteacherPages/InventoryManagement/RemoveStockPage";
+
+import TransferStockPage
+  from "./pages/SMS/HeadteacherPages/InventoryManagement/TransferStockPage";
+
+import AdjustStockPage
+  from "./pages/SMS/HeadteacherPages/InventoryManagement/AdjustStockPage";
+
+import InventoryTransactionsPage
+  from "./pages/SMS/HeadteacherPages/InventoryManagement/InventoryTransactionsPage";
+
+
+// ============================================================
+// WEBSITE ADMINISTRATION
+// ============================================================
+
+import EventsPanel
+  from "./pages/SMS/WebsiteManagementPages/EventsPanel";
+
+import AdminDashboard
+  from "./pages/SMS/WebsiteManagementPages/AdminDashboard";
+
+import GalleryPanel
+  from "./pages/SMS/WebsiteManagementPages/GalleryPanel";
+
+import FacilitiesPanel
+  from "./pages/SMS/WebsiteManagementPages/AdminFacilities";
+
+import AdminTeamManagement
+  from "./pages/SMS/WebsiteManagementPages/AdminTeamManagement";
+
+import AdminAboutUs
+  from "./pages/SMS/WebsiteManagementPages/AdminAboutUs";
+
+
+// ============================================================
+// DEPARTMENT MANAGEMENT
+// ============================================================
+
+import DepartmentsPage
+  from "./pages/SMS/HeadteacherPages/DepatmentManagement/DepartmentsPage";
+
+import DepartmentFormPage
+  from "./pages/SMS/HeadteacherPages/DepatmentManagement/DepartmentFormPage";
+
+
+// ============================================================
 // ACADEMICS MANAGEMENT
-// ==================================================
+// ============================================================
 
-import AcademicsDashboard from "./pages/SMS/HeadteacherPages/AcademicsManagement/AcademicsDashboard";
+import AcademicsDashboard
+  from "./pages/SMS/HeadteacherPages/AcademicsManagement/AcademicsDashboard";
+
 
 // Academic Years
-import AcademicYearsPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/years/AcademicYearsPage";
-import AcademicYearFormPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/years/AcademicYearFormPage";
-import AcademicYearDetailsPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/years/AcademicYearDetailsPage";
+import AcademicYearsPage
+  from "./pages/SMS/HeadteacherPages/AcademicsManagement/years/AcademicYearsPage";
+
+import AcademicYearFormPage
+  from "./pages/SMS/HeadteacherPages/AcademicsManagement/years/AcademicYearFormPage";
+
+import AcademicYearDetailsPage
+  from "./pages/SMS/HeadteacherPages/AcademicsManagement/years/AcademicYearDetailsPage";
+
 
 // Academic Terms
-import AcademicTermsPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/terms/AcademicTermsPage";
-import AcademicTermFormPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/terms/AcademicTermFormPage";
-import AcademicTermDetailsPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/terms/AcademicTermDetailsPage";
+import AcademicTermsPage
+  from "./pages/SMS/HeadteacherPages/AcademicsManagement/terms/AcademicTermsPage";
+
+import AcademicTermFormPage
+  from "./pages/SMS/HeadteacherPages/AcademicsManagement/terms/AcademicTermFormPage";
+
+import AcademicTermDetailsPage
+  from "./pages/SMS/HeadteacherPages/AcademicsManagement/terms/AcademicTermDetailsPage";
+
 
 // Academic Calendar
-import AcademicCalendarPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/calendar/AcademicCalendarPage";
-import CalendarEventFormPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/calendar/CalendarEventFormPage";
-import CalendarEventDetailsPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/calendar/CalendarEventDetailsPage";
+import AcademicCalendarPage
+  from "./pages/SMS/HeadteacherPages/AcademicsManagement/calendar/AcademicCalendarPage";
+
+import CalendarEventFormPage
+  from "./pages/SMS/HeadteacherPages/AcademicsManagement/calendar/CalendarEventFormPage";
+
+import CalendarEventDetailsPage
+  from "./pages/SMS/HeadteacherPages/AcademicsManagement/calendar/CalendarEventDetailsPage";
+
 
 // Class Levels
-import ClassLevelsPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/classes/ClassLevelsPage";
-import ClassLevelFormPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/classes/ClassLevelFormPage";
-import ClassLevelDetailsPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/classes/ClassLevelDetailsPage";
+import ClassLevelsPage
+  from "./pages/SMS/HeadteacherPages/AcademicsManagement/classes/ClassLevelsPage";
+
+import ClassLevelFormPage
+  from "./pages/SMS/HeadteacherPages/AcademicsManagement/classes/ClassLevelFormPage";
+
+import ClassLevelDetailsPage
+  from "./pages/SMS/HeadteacherPages/AcademicsManagement/classes/ClassLevelDetailsPage";
+
 
 // Streams
-// IMPORTANT:
-// These files are directly inside AcademicsManagement,
-// NOT inside AcademicsManagement/streams/
-import AcademicStreamsPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/streams/StreamsPage";
-import AcademicStreamFormPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/streams/StreamFormPage";
-import AcademicStreamDetailsPage from "./pages/SMS/HeadteacherPages/AcademicsManagement/streams/StreamDetailsPage";
+import AcademicStreamsPage
+  from "./pages/SMS/HeadteacherPages/AcademicsManagement/streams/StreamsPage";
 
-import axiosInstance from "./utils/axiosInstance";
+import AcademicStreamFormPage
+  from "./pages/SMS/HeadteacherPages/AcademicsManagement/streams/StreamFormPage";
 
-// --------------------------------------------------
+import AcademicStreamDetailsPage
+  from "./pages/SMS/HeadteacherPages/AcademicsManagement/streams/StreamDetailsPage";
+
+
+
+
+// ============================================================
 // APP CONTENT
-// --------------------------------------------------
+// ============================================================
 
 function AppContent() {
   const location = useLocation();
 
-  // Hide the public Navbar/Footer only on the portfolio page.
+  // Portfolio has its own standalone layout.
   const hideLayout = location.pathname === "/portfolio";
 
   return (
     <div className="font-sans">
+
       {!hideLayout && <Navbar />}
 
       <Routes>
+
         {/* ==================================================
-            PUBLIC WEBSITE ROUTES
+            PUBLIC WEBSITE
         ================================================== */}
 
-        {/* HOME */}
         <Route path="/" element={<Home />} />
 
         <Route path="/about" element={<About />} />
@@ -134,17 +312,16 @@ function AppContent() {
           element={<FacilityPage />}
         />
 
-        {/* LOGIN */}
         <Route
           path="/login"
           element={<Login />}
         />
 
-        {/* PORTFOLIO */}
         <Route
           path="/portfolio"
           element={<PortfolioPage />}
         />
+
 
         {/* ==================================================
             WEBSITE ADMIN
@@ -204,6 +381,7 @@ function AppContent() {
           }
         />
 
+
         {/* ==================================================
             HEAD TEACHER DASHBOARD
         ================================================== */}
@@ -217,11 +395,313 @@ function AppContent() {
           }
         />
 
+
+        {/* ==================================================
+            STUDENT & FAMILY MANAGEMENT
+        ================================================== */}
+
+        {/* --------------------------------------------------
+            Student Management Dashboard
+        -------------------------------------------------- */}
+
+        <Route
+          path="/student-management"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <StudentsDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* --------------------------------------------------
+            Students
+        -------------------------------------------------- */}
+
+        <Route
+          path="/sms/students"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <StudentsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/sms/students/add"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <StudentFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/sms/students/:id/edit"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <EditStudentPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/sms/students/:id"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <StudentDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* --------------------------------------------------
+            Families
+        -------------------------------------------------- */}
+
+        <Route
+          path="/sms/families"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <FamiliesPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/sms/families/:id"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <FamilyDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
+    <Route
+        path="/sms/families/add"
+        element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+                <FamilyFormPage />
+            </ProtectedRoute>
+        }
+    />
+
+      <Route
+          path="/sms/families/:id/edit"
+          element={
+              <ProtectedRoute allowedRoles={["Head Teacher"]}>
+                  <FamilyFormPage />
+              </ProtectedRoute>
+          }
+      />
+
+
+        {/* --------------------------------------------------
+            Parents & Guardians
+        -------------------------------------------------- */}
+ 
+      <Route
+          path="/sms/parents"
+          element={
+              <ProtectedRoute allowedRoles={["Head Teacher"]}>
+                  <ParentsPage />
+              </ProtectedRoute>
+          }
+      />
+      <Route
+          path="/sms/parents/add"
+          element={
+              <ProtectedRoute allowedRoles={["Head Teacher"]}>
+                  <ParentFormPage />
+              </ProtectedRoute>
+          }
+      />
+
+      <Route
+          path="/sms/parents/:id/edit"
+          element={
+              <ProtectedRoute allowedRoles={["Head Teacher"]}>
+                  <ParentFormPage />
+              </ProtectedRoute>
+          }
+      />
+
+      <Route
+    path="/sms/parents/:id"
+    element={
+        <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ParentDetailsPage />
+        </ProtectedRoute>
+    }
+/>
+        {/* --------------------------------------------------
+            StudentParent Relationships
+        -------------------------------------------------- */}
+<Route
+    path="/sms/student-parents"
+    element={
+        <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <StudentParentRelationshipsPage />
+        </ProtectedRoute>
+    }
+/><Route
+    path="/sms/student-parents/add"
+    element={
+        <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <StudentParentFormPage />
+        </ProtectedRoute>
+    }
+/>
+
+<Route
+    path="/sms/student-parents/:id/edit"
+    element={
+        <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <StudentParentFormPage />
+        </ProtectedRoute>
+    }
+/>
+<Route
+    path="/sms/student-parents/:id"
+    element={
+        <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <StudentParentDetailsPage />
+        </ProtectedRoute>
+    }
+/>
+
+        {/* --------------------------------------------------
+            Enrollments
+        -------------------------------------------------- */}
+
+        {/* Temporary routes until Enrollment pages are created */}
+
+    <Route
+        path="/sms/enrollments"
+        element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+                <EnrollmentsPage />
+            </ProtectedRoute>
+        }
+    />
+
+<Route
+    path="/sms/enrollments/add"
+    element={
+        <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <EnrollmentFormPage />
+        </ProtectedRoute>
+    }
+/>
+
+<Route
+    path="/sms/enrollments/:id/edit"
+    element={
+        <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <EnrollmentFormPage />
+        </ProtectedRoute>
+    }
+/>
+
+<Route
+    path="/sms/enrollments/:id"
+    element={
+        <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <EnrollmentDetailsPage />
+        </ProtectedRoute>
+    }
+/>
+
+
+        {/* --------------------------------------------------
+            Emergency Contacts
+        -------------------------------------------------- */}
+
+        {/* Temporary routes until Emergency Contact pages
+            are created */}
+
+    <Route
+        path="/sms/emergency-contacts"
+        element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+                <EmergencyContactsPage />
+            </ProtectedRoute>
+        }
+    />
+
+    <Route
+        path="/sms/emergency-contacts/add"
+        element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+                <EmergencyContactFormPage />
+            </ProtectedRoute>
+        }
+    />
+
+    <Route
+        path="/sms/emergency-contacts/:id/edit"
+        element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+                <EmergencyContactFormPage />
+            </ProtectedRoute>
+        }
+    />
+
+<Route
+    path="/sms/emergency-contacts/:id"
+    element={
+        <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <EmergencyContactDetailsPage />
+        </ProtectedRoute>
+    }
+/>
+        {/* --------------------------------------------------
+            Student Documents
+        -------------------------------------------------- */}
+
+        {/* Temporary routes until Document pages are created */}
+
+<Route
+    path="/sms/documents"
+    element={
+        <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <StudentDocumentsPage />
+        </ProtectedRoute>
+    }
+/>
+
+<Route
+    path="/sms/documents/upload"
+    element={
+        <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <StudentDocumentFormPage />
+        </ProtectedRoute>
+    }
+/>
+
+<Route
+    path="/sms/documents/:id/edit"
+    element={
+        <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <StudentDocumentFormPage />
+        </ProtectedRoute>
+    }
+/>
+
+        <Route
+          path="/sms/documents/upload"
+          element={
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+              <StudentFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+
         {/* ==================================================
             ACADEMICS MANAGEMENT
         ================================================== */}
 
-        {/* Academics Dashboard */}
         <Route
           path="/academics"
           element={
@@ -231,11 +711,11 @@ function AppContent() {
           }
         />
 
-        {/* ==================================================
-            ACADEMIC YEARS
-        ================================================== */}
 
-        {/* Academic Years List */}
+        {/* --------------------------------------------------
+            Academic Years
+        -------------------------------------------------- */}
+
         <Route
           path="/academics/years"
           element={
@@ -245,7 +725,6 @@ function AppContent() {
           }
         />
 
-        {/* Create Academic Year */}
         <Route
           path="/academics/years/new"
           element={
@@ -255,7 +734,6 @@ function AppContent() {
           }
         />
 
-        {/* Academic Year Details */}
         <Route
           path="/academics/years/:id"
           element={
@@ -265,7 +743,6 @@ function AppContent() {
           }
         />
 
-        {/* Edit Academic Year */}
         <Route
           path="/academics/years/:id/edit"
           element={
@@ -275,11 +752,11 @@ function AppContent() {
           }
         />
 
-        {/* ==================================================
-            ACADEMIC TERMS
-        ================================================== */}
 
-        {/* Academic Terms List */}
+        {/* --------------------------------------------------
+            Academic Terms
+        -------------------------------------------------- */}
+
         <Route
           path="/academics/terms"
           element={
@@ -289,7 +766,6 @@ function AppContent() {
           }
         />
 
-        {/* Create Academic Term */}
         <Route
           path="/academics/terms/new"
           element={
@@ -299,7 +775,6 @@ function AppContent() {
           }
         />
 
-        {/* Academic Term Details */}
         <Route
           path="/academics/terms/:id"
           element={
@@ -309,7 +784,6 @@ function AppContent() {
           }
         />
 
-        {/* Edit Academic Term */}
         <Route
           path="/academics/terms/:id/edit"
           element={
@@ -319,11 +793,11 @@ function AppContent() {
           }
         />
 
-        {/* ==================================================
-            ACADEMIC CALENDAR
-        ================================================== */}
 
-        {/* Academic Calendar */}
+        {/* --------------------------------------------------
+            Academic Calendar
+        -------------------------------------------------- */}
+
         <Route
           path="/academics/calendar"
           element={
@@ -333,7 +807,6 @@ function AppContent() {
           }
         />
 
-        {/* Create Calendar Event */}
         <Route
           path="/academics/calendar/new"
           element={
@@ -343,7 +816,6 @@ function AppContent() {
           }
         />
 
-        {/* Calendar Event Details */}
         <Route
           path="/academics/calendar/:id"
           element={
@@ -353,7 +825,6 @@ function AppContent() {
           }
         />
 
-        {/* Edit Calendar Event */}
         <Route
           path="/academics/calendar/:id/edit"
           element={
@@ -363,11 +834,11 @@ function AppContent() {
           }
         />
 
-        {/* ==================================================
-            CLASS LEVELS / GRADES
-        ================================================== */}
 
-        {/* Class Levels */}
+        {/* --------------------------------------------------
+            Class Levels
+        -------------------------------------------------- */}
+
         <Route
           path="/academics/classes"
           element={
@@ -377,7 +848,6 @@ function AppContent() {
           }
         />
 
-        {/* Create Class Level */}
         <Route
           path="/academics/classes/new"
           element={
@@ -387,7 +857,6 @@ function AppContent() {
           }
         />
 
-        {/* Class Level Details */}
         <Route
           path="/academics/classes/:id"
           element={
@@ -397,7 +866,6 @@ function AppContent() {
           }
         />
 
-        {/* Edit Class Level */}
         <Route
           path="/academics/classes/:id/edit"
           element={
@@ -407,11 +875,11 @@ function AppContent() {
           }
         />
 
-        {/* ==================================================
-            STREAMS
-        ================================================== */}
 
-        {/* Streams */}
+        {/* --------------------------------------------------
+            Academic Streams
+        -------------------------------------------------- */}
+
         <Route
           path="/academics/streams"
           element={
@@ -421,7 +889,6 @@ function AppContent() {
           }
         />
 
-        {/* Create Stream */}
         <Route
           path="/academics/streams/new"
           element={
@@ -431,7 +898,6 @@ function AppContent() {
           }
         />
 
-        {/* Stream Details */}
         <Route
           path="/academics/streams/:id"
           element={
@@ -441,7 +907,6 @@ function AppContent() {
           }
         />
 
-        {/* Edit Stream */}
         <Route
           path="/academics/streams/:id/edit"
           element={
@@ -451,31 +916,11 @@ function AppContent() {
           }
         />
 
+
         {/* ==================================================
-            SCHOOL MANAGEMENT SYSTEM
+            TEACHER MANAGEMENT
         ================================================== */}
 
-        {/* Students */}
-        <Route
-          path="/students/create"
-          element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
-              <CreateStudent />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Parents */}
-        <Route
-          path="/parents/create"
-          element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
-              <CreateParent />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Teachers */}
         <Route
           path="/teachers/create"
           element={
@@ -493,6 +938,7 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
+
 
         {/* ==================================================
             FEES
@@ -516,15 +962,11 @@ function AppContent() {
           }
         />
 
+
         {/* ==================================================
-            OLD STREAMS ROUTE
+            OLD STANDALONE STREAMS
         ================================================== */}
 
-        {/* 
-          This is the old standalone Streams page.
-          Keep it temporarily if other parts of the application
-          still use /streams.
-        */}
         <Route
           path="/streams"
           element={
@@ -533,6 +975,7 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
+
 
         {/* ==================================================
             DEPARTMENT MANAGEMENT
@@ -564,6 +1007,7 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
+
 
         {/* ==================================================
             RECEIPTS
@@ -623,11 +1067,11 @@ function AppContent() {
           }
         />
 
+
         {/* ==================================================
             INVENTORY MANAGEMENT
         ================================================== */}
 
-        {/* Inventory Dashboard */}
         <Route
           path="/inventory"
           element={
@@ -637,7 +1081,6 @@ function AppContent() {
           }
         />
 
-        {/* Stores */}
         <Route
           path="/inventory/stores"
           element={
@@ -647,7 +1090,6 @@ function AppContent() {
           }
         />
 
-        {/* Inventory Locations */}
         <Route
           path="/inventory/locations"
           element={
@@ -657,7 +1099,6 @@ function AppContent() {
           }
         />
 
-        {/* Inventory Items */}
         <Route
           path="/inventory/items"
           element={
@@ -667,7 +1108,6 @@ function AppContent() {
           }
         />
 
-        {/* Current Stock */}
         <Route
           path="/inventory/stock"
           element={
@@ -677,7 +1117,6 @@ function AppContent() {
           }
         />
 
-        {/* Add Stock */}
         <Route
           path="/inventory/stock/add"
           element={
@@ -687,7 +1126,6 @@ function AppContent() {
           }
         />
 
-        {/* Remove Stock */}
         <Route
           path="/inventory/stock/remove"
           element={
@@ -697,7 +1135,6 @@ function AppContent() {
           }
         />
 
-        {/* Transfer Stock */}
         <Route
           path="/inventory/stock/transfer"
           element={
@@ -707,7 +1144,6 @@ function AppContent() {
           }
         />
 
-        {/* Adjust Stock */}
         <Route
           path="/inventory/stock/adjust"
           element={
@@ -717,7 +1153,6 @@ function AppContent() {
           }
         />
 
-        {/* Transactions */}
         <Route
           path="/inventory/transactions"
           element={
@@ -727,6 +1162,7 @@ function AppContent() {
           }
         />
 
+
         {/* ==================================================
             FALLBACK
         ================================================== */}
@@ -735,36 +1171,34 @@ function AppContent() {
           path="*"
           element={<Navigate to="/" replace />}
         />
+
       </Routes>
 
       {!hideLayout && <Footer />}
+
     </div>
   );
 }
 
-// --------------------------------------------------
+
+// ============================================================
 // APP
-// --------------------------------------------------
+// ============================================================
 
 export default function App() {
-  const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    axiosInstance
-      .get("/")
-      .then((res) => {
-        setMessage(res.data.message);
-      })
-      .catch((err) => {
-        console.error("Backend connection error:", err);
-      });
-  }, []);
+
+
 
   return (
     <Router>
+
       <AuthProvider>
+
         <AppContent />
+
       </AuthProvider>
+
     </Router>
   );
 }

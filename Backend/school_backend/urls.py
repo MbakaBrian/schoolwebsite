@@ -48,11 +48,11 @@ urlpatterns = [
         include("SMS_apps.students.urls"),
     ),
 
-    # Teachers
-    path(
-        "api/teachers/",
-        include("SMS_apps.teachers.urls"),
-    ),
+    # # Teachers
+    # path(
+    #     "api/teachers/",
+    #     include("SMS_apps.teachers.urls"),
+    # ),
 
     # Inventory
     path(
@@ -61,10 +61,10 @@ urlpatterns = [
     ),
 
     # Fees
-    path(
-        "api/fees/",
-        include("SMS_apps.fees.urls"),
-    ),
+    # path(
+    #     "api/fees/",
+    #     include("SMS_apps.fees.urls"),
+    # ),
 
     # Academics
     path(
