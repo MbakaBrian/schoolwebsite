@@ -1,4 +1,6 @@
-# academics/serializers.py
+# ============================================================
+# ACADEMICS SERIALIZERS
+# ============================================================
 
 from rest_framework import serializers
 
@@ -325,9 +327,25 @@ class ClassLevelSerializer(serializers.ModelSerializer):
         Grade 7
         Grade 8
         Grade 9
+
+    The next_class_level field is used by the student progression
+    system to determine the normal class a student should move to
+    after completing the current class.
     """
 
     streams_count = serializers.SerializerMethodField()
+
+    next_class_level_name = serializers.CharField(
+        source="next_class_level.name",
+        read_only=True,
+        allow_null=True,
+    )
+
+    next_class_level_code = serializers.CharField(
+        source="next_class_level.code",
+        read_only=True,
+        allow_null=True,
+    )
 
     class Meta:
         model = ClassLevel
@@ -338,6 +356,9 @@ class ClassLevelSerializer(serializers.ModelSerializer):
             "code",
             "description",
             "display_order",
+            "next_class_level",
+            "next_class_level_name",
+            "next_class_level_code",
             "is_active",
             "streams_count",
             "created_at",
@@ -346,6 +367,8 @@ class ClassLevelSerializer(serializers.ModelSerializer):
 
         read_only_fields = [
             "id",
+            "next_class_level_name",
+            "next_class_level_code",
             "streams_count",
             "created_at",
             "updated_at",

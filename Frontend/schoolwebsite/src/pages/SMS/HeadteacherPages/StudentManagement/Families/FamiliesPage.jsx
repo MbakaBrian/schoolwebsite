@@ -46,30 +46,48 @@ const FamiliesPage = () => {
 
             setError("");
 
-            const [familiesResponse, studentsResponse, parentsResponse] =
-                await Promise.all([
-                    axiosInstance.get("/students/families/"),
-                    axiosInstance.get("/students/students/"),
-                    axiosInstance.get("/students/parents/"),
-                ]);
+            const [
+                familiesResponse,
+                studentsResponse,
+                parentsResponse,
+            ] = await Promise.all([
+                axiosInstance.get("/students/families/"),
+                axiosInstance.get("/students/students/"),
+                axiosInstance.get("/students/parents/"),
+            ]);
 
-            setFamilies(
-                Array.isArray(familiesResponse.data)
-                    ? familiesResponse.data
-                    : familiesResponse.data.results || []
-            );
 
-            setStudents(
-                Array.isArray(studentsResponse.data)
-                    ? studentsResponse.data
-                    : studentsResponse.data.results || []
-            );
+            // ----------------------------------------------------
+            // FAMILIES
+            // ----------------------------------------------------
 
-            setParents(
-                Array.isArray(parentsResponse.data)
-                    ? parentsResponse.data
-                    : parentsResponse.data.results || []
-            );
+            const familiesData = Array.isArray(familiesResponse.data)
+                ? familiesResponse.data
+                : familiesResponse.data.results || [];
+
+            setFamilies(familiesData);
+
+
+            // ----------------------------------------------------
+            // STUDENTS
+            // ----------------------------------------------------
+
+            const studentsData = Array.isArray(studentsResponse.data)
+                ? studentsResponse.data
+                : studentsResponse.data.results || [];
+
+            setStudents(studentsData);
+
+
+            // ----------------------------------------------------
+            // PARENTS / GUARDIANS
+            // ----------------------------------------------------
+
+            const parentsData = Array.isArray(parentsResponse.data)
+                ? parentsResponse.data
+                : parentsResponse.data.results || [];
+
+            setParents(parentsData);
 
         } catch (err) {
             console.error("Failed to load families:", err);
@@ -91,20 +109,62 @@ const FamiliesPage = () => {
 
 
     // ============================================================
+    // GET FAMILY ID FROM RELATED OBJECT
+    // ============================================================
+    //
+    // Supports both the old serializer:
+    //
+    //     family: 4
+    //
+    // and the updated serializer:
+    //
+    //     family_details: {
+    //         id: 4,
+    //         ...
+    //     }
+    //
+    // ============================================================
+
+    const getRelatedFamilyId = (record) => {
+        return (
+            record?.family_details?.id ??
+            record?.family ??
+            null
+        );
+    };
+
+
+    // ============================================================
     // FAMILY COUNTS
     // ============================================================
 
     const getStudentCount = (familyId) => {
-        return students.filter(
-            (student) => String(student.family) === String(familyId)
-        ).length;
+        return students.filter((student) => {
+
+            const studentFamilyId =
+                getRelatedFamilyId(student);
+
+            return (
+                studentFamilyId !== null &&
+                studentFamilyId !== undefined &&
+                String(studentFamilyId) === String(familyId)
+            );
+        }).length;
     };
 
 
     const getParentCount = (familyId) => {
-        return parents.filter(
-            (parent) => String(parent.family) === String(familyId)
-        ).length;
+        return parents.filter((parent) => {
+
+            const parentFamilyId =
+                getRelatedFamilyId(parent);
+
+            return (
+                parentFamilyId !== null &&
+                parentFamilyId !== undefined &&
+                String(parentFamilyId) === String(familyId)
+            );
+        }).length;
     };
 
 
@@ -113,6 +173,7 @@ const FamiliesPage = () => {
     // ============================================================
 
     const filteredFamilies = useMemo(() => {
+
         return families.filter((family) => {
 
             const matchesStatus =
@@ -122,11 +183,16 @@ const FamiliesPage = () => {
                         ? family.is_active
                         : !family.is_active;
 
-            const search = searchTerm.toLowerCase().trim();
+
+            const search = searchTerm
+                .toLowerCase()
+                .trim();
+
 
             if (!search) {
                 return matchesStatus;
             }
+
 
             const searchableText = [
                 family.family_id,
@@ -141,12 +207,18 @@ const FamiliesPage = () => {
                 .join(" ")
                 .toLowerCase();
 
+
             return (
                 matchesStatus &&
                 searchableText.includes(search)
             );
         });
-    }, [families, searchTerm, statusFilter]);
+
+    }, [
+        families,
+        searchTerm,
+        statusFilter,
+    ]);
 
 
     // ============================================================
@@ -155,13 +227,16 @@ const FamiliesPage = () => {
 
     const totalFamilies = families.length;
 
+
     const activeFamilies = families.filter(
         (family) => family.is_active
     ).length;
 
+
     const inactiveFamilies = families.filter(
         (family) => !family.is_active
     ).length;
+
 
     const familiesWithStudents = families.filter(
         (family) => getStudentCount(family.id) > 0
@@ -173,27 +248,42 @@ const FamiliesPage = () => {
     // ============================================================
 
     const handleDeactivate = async (family) => {
+
         const confirmed = window.confirm(
             `Are you sure you want to deactivate ${family.family_name}?`
         );
 
-        if (!confirmed) return;
+
+        if (!confirmed) {
+            return;
+        }
+
 
         try {
+
             await axiosInstance.delete(
                 `/students/families/${family.id}/`
             );
 
+
             setFamilies((previous) =>
                 previous.map((item) =>
                     item.id === family.id
-                        ? { ...item, is_active: false }
+                        ? {
+                            ...item,
+                            is_active: false,
+                        }
                         : item
                 )
             );
 
         } catch (err) {
-            console.error("Failed to deactivate family:", err);
+
+            console.error(
+                "Failed to deactivate family:",
+                err
+            );
+
 
             alert(
                 err.response?.data?.detail ||
@@ -208,9 +298,12 @@ const FamiliesPage = () => {
     // ============================================================
 
     if (loading) {
+
         return (
             <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+
                 <div className="flex flex-col items-center gap-3">
+
                     <RefreshCw
                         size={32}
                         className="text-purple-700 animate-spin"
@@ -219,7 +312,9 @@ const FamiliesPage = () => {
                     <p className="text-gray-600 font-medium">
                         Loading families...
                     </p>
+
                 </div>
+
             </div>
         );
     }
@@ -245,21 +340,27 @@ const FamiliesPage = () => {
                         <div className="flex items-start gap-4">
 
                             <div className="bg-purple-700 p-3 rounded-xl">
+
                                 <Home
                                     size={30}
                                     className="text-purple-100"
                                 />
+
                             </div>
 
+
                             <div>
+
                                 <h1 className="text-2xl md:text-3xl font-bold text-white">
                                     Families
                                 </h1>
+
 
                                 <p className="text-purple-200 mt-1">
                                     Manage student families and household
                                     information
                                 </p>
+
                             </div>
 
                         </div>
@@ -272,6 +373,7 @@ const FamiliesPage = () => {
                                 disabled={refreshing}
                                 className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-purple-700 text-white hover:bg-purple-600 transition disabled:opacity-60"
                             >
+
                                 <RefreshCw
                                     size={18}
                                     className={
@@ -282,6 +384,7 @@ const FamiliesPage = () => {
                                 />
 
                                 Refresh
+
                             </button>
 
 
@@ -289,9 +392,11 @@ const FamiliesPage = () => {
                                 to="/sms/families/add"
                                 className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gray-50 text-purple-800 font-semibold hover:bg-gray-200 transition"
                             >
+
                                 <Plus size={19} />
 
                                 Add Family
+
                             </Link>
 
                         </div>
@@ -308,6 +413,7 @@ const FamiliesPage = () => {
             {/* ================================================== */}
 
             {error && (
+
                 <div className="mb-6 bg-red-100 border border-red-300 text-red-800 rounded-xl p-4 flex items-start gap-3">
 
                     <AlertCircle
@@ -315,14 +421,18 @@ const FamiliesPage = () => {
                         className="mt-0.5 flex-shrink-0"
                     />
 
+
                     <div>
+
                         <p className="font-semibold">
                             Unable to load families
                         </p>
 
+
                         <p className="text-sm mt-1">
                             {error}
                         </p>
+
                     </div>
 
                 </div>
@@ -335,27 +445,33 @@ const FamiliesPage = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
 
-                {/* Total */}
+                {/* TOTAL */}
 
                 <div className="bg-gray-50 rounded-2xl shadow-sm border border-gray-200 p-5">
 
                     <div className="flex items-center justify-between">
 
                         <div>
+
                             <p className="text-sm text-gray-500 font-medium">
                                 Total Families
                             </p>
 
+
                             <p className="text-3xl font-bold text-gray-800 mt-1">
                                 {totalFamilies}
                             </p>
+
                         </div>
 
+
                         <div className="bg-purple-100 p-3 rounded-xl">
+
                             <Users
                                 size={24}
                                 className="text-purple-700"
                             />
+
                         </div>
 
                     </div>
@@ -363,27 +479,33 @@ const FamiliesPage = () => {
                 </div>
 
 
-                {/* Active */}
+                {/* ACTIVE */}
 
                 <div className="bg-gray-50 rounded-2xl shadow-sm border border-gray-200 p-5">
 
                     <div className="flex items-center justify-between">
 
                         <div>
+
                             <p className="text-sm text-gray-500 font-medium">
                                 Active Families
                             </p>
 
+
                             <p className="text-3xl font-bold text-gray-800 mt-1">
                                 {activeFamilies}
                             </p>
+
                         </div>
 
+
                         <div className="bg-green-100 p-3 rounded-xl">
+
                             <UserPlus
                                 size={24}
                                 className="text-green-700"
                             />
+
                         </div>
 
                     </div>
@@ -391,27 +513,33 @@ const FamiliesPage = () => {
                 </div>
 
 
-                {/* With Students */}
+                {/* WITH STUDENTS */}
 
                 <div className="bg-gray-50 rounded-2xl shadow-sm border border-gray-200 p-5">
 
                     <div className="flex items-center justify-between">
 
                         <div>
+
                             <p className="text-sm text-gray-500 font-medium">
                                 With Students
                             </p>
 
+
                             <p className="text-3xl font-bold text-gray-800 mt-1">
                                 {familiesWithStudents}
                             </p>
+
                         </div>
 
+
                         <div className="bg-blue-100 p-3 rounded-xl">
+
                             <GraduationCap
                                 size={24}
                                 className="text-blue-700"
                             />
+
                         </div>
 
                     </div>
@@ -419,27 +547,33 @@ const FamiliesPage = () => {
                 </div>
 
 
-                {/* Inactive */}
+                {/* INACTIVE */}
 
                 <div className="bg-gray-50 rounded-2xl shadow-sm border border-gray-200 p-5">
 
                     <div className="flex items-center justify-between">
 
                         <div>
+
                             <p className="text-sm text-gray-500 font-medium">
                                 Inactive Families
                             </p>
 
+
                             <p className="text-3xl font-bold text-gray-800 mt-1">
                                 {inactiveFamilies}
                             </p>
+
                         </div>
 
+
                         <div className="bg-gray-200 p-3 rounded-xl">
+
                             <UserX
                                 size={24}
                                 className="text-gray-600"
                             />
+
                         </div>
 
                     </div>
@@ -457,7 +591,7 @@ const FamiliesPage = () => {
 
                 <div className="flex flex-col md:flex-row gap-4">
 
-                    {/* Search */}
+                    {/* SEARCH */}
 
                     <div className="relative flex-1">
 
@@ -465,6 +599,7 @@ const FamiliesPage = () => {
                             size={20}
                             className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
                         />
+
 
                         <input
                             type="text"
@@ -479,7 +614,7 @@ const FamiliesPage = () => {
                     </div>
 
 
-                    {/* Status */}
+                    {/* STATUS */}
 
                     <select
                         value={statusFilter}
@@ -488,31 +623,42 @@ const FamiliesPage = () => {
                         }
                         className="md:w-52 px-4 py-3 bg-gray-100 border border-gray-300 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     >
+
                         <option value="active">
                             Active Families
                         </option>
+
 
                         <option value="inactive">
                             Inactive Families
                         </option>
 
+
                         <option value="all">
                             All Families
                         </option>
+
                     </select>
 
                 </div>
 
+
                 <div className="mt-3 text-sm text-gray-500">
+
                     Showing{" "}
+
                     <span className="font-semibold text-gray-700">
                         {filteredFamilies.length}
                     </span>{" "}
+
                     of{" "}
+
                     <span className="font-semibold text-gray-700">
                         {families.length}
                     </span>{" "}
+
                     families
+
                 </div>
 
             </div>
@@ -529,6 +675,7 @@ const FamiliesPage = () => {
                     <h2 className="text-lg font-bold text-gray-800">
                         Family Records
                     </h2>
+
 
                     <p className="text-sm text-gray-500 mt-1">
                         View and manage registered families
@@ -550,24 +697,34 @@ const FamiliesPage = () => {
 
                         </div>
 
+
                         <h3 className="text-lg font-semibold text-gray-800">
                             No families found
                         </h3>
 
+
                         <p className="text-gray-500 mt-1 max-w-md mx-auto">
+
                             {searchTerm
                                 ? "No families match your search criteria."
                                 : "There are currently no families registered."}
+
                         </p>
 
+
                         {!searchTerm && (
+
                             <Link
                                 to="/sms/families/add"
                                 className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 bg-purple-800 text-white rounded-xl font-semibold hover:bg-purple-700 transition"
                             >
+
                                 <Plus size={18} />
+
                                 Add First Family
+
                             </Link>
+
                         )}
 
                     </div>
@@ -586,21 +743,26 @@ const FamiliesPage = () => {
                                         Family
                                     </th>
 
+
                                     <th className="px-5 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                                         Location
                                     </th>
+
 
                                     <th className="px-5 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
                                         Students
                                     </th>
 
+
                                     <th className="px-5 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
                                         Parents
                                     </th>
 
+
                                     <th className="px-5 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
                                         Status
                                     </th>
+
 
                                     <th className="px-5 py-4 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">
                                         Actions
@@ -618,8 +780,10 @@ const FamiliesPage = () => {
                                     const studentCount =
                                         getStudentCount(family.id);
 
+
                                     const parentCount =
                                         getParentCount(family.id);
+
 
                                     return (
 
@@ -628,7 +792,7 @@ const FamiliesPage = () => {
                                             className="hover:bg-purple-50 transition"
                                         >
 
-                                            {/* Family */}
+                                            {/* FAMILY */}
 
                                             <td className="px-5 py-4">
 
@@ -643,12 +807,16 @@ const FamiliesPage = () => {
 
                                                     </div>
 
+
                                                     <div>
 
                                                         <p className="font-semibold text-gray-800">
+
                                                             {family.family_name ||
                                                                 "Unnamed Family"}
+
                                                         </p>
+
 
                                                         <p className="text-sm text-purple-700 font-medium">
                                                             {family.family_id}
@@ -661,7 +829,7 @@ const FamiliesPage = () => {
                                             </td>
 
 
-                                            {/* Location */}
+                                            {/* LOCATION */}
 
                                             <td className="px-5 py-4">
 
@@ -672,21 +840,30 @@ const FamiliesPage = () => {
                                                         className="text-gray-400 mt-0.5 flex-shrink-0"
                                                     />
 
+
                                                     <div>
 
                                                         <p className="text-sm text-gray-700">
+
                                                             {family.town ||
                                                                 family.county ||
                                                                 "Not provided"}
+
                                                         </p>
 
+
                                                         {family.county && (
+
                                                             <p className="text-xs text-gray-500">
+
                                                                 {family.county}
+
                                                                 {family.sub_county
                                                                     ? ` • ${family.sub_county}`
                                                                     : ""}
+
                                                             </p>
+
                                                         )}
 
                                                     </div>
@@ -696,29 +873,33 @@ const FamiliesPage = () => {
                                             </td>
 
 
-                                            {/* Students */}
+                                            {/* STUDENTS */}
 
                                             <td className="px-5 py-4 text-center">
 
                                                 <span className="inline-flex items-center justify-center min-w-9 h-9 px-2 rounded-lg bg-purple-100 text-purple-800 font-bold">
+
                                                     {studentCount}
+
                                                 </span>
 
                                             </td>
 
 
-                                            {/* Parents */}
+                                            {/* PARENTS */}
 
                                             <td className="px-5 py-4 text-center">
 
                                                 <span className="inline-flex items-center justify-center min-w-9 h-9 px-2 rounded-lg bg-gray-200 text-gray-700 font-bold">
+
                                                     {parentCount}
+
                                                 </span>
 
                                             </td>
 
 
-                                            {/* Status */}
+                                            {/* STATUS */}
 
                                             <td className="px-5 py-4 text-center">
 
@@ -739,7 +920,7 @@ const FamiliesPage = () => {
                                             </td>
 
 
-                                            {/* Actions */}
+                                            {/* ACTIONS */}
 
                                             <td className="px-5 py-4">
 
@@ -750,7 +931,9 @@ const FamiliesPage = () => {
                                                         title="View Family"
                                                         className="p-2 rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 transition"
                                                     >
+
                                                         <Eye size={17} />
+
                                                     </Link>
 
 
@@ -759,11 +942,14 @@ const FamiliesPage = () => {
                                                         title="Edit Family"
                                                         className="p-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition"
                                                     >
+
                                                         <Edit size={17} />
+
                                                     </Link>
 
 
                                                     {family.is_active && (
+
                                                         <button
                                                             onClick={() =>
                                                                 handleDeactivate(
@@ -773,8 +959,11 @@ const FamiliesPage = () => {
                                                             title="Deactivate Family"
                                                             className="p-2 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition"
                                                         >
+
                                                             <UserX size={17} />
+
                                                         </button>
+
                                                     )}
 
                                                 </div>
@@ -802,4 +991,3 @@ const FamiliesPage = () => {
 
 
 export default FamiliesPage;
-

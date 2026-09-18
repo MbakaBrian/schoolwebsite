@@ -16,8 +16,9 @@ import {
     CalendarDays,
     AlertCircle,
     UserRound,
-    PhoneCall,
     FileText,
+    GitBranch,
+    ChevronRight,
 } from "lucide-react";
 
 
@@ -227,7 +228,7 @@ const StudentsDashboard = () => {
             student.last_name,
         ]
             .filter(Boolean)
-            .join(" ");
+            .join(" ") || "Unnamed Student";
 
     };
 
@@ -413,6 +414,26 @@ const StudentsDashboard = () => {
 
                 <div className="px-6 py-7 lg:px-8">
 
+                    {/* BREADCRUMB */}
+
+                    <div className="mb-5 flex flex-wrap items-center gap-1.5 text-sm">
+
+                        <Link
+                            to="/dashboard/headteacher"
+                            className="text-purple-200 transition hover:text-white"
+                        >
+                            Head Teacher
+                        </Link>
+
+                        <ChevronRight className="h-4 w-4 text-purple-300" />
+
+                        <span className="font-medium text-white">
+                            Student Management
+                        </span>
+
+                    </div>
+
+
                     <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
 
                         <div>
@@ -437,9 +458,9 @@ const StudentsDashboard = () => {
 
                             <p className="mt-1 max-w-2xl text-sm text-purple-100">
 
-                                Manage students, families, parents,
-                                enrollments, emergency contacts and
-                                student documents from one place.
+                                Manage the complete student lifecycle,
+                                from admission and family records to
+                                enrollment, documents and progression.
 
                             </p>
 
@@ -493,6 +514,96 @@ const StudentsDashboard = () => {
                             </Link>
 
                         </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            {/* ====================================================
+                MANAGEMENT NAVIGATION
+            ==================================================== */}
+
+            <div className="border-b border-gray-300 bg-gray-200">
+
+                <div className="px-6 py-4 lg:px-8">
+
+                    <div className="flex flex-wrap items-center gap-2">
+
+                        <span className="mr-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            Student Management
+                        </span>
+
+
+                        <Link
+                            to="/sms/students"
+                            className="inline-flex items-center gap-2 rounded-lg bg-purple-700 px-3 py-2 text-xs font-medium text-white shadow-sm"
+                        >
+                            <Users className="h-4 w-4" />
+                            Students
+                        </Link>
+
+
+                        <ChevronRight className="h-4 w-4 text-gray-400" />
+
+
+                        <Link
+                            to="/sms/families"
+                            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-700 transition hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
+                        >
+                            <Home className="h-4 w-4" />
+                            Families
+                        </Link>
+
+
+                        <ChevronRight className="h-4 w-4 text-gray-400" />
+
+
+                        <Link
+                            to="/sms/parents"
+                            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-700 transition hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
+                        >
+                            <UserRound className="h-4 w-4" />
+                            Parents
+                        </Link>
+
+
+                        <ChevronRight className="h-4 w-4 text-gray-400" />
+
+
+                        <Link
+                            to="/sms/enrollments"
+                            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-700 transition hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
+                        >
+                            <CalendarDays className="h-4 w-4" />
+                            Enrollments
+                        </Link>
+
+
+                        <ChevronRight className="h-4 w-4 text-gray-400" />
+
+
+                        <Link
+                            to="/sms/documents"
+                            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-700 transition hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
+                        >
+                            <FileText className="h-4 w-4" />
+                            Documents
+                        </Link>
+
+
+                        <ChevronRight className="h-4 w-4 text-gray-400" />
+
+
+                        <Link
+                            to="/sms/progression"
+                            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-700 transition hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
+                        >
+                            <GitBranch className="h-4 w-4" />
+                            Progression
+                        </Link>
 
                     </div>
 
@@ -661,7 +772,7 @@ const StudentsDashboard = () => {
 
 
                 {/* ==================================================
-                    QUICK ACTIONS
+                    STUDENT MANAGEMENT WORKFLOW
                 ================================================== */}
 
                 <section className="mt-8">
@@ -669,76 +780,51 @@ const StudentsDashboard = () => {
                     <div className="mb-4">
 
                         <h2 className="text-lg font-semibold text-gray-900">
-                            Quick Actions
+                            Student Management Workflow
                         </h2>
 
                         <p className="mt-1 text-sm text-gray-500">
-                            Common student management tasks.
+                            Follow the student record from registration
+                            through enrollment, supporting documents and
+                            academic progression.
                         </p>
 
                     </div>
 
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
 
 
-                        {/* ADD STUDENT */}
-
-                        <Link
-                            to="/sms/students/add"
-                            className="group rounded-xl border border-gray-300 bg-gray-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-purple-400 hover:bg-purple-50 hover:shadow-md"
-                        >
-
-                            <div className="flex items-center justify-between">
-
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
-
-                                    <UserPlus className="h-5 w-5 text-purple-700" />
-
-                                </div>
-
-                                <ArrowRight className="h-4 w-4 text-gray-400 transition group-hover:translate-x-1 group-hover:text-purple-600" />
-
-                            </div>
-
-
-                            <h3 className="mt-4 font-semibold text-gray-900">
-                                Add Student
-                            </h3>
-
-                            <p className="mt-1 text-sm text-gray-500">
-                                Register a new student.
-                            </p>
-
-                        </Link>
-
-
-                        {/* FIND STUDENT */}
+                        {/* STUDENTS */}
 
                         <Link
                             to="/sms/students"
-                            className="group rounded-xl border border-gray-300 bg-gray-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-purple-400 hover:bg-purple-50 hover:shadow-md"
+                            className="group rounded-xl border border-purple-300 bg-purple-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-purple-500 hover:shadow-md"
                         >
 
                             <div className="flex items-center justify-between">
 
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-200">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-200">
 
-                                    <Search className="h-5 w-5 text-gray-700" />
+                                    <Users className="h-5 w-5 text-purple-700" />
 
                                 </div>
 
-                                <ArrowRight className="h-4 w-4 text-gray-400 transition group-hover:translate-x-1 group-hover:text-purple-600" />
+                                <ArrowRight className="h-4 w-4 text-purple-400 transition group-hover:translate-x-1 group-hover:text-purple-700" />
 
                             </div>
 
 
-                            <h3 className="mt-4 font-semibold text-gray-900">
-                                Find Student
+                            <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-purple-600">
+                                Step 1
+                            </p>
+
+                            <h3 className="mt-1 font-semibold text-gray-900">
+                                Students
                             </h3>
 
                             <p className="mt-1 text-sm text-gray-500">
-                                Search student records.
+                                Student profiles and records.
                             </p>
 
                         </Link>
@@ -753,9 +839,9 @@ const StudentsDashboard = () => {
 
                             <div className="flex items-center justify-between">
 
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-200">
 
-                                    <Home className="h-5 w-5 text-purple-700" />
+                                    <Home className="h-5 w-5 text-gray-700" />
 
                                 </div>
 
@@ -764,12 +850,16 @@ const StudentsDashboard = () => {
                             </div>
 
 
-                            <h3 className="mt-4 font-semibold text-gray-900">
+                            <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                Step 2
+                            </p>
+
+                            <h3 className="mt-1 font-semibold text-gray-900">
                                 Families
                             </h3>
 
                             <p className="mt-1 text-sm text-gray-500">
-                                Manage family records.
+                                Household and residence details.
                             </p>
 
                         </Link>
@@ -784,9 +874,9 @@ const StudentsDashboard = () => {
 
                             <div className="flex items-center justify-between">
 
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-200">
 
-                                    <UserRound className="h-5 w-5 text-purple-700" />
+                                    <UserRound className="h-5 w-5 text-gray-700" />
 
                                 </div>
 
@@ -795,12 +885,16 @@ const StudentsDashboard = () => {
                             </div>
 
 
-                            <h3 className="mt-4 font-semibold text-gray-900">
-                                Parents
+                            <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                Step 3
+                            </p>
+
+                            <h3 className="mt-1 font-semibold text-gray-900">
+                                Parents & Guardians
                             </h3>
 
                             <p className="mt-1 text-sm text-gray-500">
-                                Manage parents and guardians.
+                                Parent relationships and contacts.
                             </p>
 
                         </Link>
@@ -826,12 +920,16 @@ const StudentsDashboard = () => {
                             </div>
 
 
-                            <h3 className="mt-4 font-semibold text-gray-900">
+                            <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-purple-600">
+                                Step 4
+                            </p>
+
+                            <h3 className="mt-1 font-semibold text-gray-900">
                                 Enrollments
                             </h3>
 
                             <p className="mt-1 text-sm text-gray-500">
-                                Manage classes and streams.
+                                Academic year, class and stream.
                             </p>
 
                         </Link>
@@ -857,12 +955,189 @@ const StudentsDashboard = () => {
                             </div>
 
 
-                            <h3 className="mt-4 font-semibold text-gray-900">
+                            <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-purple-600">
+                                Step 5
+                            </p>
+
+                            <h3 className="mt-1 font-semibold text-gray-900">
                                 Documents
                             </h3>
 
                             <p className="mt-1 text-sm text-gray-500">
-                                Manage student documents.
+                                Supporting student documents.
+                            </p>
+
+                        </Link>
+
+
+                        {/* PROGRESSION */}
+
+                        <Link
+                            to="/sms/progression"
+                            className="group rounded-xl border border-gray-300 bg-gray-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-purple-400 hover:bg-purple-50 hover:shadow-md"
+                        >
+
+                            <div className="flex items-center justify-between">
+
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
+
+                                    <GitBranch className="h-5 w-5 text-purple-700" />
+
+                                </div>
+
+                                <ArrowRight className="h-4 w-4 text-gray-400 transition group-hover:translate-x-1 group-hover:text-purple-600" />
+
+                            </div>
+
+
+                            <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-purple-600">
+                                Step 6
+                            </p>
+
+                            <h3 className="mt-1 font-semibold text-gray-900">
+                                Progression
+                            </h3>
+
+                            <p className="mt-1 text-sm text-gray-500">
+                                Promote, repeat or exit students.
+                            </p>
+
+                        </Link>
+
+                    </div>
+
+                </section>
+
+
+                {/* ==================================================
+                    QUICK ACTIONS
+                ================================================== */}
+
+                <section className="mt-8">
+
+                    <div className="mb-4">
+
+                        <h2 className="text-lg font-semibold text-gray-900">
+                            Quick Actions
+                        </h2>
+
+                        <p className="mt-1 text-sm text-gray-500">
+                            Frequently used student management actions.
+                        </p>
+
+                    </div>
+
+
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
+
+                        <Link
+                            to="/sms/students/add"
+                            className="group rounded-xl border border-gray-300 bg-gray-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-purple-400 hover:bg-purple-50 hover:shadow-md"
+                        >
+
+                            <div className="flex items-center justify-between">
+
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
+
+                                    <UserPlus className="h-5 w-5 text-purple-700" />
+
+                                </div>
+
+                                <ArrowRight className="h-4 w-4 text-gray-400 group-hover:translate-x-1 group-hover:text-purple-600" />
+
+                            </div>
+
+                            <h3 className="mt-4 font-semibold text-gray-900">
+                                Add Student
+                            </h3>
+
+                            <p className="mt-1 text-sm text-gray-500">
+                                Register a new student.
+                            </p>
+
+                        </Link>
+
+
+                        <Link
+                            to="/sms/families/add"
+                            className="group rounded-xl border border-gray-300 bg-gray-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-purple-400 hover:bg-purple-50 hover:shadow-md"
+                        >
+
+                            <div className="flex items-center justify-between">
+
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-200">
+
+                                    <Home className="h-5 w-5 text-gray-700" />
+
+                                </div>
+
+                                <ArrowRight className="h-4 w-4 text-gray-400 group-hover:translate-x-1 group-hover:text-purple-600" />
+
+                            </div>
+
+                            <h3 className="mt-4 font-semibold text-gray-900">
+                                Add Family
+                            </h3>
+
+                            <p className="mt-1 text-sm text-gray-500">
+                                Create a household record.
+                            </p>
+
+                        </Link>
+
+
+                        <Link
+                            to="/sms/parents"
+                            className="group rounded-xl border border-gray-300 bg-gray-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-purple-400 hover:bg-purple-50 hover:shadow-md"
+                        >
+
+                            <div className="flex items-center justify-between">
+
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
+
+                                    <UserRound className="h-5 w-5 text-purple-700" />
+
+                                </div>
+
+                                <ArrowRight className="h-4 w-4 text-gray-400 group-hover:translate-x-1 group-hover:text-purple-600" />
+
+                            </div>
+
+                            <h3 className="mt-4 font-semibold text-gray-900">
+                                Manage Parents
+                            </h3>
+
+                            <p className="mt-1 text-sm text-gray-500">
+                                View parents and guardians.
+                            </p>
+
+                        </Link>
+
+
+                        <Link
+                            to="/sms/enrollments"
+                            className="group rounded-xl border border-gray-300 bg-gray-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-purple-400 hover:bg-purple-50 hover:shadow-md"
+                        >
+
+                            <div className="flex items-center justify-between">
+
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
+
+                                    <GraduationCap className="h-5 w-5 text-purple-700" />
+
+                                </div>
+
+                                <ArrowRight className="h-4 w-4 text-gray-400 group-hover:translate-x-1 group-hover:text-purple-600" />
+
+                            </div>
+
+                            <h3 className="mt-4 font-semibold text-gray-900">
+                                Manage Enrollments
+                            </h3>
+
+                            <p className="mt-1 text-sm text-gray-500">
+                                Manage classes and streams.
                             </p>
 
                         </Link>
@@ -1202,11 +1477,12 @@ const StudentsDashboard = () => {
 
                             <p className="mt-1 text-xs leading-relaxed text-purple-700">
 
-                                Student profiles, family information,
-                                parent and guardian relationships,
-                                enrollments, emergency contacts and
-                                supporting documents are all managed
-                                through this student management foundation.
+                                The student record is the permanent identity
+                                of the learner. Family, parent relationships,
+                                academic enrollments, documents, emergency
+                                contacts and progression history are managed
+                                separately so that the student's history is
+                                preserved across academic years.
 
                             </p>
 

@@ -1,5 +1,16 @@
-import React, { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import React, {
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
+
+import {
+    Link,
+    useNavigate,
+    useParams,
+} from "react-router-dom";
+
 import axiosInstance from "../../../../../utils/axiosInstance";
 
 import {
@@ -14,6 +25,8 @@ import {
     AlertCircle,
     CheckCircle2,
     Loader2,
+    Search,
+    ChevronDown,
 } from "lucide-react";
 
 
@@ -22,6 +35,8 @@ import {
 // ============================================================
 
 const initialForm = {
+    admission_number: "",
+
     first_name: "",
     middle_name: "",
     last_name: "",
@@ -41,18 +56,18 @@ const initialForm = {
     child_assessment_number: "",
 
     home_county: "",
-    home_sub_county: "",
+    home_subcounty: "",
 
     has_allergies_or_illness: false,
-    medical_conditions: "",
+    allergies_or_illness_details: "",
 
     has_special_abilities: false,
-    special_abilities: "",
+    special_abilities_details: "",
 };
 
 
 // ============================================================
-// HELPERS
+// SECTION HEADER
 // ============================================================
 
 const SectionHeader = ({
@@ -103,7 +118,259 @@ const SectionHeader = ({
 );
 
 
+// ============================================================
+// SEARCHABLE DROPDOWN
+// ============================================================
+
+const SearchableDropdown = ({
+    value,
+    displayValue,
+    options,
+    onSelect,
+    placeholder,
+    searchPlaceholder,
+    disabled = false,
+    loading = false,
+    emptyMessage = "No results found.",
+}) => {
+
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState("");
+
+    const containerRef = useRef(null);
+
+    // --------------------------------------------------------
+    // CLOSE WHEN CLICKING OUTSIDE
+    // --------------------------------------------------------
+
+    useEffect(() => {
+
+        const handleClickOutside = (event) => {
+
+            if (
+                containerRef.current &&
+                !containerRef.current.contains(
+                    event.target
+                )
+            ) {
+                setOpen(false);
+                setSearch("");
+            }
+
+        };
+
+        document.addEventListener(
+            "mousedown",
+            handleClickOutside
+        );
+
+        return () => {
+            document.removeEventListener(
+                "mousedown",
+                handleClickOutside
+            );
+        };
+
+    }, []);
+
+
+    // --------------------------------------------------------
+    // FILTER OPTIONS
+    // --------------------------------------------------------
+
+    const filteredOptions = useMemo(() => {
+
+        const query = search
+            .trim()
+            .toLowerCase();
+
+        if (!query) {
+            return options;
+        }
+
+        return options.filter((option) => {
+
+            const searchableText = (
+                option.searchText ||
+                option.label ||
+                ""
+            ).toLowerCase();
+
+            return searchableText.includes(query);
+
+        });
+
+    }, [options, search]);
+
+
+    // --------------------------------------------------------
+    // OPEN
+    // --------------------------------------------------------
+
+    const handleOpen = () => {
+
+        if (disabled) {
+            return;
+        }
+
+        setOpen(true);
+        setSearch("");
+
+    };
+
+
+    // --------------------------------------------------------
+    // SELECT
+    // --------------------------------------------------------
+
+    const handleSelect = (option) => {
+
+        onSelect(option);
+
+        setOpen(false);
+        setSearch("");
+
+    };
+
+
+    return (
+        <div
+            ref={containerRef}
+            className="relative"
+        >
+
+            <div className="relative">
+
+                <Search
+                    size={17}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                />
+
+                <input
+                    type="text"
+                    value={
+                        open
+                            ? search
+                            : displayValue || ""
+                    }
+                    onFocus={handleOpen}
+                    onChange={(event) => {
+
+                        if (disabled) {
+                            return;
+                        }
+
+                        setOpen(true);
+                        setSearch(
+                            event.target.value
+                        );
+
+                    }}
+                    placeholder={
+                        open
+                            ? searchPlaceholder
+                            : placeholder
+                    }
+                    disabled={
+                        disabled || loading
+                    }
+                    className="form-input pl-10 pr-10"
+                    autoComplete="off"
+                />
+
+                <ChevronDown
+                    size={18}
+                    className={`absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none transition-transform ${
+                        open
+                            ? "rotate-180"
+                            : ""
+                    }`}
+                />
+
+            </div>
+
+
+            {open &&
+                !disabled &&
+                !loading && (
+
+                    <div className="absolute z-50 left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
+
+                        <div className="max-h-64 overflow-y-auto">
+
+                            {filteredOptions.length === 0 ? (
+
+                                <div className="px-4 py-4 text-sm text-gray-500 text-center">
+                                    {emptyMessage}
+                                </div>
+
+                            ) : (
+
+                                filteredOptions.map(
+                                    (option) => (
+
+                                        <button
+                                            key={
+                                                String(
+                                                    option.value
+                                                )
+                                            }
+                                            type="button"
+                                            onClick={() =>
+                                                handleSelect(
+                                                    option
+                                                )
+                                            }
+                                            className={`w-full text-left px-4 py-3 text-sm transition hover:bg-purple-50 ${
+                                                String(
+                                                    option.value
+                                                ) ===
+                                                String(value)
+                                                    ? "bg-purple-50 text-purple-800 font-semibold"
+                                                    : "text-gray-700"
+                                            }`}
+                                        >
+
+                                            <div className="font-medium">
+                                                {
+                                                    option.label
+                                                }
+                                            </div>
+
+                                            {option.secondaryLabel && (
+
+                                                <div className="text-xs text-gray-500 mt-0.5">
+                                                    {
+                                                        option.secondaryLabel
+                                                    }
+                                                </div>
+
+                                            )}
+
+                                        </button>
+
+                                    )
+                                )
+
+                            )}
+
+                        </div>
+
+                    </div>
+
+                )}
+
+        </div>
+    );
+};
+
+
+// ============================================================
+// STUDENT NAME
+// ============================================================
+
 const getStudentName = (student) => {
+
     if (student?.full_name) {
         return student.full_name;
     }
@@ -119,81 +386,276 @@ const getStudentName = (student) => {
 
 
 // ============================================================
+// ERROR MESSAGE
+// ============================================================
+
+const getErrorMessage = (err) => {
+
+    const responseData =
+        err?.response?.data;
+
+    if (!responseData) {
+        return "Unable to update the student. Please try again.";
+    }
+
+    if (typeof responseData === "string") {
+        return responseData;
+    }
+
+    if (responseData.detail) {
+        return responseData.detail;
+    }
+
+    if (responseData.message) {
+        return responseData.message;
+    }
+
+    if (typeof responseData === "object") {
+
+        const messages =
+            Object.entries(responseData)
+                .map(([field, message]) => {
+
+                    const text =
+                        Array.isArray(message)
+                            ? message.join(", ")
+                            : String(message);
+
+                    return `${field}: ${text}`;
+
+                })
+                .join(" | ");
+
+        return (
+            messages ||
+            "Unable to update the student."
+        );
+    }
+
+    return "Unable to update the student.";
+};
+
+
+// ============================================================
 // COMPONENT
 // ============================================================
 
 const EditStudentPage = () => {
+
     const { id } = useParams();
+
     const navigate = useNavigate();
 
-    const [student, setStudent] = useState(null);
-
-    const [formData, setFormData] = useState(initialForm);
-
-    const [families, setFamilies] = useState([]);
-    const [selectedFamily, setSelectedFamily] = useState("");
-
-    const [loading, setLoading] = useState(true);
-    const [loadingFamilies, setLoadingFamilies] = useState(true);
-    const [saving, setSaving] = useState(false);
-
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
 
     // ========================================================
-    // FETCH STUDENT + FAMILIES
+    // STATE
+    // ========================================================
+
+    const [student, setStudent] =
+        useState(null);
+
+    const [formData, setFormData] =
+        useState(initialForm);
+
+    const [families, setFamilies] =
+        useState([]);
+
+    const [referenceData, setReferenceData] =
+        useState({
+            counties: [],
+            religions: [],
+        });
+
+    const [admissionConfig, setAdmissionConfig] =
+        useState(null);
+
+    const [loading, setLoading] =
+        useState(true);
+
+    const [loadingFamilies, setLoadingFamilies] =
+        useState(true);
+
+    const [loadingReferenceData, setLoadingReferenceData] =
+        useState(true);
+
+    const [loadingAdmissionConfig, setLoadingAdmissionConfig] =
+        useState(true);
+
+    const [saving, setSaving] =
+        useState(false);
+
+    const [error, setError] =
+        useState("");
+
+    const [success, setSuccess] =
+        useState("");
+
+
+    // ========================================================
+    // ADMISSION CONFIG
+    // ========================================================
+
+    const admissionPrefix =
+        admissionConfig?.formatted_prefix || "";
+
+    const admissionDigits =
+        Number(
+            admissionConfig?.digits
+        ) || 5;
+
+
+    // ========================================================
+    // FETCH STUDENT + REFERENCE DATA
     // ========================================================
 
     useEffect(() => {
+
         const loadData = async () => {
+
             try {
+
                 setLoading(true);
                 setLoadingFamilies(true);
+                setLoadingReferenceData(true);
+                setLoadingAdmissionConfig(true);
+
                 setError("");
 
-                const [studentResponse, familiesResponse] =
-                    await Promise.all([
-                        axiosInstance.get(
-                            `/students/students/${id}/`
-                        ),
-                        axiosInstance.get(
-                            "/students/families/"
-                        ),
-                    ]);
+
+                const [
+                    studentResponse,
+                    familiesResponse,
+                    referenceResponse,
+                    admissionConfigResponse,
+                ] = await Promise.all([
+
+                    // STUDENT
+                    axiosInstance.get(
+                        `/students/students/${id}/`
+                    ),
+
+                    // FAMILIES
+                    axiosInstance.get(
+                        "/students/families/"
+                    ),
+
+                    // COUNTIES / RELIGIONS
+                    axiosInstance.get(
+                        "/students/reference-data/"
+                    ),
+
+                    // ADMISSION NUMBER CONFIG
+                    axiosInstance.get(
+                        "/students/admission-number-config/"
+                    ),
+
+                ]);
+
+
+                // =================================================
+                // STUDENT
+                // =================================================
 
                 const studentData =
                     studentResponse.data;
 
+                setStudent(studentData);
+
+
+                // =================================================
+                // FAMILIES
+                // =================================================
+
                 const familyData =
                     familiesResponse.data;
 
-                setStudent(studentData);
+                setFamilies(
+                    Array.isArray(familyData)
+                        ? familyData
+                        : familyData?.results || []
+                );
+
+
+                // =================================================
+                // REFERENCE DATA
+                // =================================================
+
+                const referenceResponseData =
+                    referenceResponse.data;
+
+                setReferenceData({
+
+                    counties:
+                        Array.isArray(
+                            referenceResponseData?.counties
+                        )
+                            ? referenceResponseData.counties
+                            : [],
+
+                    religions:
+                        Array.isArray(
+                            referenceResponseData?.religions
+                        )
+                            ? referenceResponseData.religions
+                            : [],
+
+                });
+
+
+                // =================================================
+                // ADMISSION CONFIG
+                // =================================================
+
+                const config =
+                    admissionConfigResponse.data;
+
+                setAdmissionConfig(config);
+
+
+                // =================================================
+                // POPULATE FORM
+                // =================================================
 
                 setFormData({
+
+                    admission_number:
+                        studentData.admission_number ||
+                        "",
+
                     first_name:
-                        studentData.first_name || "",
+                        studentData.first_name ||
+                        "",
 
                     middle_name:
-                        studentData.middle_name || "",
+                        studentData.middle_name ||
+                        "",
 
                     last_name:
-                        studentData.last_name || "",
+                        studentData.last_name ||
+                        "",
 
                     date_of_birth:
-                        studentData.date_of_birth || "",
+                        studentData.date_of_birth
+                            ? String(
+                                  studentData.date_of_birth
+                              ).split("T")[0]
+                            : "",
 
                     place_of_birth:
-                        studentData.place_of_birth || "",
+                        studentData.place_of_birth ||
+                        "",
 
                     gender:
-                        studentData.gender || "",
+                        studentData.gender ||
+                        "",
 
                     nationality:
                         studentData.nationality ||
                         "Kenyan",
 
                     religion:
-                        studentData.religion || "",
+                        studentData.religion ||
+                        "",
 
                     birth_certificate_entry_number:
                         studentData.birth_certificate_entry_number ||
@@ -217,10 +679,11 @@ const EditStudentPage = () => {
                         "",
 
                     home_county:
-                        studentData.home_county || "",
+                        studentData.home_county ||
+                        "",
 
-                    home_sub_county:
-                        studentData.home_sub_county ||
+                    home_subcounty:
+                        studentData.home_subcounty ||
                         "",
 
                     has_allergies_or_illness:
@@ -228,8 +691,8 @@ const EditStudentPage = () => {
                             studentData.has_allergies_or_illness
                         ),
 
-                    medical_conditions:
-                        studentData.medical_conditions ||
+                    allergies_or_illness_details:
+                        studentData.allergies_or_illness_details ||
                         "",
 
                     has_special_abilities:
@@ -237,24 +700,15 @@ const EditStudentPage = () => {
                             studentData.has_special_abilities
                         ),
 
-                    special_abilities:
-                        studentData.special_abilities ||
+                    special_abilities_details:
+                        studentData.special_abilities_details ||
                         "",
+
                 });
 
-                setSelectedFamily(
-                    studentData.family
-                        ? String(studentData.family)
-                        : ""
-                );
-
-                setFamilies(
-                    Array.isArray(familyData)
-                        ? familyData
-                        : familyData?.results || []
-                );
 
             } catch (err) {
+
                 console.error(
                     "Failed to load student:",
                     err
@@ -266,13 +720,191 @@ const EditStudentPage = () => {
                 );
 
             } finally {
+
                 setLoading(false);
                 setLoadingFamilies(false);
+                setLoadingReferenceData(false);
+                setLoadingAdmissionConfig(false);
+
             }
+
         };
 
+
         loadData();
+
     }, [id]);
+
+
+    // ========================================================
+    // FAMILY OPTIONS
+    // ========================================================
+
+    const familyOptions = useMemo(() => {
+
+        return families.map((family) => {
+
+            const familyName =
+                family.family_name ||
+                "Unnamed Family";
+
+            const familyId =
+                family.family_id ||
+                "";
+
+            return {
+
+                value: String(
+                    family.id
+                ),
+
+                label: familyName,
+
+                secondaryLabel:
+                    familyId
+                        ? `Family ID: ${familyId}`
+                        : "",
+
+                searchText:
+                    `${familyName} ${familyId}`,
+
+            };
+
+        });
+
+    }, [families]);
+
+
+    // ========================================================
+    // SELECTED FAMILY
+    // ========================================================
+
+    const selectedFamily = useMemo(() => {
+
+        return families.find(
+            (family) =>
+                String(family.id) ===
+                String(student?.family)
+        );
+
+    }, [families, student]);
+
+
+    const selectedFamilyId =
+        formData.family ||
+        (
+            student?.family
+                ? String(student.family)
+                : ""
+        );
+
+
+    // ========================================================
+    // COUNTY OPTIONS
+    // ========================================================
+
+    const countyOptions = useMemo(() => {
+
+        return referenceData.counties.map(
+            (county) => {
+
+                const name =
+                    county.name || "";
+
+                return {
+
+                    value: name,
+
+                    label: name,
+
+                    searchText: name,
+
+                };
+
+            }
+        );
+
+    }, [referenceData.counties]);
+
+
+    // ========================================================
+    // SELECTED COUNTY
+    // ========================================================
+
+    const selectedCountyData =
+        useMemo(() => {
+
+            return referenceData.counties.find(
+                (county) =>
+                    county.name ===
+                    formData.home_county
+            );
+
+        }, [
+            referenceData.counties,
+            formData.home_county,
+        ]);
+
+
+    // ========================================================
+    // SUB-COUNTY OPTIONS
+    // ========================================================
+
+    const subcountyOptions = useMemo(() => {
+
+        const subCounties =
+            selectedCountyData?.sub_counties ||
+            [];
+
+        return subCounties.map(
+            (subcounty) => ({
+
+                value: subcounty,
+
+                label: subcounty,
+
+                searchText: subcounty,
+
+            })
+        );
+
+    }, [selectedCountyData]);
+
+
+    // ========================================================
+    // RELIGION OPTIONS
+    // ========================================================
+
+    const religionOptions = useMemo(() => {
+
+        return referenceData.religions.map(
+            (religion) => ({
+
+                value:
+                    religion.value,
+
+                label:
+                    religion.label,
+
+                searchText:
+                    `${religion.label} ${religion.value}`,
+
+            })
+        );
+
+    }, [referenceData.religions]);
+
+
+    // ========================================================
+    // SELECTED RELIGION
+    // ========================================================
+
+    const selectedReligion =
+        referenceData.religions.find(
+            (religion) =>
+                religion.value ===
+                formData.religion
+        );
 
 
     // ========================================================
@@ -280,6 +912,7 @@ const EditStudentPage = () => {
     // ========================================================
 
     const handleChange = (event) => {
+
         const {
             name,
             value,
@@ -287,16 +920,151 @@ const EditStudentPage = () => {
             checked,
         } = event.target;
 
+
         setFormData((previous) => ({
+
             ...previous,
+
             [name]:
                 type === "checkbox"
                     ? checked
                     : value,
+
+        }));
+
+
+        setError("");
+        setSuccess("");
+
+    };
+
+
+    // ========================================================
+    // ADMISSION NUMBER
+    // ========================================================
+
+    const handleAdmissionNumberChange = (
+        event
+    ) => {
+
+        let value =
+            event.target.value.toUpperCase();
+
+
+        value = value.replace(
+            /[^A-Z0-9-]/g,
+            ""
+        );
+
+
+        setFormData((previous) => ({
+
+            ...previous,
+
+            admission_number: value,
+
+        }));
+
+
+        setError("");
+        setSuccess("");
+
+    };
+
+
+    // ========================================================
+    // FAMILY SELECTION
+    // ========================================================
+
+    const handleFamilySelect = (
+        option
+    ) => {
+
+        setFormData((previous) => ({
+
+            ...previous,
+
+            family: option.value,
+
         }));
 
         setError("");
         setSuccess("");
+
+    };
+
+
+    // ========================================================
+    // COUNTY SELECTION
+    // ========================================================
+
+    const handleCountySelect = (
+        option
+    ) => {
+
+        setFormData((previous) => ({
+
+            ...previous,
+
+            home_county:
+                option.value,
+
+            // Changing county invalidates
+            // the previous sub-county.
+            home_subcounty:
+                "",
+
+        }));
+
+        setError("");
+        setSuccess("");
+
+    };
+
+
+    // ========================================================
+    // SUB-COUNTY SELECTION
+    // ========================================================
+
+    const handleSubcountySelect = (
+        option
+    ) => {
+
+        setFormData((previous) => ({
+
+            ...previous,
+
+            home_subcounty:
+                option.value,
+
+        }));
+
+        setError("");
+        setSuccess("");
+
+    };
+
+
+    // ========================================================
+    // RELIGION SELECTION
+    // ========================================================
+
+    const handleReligionSelect = (
+        option
+    ) => {
+
+        setFormData((previous) => ({
+
+            ...previous,
+
+            religion:
+                option.value,
+
+        }));
+
+        setError("");
+        setSuccess("");
+
     };
 
 
@@ -305,41 +1073,101 @@ const EditStudentPage = () => {
     // ========================================================
 
     const validateForm = () => {
-        if (!formData.first_name.trim()) {
-            return "First name is required.";
+
+        // ----------------------------------------------------
+        // ADMISSION NUMBER
+        // ----------------------------------------------------
+
+        if (
+            !formData.admission_number.trim()
+        ) {
+
+            return "Admission number is required.";
+
         }
 
-        if (!formData.last_name.trim()) {
-            return "Last name is required.";
+
+        // ----------------------------------------------------
+        // BASIC INFORMATION
+        // ----------------------------------------------------
+
+        if (
+            !formData.first_name.trim()
+        ) {
+
+            return "First name is required.";
+
         }
+
+
+        if (
+            !formData.last_name.trim()
+        ) {
+
+            return "Last name is required.";
+
+        }
+
 
         if (!formData.date_of_birth) {
+
             return "Date of birth is required.";
+
         }
+
 
         if (!formData.gender) {
+
             return "Please select the student's gender.";
+
         }
 
-        if (!selectedFamily) {
+
+        // ----------------------------------------------------
+        // FAMILY
+        // ----------------------------------------------------
+
+        if (!selectedFamilyId) {
+
             return "Please select a family.";
+
         }
+
+
+        // ----------------------------------------------------
+        // MEDICAL
+        // ----------------------------------------------------
 
         if (
             formData.has_allergies_or_illness &&
-            !formData.medical_conditions.trim()
+            !formData
+                .allergies_or_illness_details
+                .trim()
         ) {
+
             return "Please provide details about the allergy or illness.";
+
         }
+
+
+        // ----------------------------------------------------
+        // SPECIAL ABILITIES
+        // ----------------------------------------------------
 
         if (
             formData.has_special_abilities &&
-            !formData.special_abilities.trim()
+            !formData
+                .special_abilities_details
+                .trim()
         ) {
+
             return "Please provide details about the student's special abilities.";
+
         }
 
+
         return null;
+
     };
 
 
@@ -347,98 +1175,209 @@ const EditStudentPage = () => {
     // SAVE
     // ========================================================
 
-    const handleSubmit = async (event) => {
+    const handleSubmit = async (
+        event
+    ) => {
+
         event.preventDefault();
 
         setError("");
         setSuccess("");
 
+
         const validationError =
             validateForm();
 
+
         if (validationError) {
-            setError(validationError);
+
+            setError(
+                validationError
+            );
 
             window.scrollTo({
+
                 top: 0,
+
                 behavior: "smooth",
+
             });
 
             return;
+
         }
 
+
         try {
+
             setSaving(true);
 
+
+            // ------------------------------------------------
+            // CLEAN PAYLOAD
+            // ------------------------------------------------
+
             const payload = {
+
                 ...formData,
-                family: Number(selectedFamily),
+
+
+                admission_number:
+                    formData.admission_number
+                        .trim(),
+
+
+                first_name:
+                    formData.first_name
+                        .trim(),
+
+
+                middle_name:
+                    formData.middle_name
+                        .trim(),
+
+
+                last_name:
+                    formData.last_name
+                        .trim(),
+
+
+                place_of_birth:
+                    formData.place_of_birth
+                        .trim(),
+
+
+                nationality:
+                    formData.nationality
+                        .trim(),
+
+
+                religion:
+                    formData.religion
+                        .trim(),
+
+
+                // Optional unique fields
+                // must be NULL when blank.
+
+                birth_certificate_entry_number:
+                    formData
+                        .birth_certificate_entry_number
+                        .trim() || null,
+
+
+                birth_certificate_number:
+                    formData
+                        .birth_certificate_number
+                        .trim() || null,
+
+
+                nemis_kemis_number:
+                    formData
+                        .nemis_kemis_number
+                        .trim() || null,
+
+
+                child_assessment_number:
+                    formData
+                        .child_assessment_number
+                        .trim() || null,
+
+
+                home_county:
+                    formData.home_county
+                        .trim(),
+
+
+                home_subcounty:
+                    formData.home_subcounty
+                        .trim(),
+
+
+                allergies_or_illness_details:
+                    formData.has_allergies_or_illness
+                        ? formData
+                              .allergies_or_illness_details
+                              .trim()
+                        : "",
+
+
+                special_abilities_details:
+                    formData.has_special_abilities
+                        ? formData
+                              .special_abilities_details
+                              .trim()
+                        : "",
+
+
+                family:
+                    Number(
+                        selectedFamilyId
+                    ),
+
             };
+
+
+            // ------------------------------------------------
+            // UPDATE STUDENT
+            // ------------------------------------------------
 
             await axiosInstance.put(
                 `/students/students/${id}/`,
                 payload
             );
 
+
+            // ------------------------------------------------
+            // SUCCESS
+            // ------------------------------------------------
+
             setSuccess(
                 "Student information updated successfully."
             );
 
+
+            // ------------------------------------------------
+            // REDIRECT
+            // ------------------------------------------------
+
             setTimeout(() => {
+
                 navigate(
                     `/sms/students/${id}`
                 );
+
             }, 800);
 
+
         } catch (err) {
+
             console.error(
                 "Failed to update student:",
                 err
             );
 
-            const responseData =
-                err?.response?.data;
 
-            if (
-                responseData &&
-                typeof responseData === "object"
-            ) {
-                const messages =
-                    Object.entries(responseData)
-                        .map(
-                            ([field, message]) => {
-                                const text =
-                                    Array.isArray(
-                                        message
-                                    )
-                                        ? message.join(
-                                              ", "
-                                          )
-                                        : message;
+            setError(
+                getErrorMessage(err)
+            );
 
-                                return `${field}: ${text}`;
-                            }
-                        )
-                        .join(" | ");
-
-                setError(
-                    messages ||
-                    "Unable to update the student."
-                );
-            } else {
-                setError(
-                    "Unable to update the student. Please check the information and try again."
-                );
-            }
 
             window.scrollTo({
+
                 top: 0,
+
                 behavior: "smooth",
+
             });
 
+
         } finally {
+
             setSaving(false);
+
         }
+
     };
 
 
@@ -446,8 +1385,15 @@ const EditStudentPage = () => {
     // LOADING
     // ========================================================
 
-    if (loading) {
+    if (
+        loading ||
+        loadingFamilies ||
+        loadingReferenceData ||
+        loadingAdmissionConfig
+    ) {
+
         return (
+
             <div className="min-h-screen bg-gray-100 p-6">
 
                 <div className="max-w-6xl mx-auto">
@@ -469,7 +1415,9 @@ const EditStudentPage = () => {
                 </div>
 
             </div>
+
         );
+
     }
 
 
@@ -478,7 +1426,9 @@ const EditStudentPage = () => {
     // ========================================================
 
     if (!student) {
+
         return (
+
             <div className="min-h-screen bg-gray-100 p-4 sm:p-6">
 
                 <div className="max-w-6xl mx-auto">
@@ -487,9 +1437,13 @@ const EditStudentPage = () => {
                         to="/sms/students"
                         className="inline-flex items-center gap-2 text-sm font-medium text-purple-700 hover:text-purple-900 mb-6"
                     >
+
                         <ArrowLeft size={17} />
+
                         Back to Students
+
                     </Link>
+
 
                     <div className="bg-red-50 border border-red-200 rounded-2xl p-6">
 
@@ -520,7 +1474,9 @@ const EditStudentPage = () => {
                 </div>
 
             </div>
+
         );
+
     }
 
 
@@ -529,9 +1485,11 @@ const EditStudentPage = () => {
     // ========================================================
 
     return (
+
         <div className="min-h-screen bg-gray-100 p-4 sm:p-6">
 
             <div className="max-w-6xl mx-auto">
+
 
                 {/* ==================================================
                     HEADER
@@ -543,9 +1501,13 @@ const EditStudentPage = () => {
                         to={`/sms/students/${id}`}
                         className="inline-flex items-center gap-2 text-sm font-medium text-purple-700 hover:text-purple-900 mb-3"
                     >
+
                         <ArrowLeft size={17} />
+
                         Back to Student
+
                     </Link>
+
 
                     <div>
 
@@ -553,12 +1515,21 @@ const EditStudentPage = () => {
                             Edit Student
                         </h1>
 
+
                         <p className="text-gray-500 mt-1">
+
                             Update information for{" "}
+
                             <span className="font-semibold text-gray-700">
-                                {getStudentName(student)}
+
+                                {getStudentName(
+                                    student
+                                )}
+
                             </span>
+
                             .
+
                         </p>
 
                     </div>
@@ -571,6 +1542,7 @@ const EditStudentPage = () => {
                 ================================================== */}
 
                 {error && (
+
                     <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-red-700">
 
                         <div className="flex gap-3">
@@ -595,10 +1567,12 @@ const EditStudentPage = () => {
                         </div>
 
                     </div>
+
                 )}
 
 
                 {success && (
+
                     <div className="mb-6 rounded-xl border border-green-200 bg-green-50 px-4 py-4 text-green-700">
 
                         <div className="flex items-center gap-3">
@@ -612,10 +1586,14 @@ const EditStudentPage = () => {
                         </div>
 
                     </div>
+
                 )}
 
 
-                <form onSubmit={handleSubmit}>
+                <form
+                    onSubmit={handleSubmit}
+                >
+
 
                     {/* ==================================================
                         PERSONAL INFORMATION
@@ -630,17 +1608,78 @@ const EditStudentPage = () => {
                             purple
                         />
 
+
                         <div className="p-5 sm:p-6">
+
+
+                            {/* ==================================================
+                                ADMISSION NUMBER
+                            ================================================== */}
+
+                            <div className="mb-6">
+
+                                <label className="form-label">
+
+                                    Admission Number
+
+                                    <span className="required">
+                                        *
+                                    </span>
+
+                                </label>
+
+
+                                <div className="max-w-md">
+
+                                    <input
+                                        type="text"
+                                        name="admission_number"
+                                        value={
+                                            formData.admission_number
+                                        }
+                                        onChange={
+                                            handleAdmissionNumberChange
+                                        }
+                                        placeholder={
+                                            admissionConfig?.example ||
+                                            `${admissionPrefix}${"0".repeat(
+                                                admissionDigits
+                                            )}`
+                                        }
+                                        className="form-input font-semibold tracking-wide"
+                                    />
+
+                                </div>
+
+
+                                <p className="text-xs text-gray-500 mt-2">
+
+                                    The student's permanent school admission
+                                    number. You can correct it here if the
+                                    existing number is incorrect.
+
+                                </p>
+
+                            </div>
+
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
+
+                                {/* FIRST NAME */}
+
                                 <div>
+
                                     <label className="form-label">
+
                                         First Name
+
                                         <span className="required">
                                             *
                                         </span>
+
                                     </label>
+
 
                                     <input
                                         type="text"
@@ -653,13 +1692,18 @@ const EditStudentPage = () => {
                                         }
                                         className="form-input"
                                     />
+
                                 </div>
 
 
+                                {/* MIDDLE NAME */}
+
                                 <div>
+
                                     <label className="form-label">
                                         Middle Name
                                     </label>
+
 
                                     <input
                                         type="text"
@@ -672,16 +1716,24 @@ const EditStudentPage = () => {
                                         }
                                         className="form-input"
                                     />
+
                                 </div>
 
 
+                                {/* LAST NAME */}
+
                                 <div>
+
                                     <label className="form-label">
+
                                         Last Name
+
                                         <span className="required">
                                             *
                                         </span>
+
                                     </label>
+
 
                                     <input
                                         type="text"
@@ -694,16 +1746,24 @@ const EditStudentPage = () => {
                                         }
                                         className="form-input"
                                     />
+
                                 </div>
 
 
+                                {/* DATE OF BIRTH */}
+
                                 <div>
+
                                     <label className="form-label">
+
                                         Date of Birth
+
                                         <span className="required">
                                             *
                                         </span>
+
                                     </label>
+
 
                                     <input
                                         type="date"
@@ -716,13 +1776,18 @@ const EditStudentPage = () => {
                                         }
                                         className="form-input"
                                     />
+
                                 </div>
 
 
+                                {/* PLACE OF BIRTH */}
+
                                 <div>
+
                                     <label className="form-label">
                                         Place of Birth
                                     </label>
+
 
                                     <input
                                         type="text"
@@ -735,16 +1800,24 @@ const EditStudentPage = () => {
                                         }
                                         className="form-input"
                                     />
+
                                 </div>
 
 
+                                {/* GENDER */}
+
                                 <div>
+
                                     <label className="form-label">
+
                                         Gender
+
                                         <span className="required">
                                             *
                                         </span>
+
                                     </label>
+
 
                                     <select
                                         name="gender"
@@ -756,6 +1829,7 @@ const EditStudentPage = () => {
                                         }
                                         className="form-input"
                                     >
+
                                         <option value="">
                                             Select gender
                                         </option>
@@ -777,13 +1851,18 @@ const EditStudentPage = () => {
                                         </option>
 
                                     </select>
+
                                 </div>
 
 
+                                {/* NATIONALITY */}
+
                                 <div>
+
                                     <label className="form-label">
                                         Nationality
                                     </label>
+
 
                                     <input
                                         type="text"
@@ -796,25 +1875,43 @@ const EditStudentPage = () => {
                                         }
                                         className="form-input"
                                     />
+
                                 </div>
 
 
+                                {/* RELIGION */}
+
                                 <div>
+
                                     <label className="form-label">
                                         Religion
                                     </label>
 
-                                    <input
-                                        type="text"
-                                        name="religion"
+
+                                    <SearchableDropdown
                                         value={
                                             formData.religion
                                         }
-                                        onChange={
-                                            handleChange
+
+                                        displayValue={
+                                            selectedReligion?.label ||
+                                            formData.religion
                                         }
-                                        className="form-input"
+
+                                        options={
+                                            religionOptions
+                                        }
+
+                                        onSelect={
+                                            handleReligionSelect
+                                        }
+
+                                        placeholder="Select religion"
+
+                                        searchPlaceholder="Search religion..."
+
                                     />
+
                                 </div>
 
                             </div>
@@ -836,60 +1933,63 @@ const EditStudentPage = () => {
                             description="Household associated with this student."
                         />
 
+
                         <div className="p-5 sm:p-6">
 
                             <label className="form-label">
+
                                 Family
+
                                 <span className="required">
                                     *
                                 </span>
+
                             </label>
 
-                            <select
-                                value={
-                                    selectedFamily
-                                }
-                                onChange={(event) => {
-                                    setSelectedFamily(
-                                        event.target.value
-                                    );
 
-                                    setError("");
-                                }}
-                                disabled={
+                            <SearchableDropdown
+
+                                value={
+                                    selectedFamilyId
+                                }
+
+                                displayValue={
+                                    selectedFamily
+                                        ? `${
+                                              selectedFamily.family_name ||
+                                              "Unnamed Family"
+                                          }${
+                                              selectedFamily.family_id
+                                                  ? ` (${selectedFamily.family_id})`
+                                                  : ""
+                                          }`
+                                        : ""
+                                }
+
+                                options={
+                                    familyOptions
+                                }
+
+                                onSelect={
+                                    handleFamilySelect
+                                }
+
+                                placeholder="Select family"
+
+                                searchPlaceholder="Search family by name or Family ID..."
+
+                                loading={
                                     loadingFamilies
                                 }
-                                className="form-input"
-                            >
 
-                                <option value="">
-                                    {loadingFamilies
-                                        ? "Loading families..."
-                                        : "Select family"}
-                                </option>
+                            />
 
-                                {families.map(
-                                    (family) => (
-                                        <option
-                                            key={
-                                                family.id
-                                            }
-                                            value={
-                                                family.id
-                                            }
-                                        >
-                                            {
-                                                family.family_name
-                                            }
 
-                                            {family.family_id
-                                                ? ` (${family.family_id})`
-                                                : ""}
-                                        </option>
-                                    )
-                                )}
+                            <p className="text-xs text-gray-500 mt-2">
 
-                            </select>
+                                Search by family name or family ID.
+
+                            </p>
 
                         </div>
 
@@ -909,14 +2009,20 @@ const EditStudentPage = () => {
                             purple
                         />
 
+
                         <div className="p-5 sm:p-6">
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
+
+                                {/* BIRTH CERTIFICATE NUMBER */}
+
                                 <div>
+
                                     <label className="form-label">
                                         Birth Certificate Number
                                     </label>
+
 
                                     <input
                                         type="text"
@@ -929,13 +2035,18 @@ const EditStudentPage = () => {
                                         }
                                         className="form-input"
                                     />
+
                                 </div>
 
 
+                                {/* BIRTH ENTRY NUMBER */}
+
                                 <div>
+
                                     <label className="form-label">
                                         Birth Entry Number
                                     </label>
+
 
                                     <input
                                         type="text"
@@ -948,8 +2059,11 @@ const EditStudentPage = () => {
                                         }
                                         className="form-input"
                                     />
+
                                 </div>
 
+
+                                {/* SUBMITTED */}
 
                                 <div className="md:col-span-2">
 
@@ -967,8 +2081,11 @@ const EditStudentPage = () => {
                                             className="h-4 w-4 rounded border-gray-300 text-purple-700 focus:ring-purple-500"
                                         />
 
+
                                         <span className="text-sm font-medium text-gray-700">
+
                                             Birth certificate has been submitted
+
                                         </span>
 
                                     </label>
@@ -994,15 +2111,20 @@ const EditStudentPage = () => {
                             description="NEMIS/KEMIS and assessment information."
                         />
 
+
                         <div className="p-5 sm:p-6">
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+
+                                {/* NEMIS / KEMIS */}
 
                                 <div>
 
                                     <label className="form-label">
                                         NEMIS / KEMIS Number
                                     </label>
+
 
                                     <input
                                         type="text"
@@ -1019,11 +2141,14 @@ const EditStudentPage = () => {
                                 </div>
 
 
+                                {/* ASSESSMENT */}
+
                                 <div>
 
                                     <label className="form-label">
                                         Child Assessment Number
                                     </label>
+
 
                                     <input
                                         type="text"
@@ -1059,9 +2184,13 @@ const EditStudentPage = () => {
                             purple
                         />
 
+
                         <div className="p-5 sm:p-6">
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+
+                                {/* COUNTY */}
 
                                 <div>
 
@@ -1069,20 +2198,35 @@ const EditStudentPage = () => {
                                         Home County
                                     </label>
 
-                                    <input
-                                        type="text"
-                                        name="home_county"
+
+                                    <SearchableDropdown
+
                                         value={
                                             formData.home_county
                                         }
-                                        onChange={
-                                            handleChange
+
+                                        displayValue={
+                                            formData.home_county
                                         }
-                                        className="form-input"
+
+                                        options={
+                                            countyOptions
+                                        }
+
+                                        onSelect={
+                                            handleCountySelect
+                                        }
+
+                                        placeholder="Select county"
+
+                                        searchPlaceholder="Search county..."
+
                                     />
 
                                 </div>
 
+
+                                {/* SUB-COUNTY */}
 
                                 <div>
 
@@ -1090,16 +2234,37 @@ const EditStudentPage = () => {
                                         Home Sub-County
                                     </label>
 
-                                    <input
-                                        type="text"
-                                        name="home_sub_county"
+
+                                    <SearchableDropdown
+
                                         value={
-                                            formData.home_sub_county
+                                            formData.home_subcounty
                                         }
-                                        onChange={
-                                            handleChange
+
+                                        displayValue={
+                                            formData.home_subcounty
                                         }
-                                        className="form-input"
+
+                                        options={
+                                            subcountyOptions
+                                        }
+
+                                        onSelect={
+                                            handleSubcountySelect
+                                        }
+
+                                        placeholder={
+                                            formData.home_county
+                                                ? "Select sub-county"
+                                                : "Select county first"
+                                        }
+
+                                        searchPlaceholder="Search sub-county..."
+
+                                        disabled={
+                                            !formData.home_county
+                                        }
+
                                     />
 
                                 </div>
@@ -1123,6 +2288,7 @@ const EditStudentPage = () => {
                             description="Allergies, illnesses and medical conditions."
                         />
 
+
                         <div className="p-5 sm:p-6">
 
                             <label className="flex items-center gap-3 cursor-pointer mb-5">
@@ -1139,8 +2305,11 @@ const EditStudentPage = () => {
                                     className="h-4 w-4 rounded border-gray-300 text-purple-700 focus:ring-purple-500"
                                 />
 
+
                                 <span className="font-medium text-gray-700">
+
                                     Does the student have any allergies or illness?
+
                                 </span>
 
                             </label>
@@ -1151,22 +2320,27 @@ const EditStudentPage = () => {
                                 <div>
 
                                     <label className="form-label">
-                                        Medical Conditions / Details
+
+                                        Allergies / Illness Details
+
                                         <span className="required">
                                             *
                                         </span>
+
                                     </label>
 
+
                                     <textarea
-                                        name="medical_conditions"
+                                        name="allergies_or_illness_details"
                                         value={
-                                            formData.medical_conditions
+                                            formData.allergies_or_illness_details
                                         }
                                         onChange={
                                             handleChange
                                         }
                                         rows="4"
                                         className="form-input resize-none"
+                                        placeholder="Provide details about the student's allergies, illness or medical condition."
                                     />
 
                                 </div>
@@ -1191,6 +2365,7 @@ const EditStudentPage = () => {
                             purple
                         />
 
+
                         <div className="p-5 sm:p-6">
 
                             <label className="flex items-center gap-3 cursor-pointer mb-5">
@@ -1207,8 +2382,11 @@ const EditStudentPage = () => {
                                     className="h-4 w-4 rounded border-gray-300 text-purple-700 focus:ring-purple-500"
                                 />
 
+
                                 <span className="font-medium text-gray-700">
+
                                     Does the student have any special abilities?
+
                                 </span>
 
                             </label>
@@ -1219,22 +2397,27 @@ const EditStudentPage = () => {
                                 <div>
 
                                     <label className="form-label">
+
                                         Special Abilities / Details
+
                                         <span className="required">
                                             *
                                         </span>
+
                                     </label>
 
+
                                     <textarea
-                                        name="special_abilities"
+                                        name="special_abilities_details"
                                         value={
-                                            formData.special_abilities
+                                            formData.special_abilities_details
                                         }
                                         onChange={
                                             handleChange
                                         }
                                         rows="4"
                                         className="form-input resize-none"
+                                        placeholder="Describe the student's special abilities or talents."
                                     />
 
                                 </div>
@@ -1267,20 +2450,28 @@ const EditStudentPage = () => {
                         >
 
                             {saving ? (
+
                                 <>
+
                                     <Loader2
                                         size={18}
                                         className="animate-spin"
                                     />
 
                                     Saving Changes...
+
                                 </>
+
                             ) : (
+
                                 <>
+
                                     <Save size={18} />
 
                                     Save Changes
+
                                 </>
+
                             )}
 
                         </button>
@@ -1297,6 +2488,7 @@ const EditStudentPage = () => {
             ========================================================== */}
 
             <style>{`
+
                 .form-label {
                     display: block;
                     font-size: 0.875rem;
@@ -1335,6 +2527,7 @@ const EditStudentPage = () => {
                     opacity: 0.6;
                     cursor: not-allowed;
                 }
+
             `}</style>
 
         </div>

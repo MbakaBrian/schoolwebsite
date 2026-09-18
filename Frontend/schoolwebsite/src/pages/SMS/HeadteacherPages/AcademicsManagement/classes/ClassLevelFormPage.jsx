@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Link,
   useNavigate,
@@ -12,22 +12,68 @@ const ClassLevelFormPage = () => {
 
   const isEditMode = Boolean(id);
 
+  // ==================================================
+  // FORM STATE
+  // ==================================================
+
   const [formData, setFormData] = useState({
     name: "",
     code: "",
     description: "",
     display_order: 1,
+    next_class_level: "",
     is_active: true,
   });
 
-  const [loading, setLoading] = useState(
-    isEditMode
-  );
+  // ==================================================
+  // STATE
+  // ==================================================
+
+  const [classLevels, setClassLevels] = useState([]);
+
+  const [loading, setLoading] = useState(isEditMode);
+  const [loadingClasses, setLoadingClasses] = useState(true);
   const [saving, setSaving] = useState(false);
+
   const [error, setError] = useState("");
-  const [fieldErrors, setFieldErrors] = useState(
-    {}
-  );
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  // ==================================================
+  // FETCH CLASS LEVELS FOR PROGRESSION
+  // ==================================================
+
+  useEffect(() => {
+    fetchClassLevels();
+  }, []);
+
+  const fetchClassLevels = async () => {
+    try {
+      setLoadingClasses(true);
+
+      const response = await axiosInstance.get(
+        "/academics/class-levels/?is_active=true"
+      );
+
+      const data = response.data;
+
+      const levels = Array.isArray(data)
+        ? data
+        : data.results || [];
+
+      setClassLevels(levels);
+    } catch (err) {
+      console.error(
+        "Failed to fetch class levels:",
+        err
+      );
+
+      // We don't block the entire form if the
+      // progression list cannot be loaded.
+      setClassLevels([]);
+    } finally {
+      setLoadingClasses(false);
+    }
+  };
 
   // ==================================================
   // FETCH EXISTING CLASS LEVEL
@@ -57,6 +103,8 @@ const ClassLevelFormPage = () => {
           level.description || "",
         display_order:
           level.display_order ?? 1,
+        next_class_level:
+          level.next_class_level ?? "",
         is_active:
           level.is_active ?? true,
       });
@@ -80,8 +128,12 @@ const ClassLevelFormPage = () => {
   // ==================================================
 
   const handleChange = (e) => {
-    const { name, value, type, checked } =
-      e.target;
+    const {
+      name,
+      value,
+      type,
+      checked,
+    } = e.target;
 
     setFormData((previous) => ({
       ...previous,
@@ -91,8 +143,7 @@ const ClassLevelFormPage = () => {
           : value,
     }));
 
-    // Clear field-specific error once user
-    // starts correcting the field.
+    // Clear field-specific error
     if (fieldErrors[name]) {
       setFieldErrors((previous) => {
         const updated = {
@@ -109,6 +160,36 @@ const ClassLevelFormPage = () => {
       setError("");
     }
   };
+
+  // ==================================================
+  // AVAILABLE NEXT CLASS LEVELS
+  // ==================================================
+
+  const availableNextClasses = useMemo(() => {
+    return classLevels.filter(
+      (classLevel) =>
+        String(classLevel.id) !== String(id)
+    );
+  }, [classLevels, id]);
+
+  // ==================================================
+  // SELECTED NEXT CLASS
+  // ==================================================
+
+  const selectedNextClass = useMemo(() => {
+    if (!formData.next_class_level) {
+      return null;
+    }
+
+    return classLevels.find(
+      (classLevel) =>
+        String(classLevel.id) ===
+        String(formData.next_class_level)
+    );
+  }, [
+    classLevels,
+    formData.next_class_level,
+  ]);
 
   // ==================================================
   // VALIDATION
@@ -155,6 +236,17 @@ const ClassLevelFormPage = () => {
         "Display order cannot be negative.";
     }
 
+    // Prevent a class from progressing to itself.
+    if (
+      formData.next_class_level &&
+      isEditMode &&
+      String(formData.next_class_level) ===
+        String(id)
+    ) {
+      errors.next_class_level =
+        "A class level cannot progress to itself.";
+    }
+
     setFieldErrors(errors);
 
     return Object.keys(errors).length === 0;
@@ -176,13 +268,23 @@ const ClassLevelFormPage = () => {
 
     const payload = {
       name: formData.name.trim(),
+
       code: formData.code.trim(),
+
       description:
         formData.description.trim(),
+
       display_order: Number(
         formData.display_order
       ),
-      is_active: formData.is_active,
+
+      next_class_level:
+        formData.next_class_level
+          ? Number(formData.next_class_level)
+          : null,
+
+      is_active:
+        formData.is_active,
     };
 
     try {
@@ -204,9 +306,17 @@ const ClassLevelFormPage = () => {
 
       const savedLevel = response.data;
 
-      navigate(
-        `/academics/classes/${savedLevel.id}`
-      );
+      const savedId =
+        savedLevel.id ??
+        savedLevel.pk;
+
+      if (savedId) {
+        navigate(
+          `/academics/classes/${savedId}`
+        );
+      } else {
+        navigate("/academics/classes");
+      }
     } catch (err) {
       console.error(
         "Failed to save class level:",
@@ -226,13 +336,16 @@ const ClassLevelFormPage = () => {
       ) {
         const parsedErrors = {};
 
-        Object.entries(responseData).forEach(
+        Object.entries(
+          responseData
+        ).forEach(
           ([field, messages]) => {
             if (Array.isArray(messages)) {
               parsedErrors[field] =
                 messages.join(" ");
             } else if (
-              typeof messages === "string"
+              typeof messages ===
+              "string"
             ) {
               parsedErrors[field] =
                 messages;
@@ -244,9 +357,12 @@ const ClassLevelFormPage = () => {
         );
 
         if (
-          Object.keys(parsedErrors).length > 0
+          Object.keys(parsedErrors)
+            .length > 0
         ) {
-          setFieldErrors(parsedErrors);
+          setFieldErrors(
+            parsedErrors
+          );
 
           const generalError =
             parsedErrors.detail ||
@@ -287,6 +403,8 @@ const ClassLevelFormPage = () => {
               <div className="h-12 rounded bg-gray-200" />
 
               <div className="h-12 rounded bg-gray-200" />
+
+              <div className="h-32 rounded bg-gray-200" />
 
               <div className="h-32 rounded bg-gray-200" />
 
@@ -337,7 +455,7 @@ const ClassLevelFormPage = () => {
 
             <p className="mt-1 text-sm text-gray-600 sm:text-base">
               {isEditMode
-                ? "Update the class level information."
+                ? "Update the class level information and progression path."
                 : "Create a class level for the school's academic structure."}
             </p>
 
@@ -359,6 +477,7 @@ const ClassLevelFormPage = () => {
               </div>
 
               <div>
+
                 <p className="font-semibold text-red-800">
                   Unable to save class level
                 </p>
@@ -366,6 +485,7 @@ const ClassLevelFormPage = () => {
                 <p className="mt-1 text-sm text-red-700">
                   {error}
                 </p>
+
               </div>
 
             </div>
@@ -403,7 +523,9 @@ const ClassLevelFormPage = () => {
 
             <div className="grid gap-5 p-5 sm:grid-cols-2 sm:p-6">
 
-              {/* Name */}
+              {/* ==================================================
+                  NAME
+              ================================================== */}
 
               <div className="sm:col-span-2">
 
@@ -444,7 +566,9 @@ const ClassLevelFormPage = () => {
 
               </div>
 
-              {/* Code */}
+              {/* ==================================================
+                  CODE
+              ================================================== */}
 
               <div>
 
@@ -485,7 +609,9 @@ const ClassLevelFormPage = () => {
 
               </div>
 
-              {/* Display Order */}
+              {/* ==================================================
+                  DISPLAY ORDER
+              ================================================== */}
 
               <div>
 
@@ -530,7 +656,9 @@ const ClassLevelFormPage = () => {
 
               </div>
 
-              {/* Description */}
+              {/* ==================================================
+                  DESCRIPTION
+              ================================================== */}
 
               <div className="sm:col-span-2">
 
@@ -559,6 +687,162 @@ const ClassLevelFormPage = () => {
                 </p>
 
               </div>
+
+            </div>
+
+          </div>
+
+          {/* ==================================================
+              PROGRESSION
+          ================================================== */}
+
+          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+
+            <div className="border-b border-gray-100 px-5 py-5 sm:px-6">
+
+              <h2 className="text-lg font-semibold text-gray-900">
+                Student Progression
+              </h2>
+
+              <p className="mt-1 text-sm text-gray-500">
+                Define which class students normally
+                move to after completing this class.
+              </p>
+
+            </div>
+
+            <div className="p-5 sm:p-6">
+
+              <label
+                htmlFor="next_class_level"
+                className="mb-1.5 block text-sm font-semibold text-gray-700"
+              >
+                Next Class Level
+              </label>
+
+              <select
+                id="next_class_level"
+                name="next_class_level"
+                value={
+                  formData.next_class_level
+                }
+                onChange={handleChange}
+                disabled={loadingClasses}
+                className={`w-full rounded-xl border bg-white px-4 py-3 text-sm outline-none transition focus:ring-2 ${
+                  fieldErrors.next_class_level
+                    ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                    : "border-gray-300 focus:border-green-500 focus:ring-green-100"
+                }`}
+              >
+
+                <option value="">
+                  {loadingClasses
+                    ? "Loading class levels..."
+                    : "No next class — final level"}
+                </option>
+
+                {!loadingClasses &&
+                  availableNextClasses.map(
+                    (classLevel) => (
+                      <option
+                        key={classLevel.id}
+                        value={classLevel.id}
+                      >
+                        {classLevel.name}
+
+                        {classLevel.code
+                          ? ` (${classLevel.code})`
+                          : ""}
+                      </option>
+                    )
+                  )}
+
+              </select>
+
+              {fieldErrors.next_class_level && (
+                <p className="mt-1.5 text-xs font-medium text-red-600">
+                  {
+                    fieldErrors.next_class_level
+                  }
+                </p>
+              )}
+
+              <p className="mt-1.5 text-xs text-gray-500">
+                When students are promoted from this
+                class, this is the class suggested as
+                their next placement.
+              </p>
+
+              {/* ==================================================
+                  PROGRESSION PREVIEW
+              ================================================== */}
+
+              {formData.next_class_level &&
+                selectedNextClass && (
+                  <div className="mt-5 rounded-xl border border-green-200 bg-green-50 p-4">
+
+                    <p className="text-xs font-semibold uppercase tracking-wide text-green-700">
+                      Progression Path
+                    </p>
+
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-gray-900">
+
+                      <span className="rounded-lg bg-white px-3 py-2 shadow-sm">
+                        {formData.name ||
+                          "Current class"}
+                      </span>
+
+                      <span className="text-green-600">
+                        →
+                      </span>
+
+                      <span className="rounded-lg bg-white px-3 py-2 shadow-sm">
+                        {
+                          selectedNextClass.name
+                        }
+                      </span>
+
+                    </div>
+
+                    <p className="mt-3 text-xs text-green-700">
+                      Students promoted from{" "}
+                      <strong>
+                        {formData.name ||
+                          "this class"}
+                      </strong>{" "}
+                      will normally be proposed for{" "}
+                      <strong>
+                        {
+                          selectedNextClass.name
+                        }
+                      </strong>
+                      .
+                    </p>
+
+                  </div>
+                )}
+
+              {/* ==================================================
+                  FINAL LEVEL INFORMATION
+              ================================================== */}
+
+              {!formData.next_class_level && (
+                <div className="mt-5 rounded-xl border border-gray-200 bg-gray-50 p-4">
+
+                  <p className="text-sm font-semibold text-gray-800">
+                    Final Class Level
+                  </p>
+
+                  <p className="mt-1 text-xs leading-5 text-gray-600">
+                    No next class is configured. This
+                    class will therefore be treated as
+                    the end of the configured progression
+                    path unless a next class is added
+                    later.
+                  </p>
+
+                </div>
+              )}
 
             </div>
 

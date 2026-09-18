@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import axiosInstance from "../../../../utils/axiosInstance";
 
@@ -8,6 +8,7 @@ import axiosInstance from "../../../../utils/axiosInstance";
 // ============================================================
 
 const Icons = {
+
     AcademicCap: ({ className = "w-6 h-6" }) => (
         <svg
             className={className}
@@ -21,12 +22,14 @@ const Icons = {
                 strokeWidth={1.8}
                 d="M22 10l-10-5-10 5 10 5 10-5z"
             />
+
             <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={1.8}
                 d="M6 12.5V17c0 1.5 3 3 6 3s6-1.5 6-3v-4.5"
             />
+
             <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -35,6 +38,7 @@ const Icons = {
             />
         </svg>
     ),
+
 
     Calendar: ({ className = "w-6 h-6" }) => (
         <svg
@@ -52,6 +56,7 @@ const Icons = {
         </svg>
     ),
 
+
     Users: ({ className = "w-6 h-6" }) => (
         <svg
             className={className}
@@ -65,12 +70,14 @@ const Icons = {
                 strokeWidth={1.8}
                 d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"
             />
+
             <circle
                 cx="9"
                 cy="7"
                 r="4"
                 strokeWidth={1.8}
             />
+
             <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -79,6 +86,7 @@ const Icons = {
             />
         </svg>
     ),
+
 
     Layers: ({ className = "w-6 h-6" }) => (
         <svg
@@ -93,6 +101,7 @@ const Icons = {
                 strokeWidth={1.8}
                 d="M12 2L2 7l10 5 10-5-10-5z"
             />
+
             <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -101,6 +110,7 @@ const Icons = {
             />
         </svg>
     ),
+
 
     Plus: ({ className = "w-5 h-5" }) => (
         <svg
@@ -118,6 +128,7 @@ const Icons = {
         </svg>
     ),
 
+
     ArrowRight: ({ className = "w-5 h-5" }) => (
         <svg
             className={className}
@@ -134,6 +145,7 @@ const Icons = {
         </svg>
     ),
 
+
     Clock: ({ className = "w-5 h-5" }) => (
         <svg
             className={className}
@@ -147,6 +159,7 @@ const Icons = {
                 r="9"
                 strokeWidth={1.8}
             />
+
             <path
                 strokeLinecap="round"
                 strokeWidth={1.8}
@@ -154,6 +167,7 @@ const Icons = {
             />
         </svg>
     ),
+
 
     CheckCircle: ({ className = "w-5 h-5" }) => (
         <svg
@@ -168,6 +182,7 @@ const Icons = {
                 r="9"
                 strokeWidth={1.8}
             />
+
             <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -176,6 +191,7 @@ const Icons = {
             />
         </svg>
     ),
+
 
     AlertCircle: ({ className = "w-5 h-5" }) => (
         <svg
@@ -190,6 +206,7 @@ const Icons = {
                 r="9"
                 strokeWidth={1.8}
             />
+
             <path
                 strokeLinecap="round"
                 strokeWidth={1.8}
@@ -197,6 +214,7 @@ const Icons = {
             />
         </svg>
     ),
+
 
     Refresh: ({ className = "w-5 h-5" }) => (
         <svg
@@ -233,19 +251,23 @@ const StatCard = ({
             to={href}
             className="
                 group
-                bg-white
-                border border-gray-200
                 rounded-2xl
+                border border-gray-200
+                bg-gray-100
                 p-5
                 shadow-sm
+                hover:bg-white
+                hover:border-purple-200
                 hover:shadow-md
-                hover:border-gray-300
                 transition-all
                 duration-200
             "
         >
+
             <div className="flex items-start justify-between">
+
                 <div>
+
                     <p className="text-sm font-medium text-gray-500">
                         {title}
                     </p>
@@ -263,21 +285,27 @@ const StatCard = ({
                             {subtitle}
                         </p>
                     )}
+
                 </div>
 
-                <div className="
-                    w-11 h-11
-                    rounded-xl
-                    bg-gray-100
-                    text-gray-700
-                    flex items-center justify-center
-                    group-hover:bg-gray-900
-                    group-hover:text-white
-                    transition-colors
-                ">
+
+                <div
+                    className="
+                        w-11 h-11
+                        rounded-xl
+                        bg-purple-100
+                        text-purple-700
+                        flex items-center justify-center
+                        group-hover:bg-purple-700
+                        group-hover:text-white
+                        transition-colors
+                    "
+                >
                     {icon}
                 </div>
+
             </div>
+
         </Link>
     );
 };
@@ -302,27 +330,33 @@ const QuickAction = ({
                 p-4
                 rounded-xl
                 border border-gray-200
-                bg-white
-                hover:border-gray-300
+                bg-gray-100
+                hover:bg-white
+                hover:border-purple-200
                 hover:shadow-sm
                 transition-all
             "
         >
-            <div className="
-                w-10 h-10
-                rounded-lg
-                bg-gray-100
-                text-gray-700
-                flex items-center justify-center
-                flex-shrink-0
-                group-hover:bg-gray-900
-                group-hover:text-white
-                transition-colors
-            ">
+
+            <div
+                className="
+                    w-10 h-10
+                    rounded-lg
+                    bg-purple-100
+                    text-purple-700
+                    flex items-center justify-center
+                    flex-shrink-0
+                    group-hover:bg-purple-700
+                    group-hover:text-white
+                    transition-colors
+                "
+            >
                 {icon}
             </div>
 
+
             <div className="flex-1 min-w-0">
+
                 <p className="font-semibold text-gray-900 text-sm">
                     {title}
                 </p>
@@ -330,16 +364,19 @@ const QuickAction = ({
                 <p className="text-xs text-gray-500 mt-0.5">
                     {description}
                 </p>
+
             </div>
+
 
             <Icons.ArrowRight
                 className="
                     w-4 h-4
                     text-gray-400
-                    group-hover:text-gray-700
+                    group-hover:text-purple-700
                     transition-colors
                 "
             />
+
         </Link>
     );
 };
@@ -352,12 +389,19 @@ const QuickAction = ({
 const AcademicsDashboard = () => {
 
     const [academicYear, setAcademicYear] = useState(null);
+
+    const [academicYears, setAcademicYears] = useState([]);
+
     const [terms, setTerms] = useState([]);
+
     const [calendarEvents, setCalendarEvents] = useState([]);
+
     const [classLevels, setClassLevels] = useState([]);
+
     const [streams, setStreams] = useState([]);
 
     const [loading, setLoading] = useState(true);
+
     const [error, setError] = useState("");
 
 
@@ -366,10 +410,12 @@ const AcademicsDashboard = () => {
     // ========================================================
 
     const fetchDashboardData = async () => {
+
         setLoading(true);
         setError("");
 
         try {
+
             const [
                 yearsResponse,
                 termsResponse,
@@ -377,8 +423,14 @@ const AcademicsDashboard = () => {
                 classesResponse,
                 streamsResponse,
             ] = await Promise.all([
+
+                // IMPORTANT:
+                // Fetch ALL years.
+                // We determine the current year from
+                // the actual is_current field below.
+
                 axiosInstance.get(
-                    "/academics/years/?is_current=true"
+                    "/academics/years/"
                 ),
 
                 axiosInstance.get(
@@ -396,31 +448,55 @@ const AcademicsDashboard = () => {
                 axiosInstance.get(
                     "/academics/streams/?is_active=true"
                 ),
+
             ]);
 
 
             // ------------------------------------------------
-            // ACADEMIC YEAR
+            // ACADEMIC YEARS
             // ------------------------------------------------
 
             const yearsData = yearsResponse.data;
 
             const years = Array.isArray(yearsData)
                 ? yearsData
-                : yearsData.results || [];
+                : yearsData?.results || [];
 
-            setAcademicYear(years.length > 0 ? years[0] : null);
+            setAcademicYears(years);
+
+
+            // ------------------------------------------------
+            // DETERMINE CURRENT ACADEMIC YEAR
+            // ------------------------------------------------
+            //
+            // DO NOT simply use years[0].
+            //
+            // The active year is the one explicitly marked:
+            //
+            // is_current: true
+            //
+            // ------------------------------------------------
+
+            const currentYear =
+                years.find(
+                    (year) =>
+                        year.is_current === true
+                ) || null;
+
+            setAcademicYear(currentYear);
 
 
             // ------------------------------------------------
             // TERMS
             // ------------------------------------------------
 
-            const termsData = termsResponse.data;
+            const termsData =
+                termsResponse.data;
 
-            const termsList = Array.isArray(termsData)
-                ? termsData
-                : termsData.results || [];
+            const termsList =
+                Array.isArray(termsData)
+                    ? termsData
+                    : termsData?.results || [];
 
             setTerms(termsList);
 
@@ -429,11 +505,13 @@ const AcademicsDashboard = () => {
             // CALENDAR EVENTS
             // ------------------------------------------------
 
-            const eventsData = eventsResponse.data;
+            const eventsData =
+                eventsResponse.data;
 
-            const eventsList = Array.isArray(eventsData)
-                ? eventsData
-                : eventsData.results || [];
+            const eventsList =
+                Array.isArray(eventsData)
+                    ? eventsData
+                    : eventsData?.results || [];
 
             setCalendarEvents(eventsList);
 
@@ -442,11 +520,13 @@ const AcademicsDashboard = () => {
             // CLASS LEVELS
             // ------------------------------------------------
 
-            const classesData = classesResponse.data;
+            const classesData =
+                classesResponse.data;
 
-            const classesList = Array.isArray(classesData)
-                ? classesData
-                : classesData.results || [];
+            const classesList =
+                Array.isArray(classesData)
+                    ? classesData
+                    : classesData?.results || [];
 
             setClassLevels(classesList);
 
@@ -455,15 +535,18 @@ const AcademicsDashboard = () => {
             // STREAMS
             // ------------------------------------------------
 
-            const streamsData = streamsResponse.data;
+            const streamsData =
+                streamsResponse.data;
 
-            const streamsList = Array.isArray(streamsData)
-                ? streamsData
-                : streamsData.results || [];
+            const streamsList =
+                Array.isArray(streamsData)
+                    ? streamsData
+                    : streamsData?.results || [];
 
             setStreams(streamsList);
 
         } catch (err) {
+
             console.error(
                 "Failed to load academics dashboard:",
                 err
@@ -473,8 +556,11 @@ const AcademicsDashboard = () => {
                 err?.response?.data?.detail ||
                 "Failed to load academic information."
             );
+
         } finally {
+
             setLoading(false);
+
         }
     };
 
@@ -484,7 +570,9 @@ const AcademicsDashboard = () => {
     // ========================================================
 
     useEffect(() => {
+
         fetchDashboardData();
+
     }, []);
 
 
@@ -492,31 +580,50 @@ const AcademicsDashboard = () => {
     // CURRENT TERM
     // ========================================================
 
-    const currentTerm = terms.find(
-        (term) =>
-            term.is_current &&
-            (
-                !academicYear ||
-                term.academic_year === academicYear.id
-            )
-    );
+    const currentTerm = useMemo(() => {
+
+        if (!academicYear) {
+            return null;
+        }
+
+        return (
+            terms.find(
+                (term) =>
+                    term.is_current === true &&
+                    String(term.academic_year) ===
+                        String(academicYear.id)
+            ) || null
+        );
+
+    }, [terms, academicYear]);
 
 
     // ========================================================
     // UPCOMING EVENTS
     // ========================================================
 
-    const upcomingEvents = [...calendarEvents]
-        .filter((event) => {
-            const eventDate = new Date(event.start_date);
-            return eventDate >= new Date();
-        })
-        .sort(
-            (a, b) =>
-                new Date(a.start_date) -
-                new Date(b.start_date)
-        )
-        .slice(0, 5);
+    const upcomingEvents = useMemo(() => {
+
+        const now = new Date();
+
+        return [...calendarEvents]
+            .filter((event) => {
+
+                if (!event.start_date) {
+                    return false;
+                }
+
+                return new Date(event.start_date) >= now;
+
+            })
+            .sort(
+                (a, b) =>
+                    new Date(a.start_date) -
+                    new Date(b.start_date)
+            )
+            .slice(0, 5);
+
+    }, [calendarEvents]);
 
 
     // ========================================================
@@ -524,6 +631,7 @@ const AcademicsDashboard = () => {
     // ========================================================
 
     const calculateYearProgress = () => {
+
         if (
             !academicYear?.start_date ||
             !academicYear?.end_date
@@ -541,16 +649,24 @@ const AcademicsDashboard = () => {
 
         const now = new Date().getTime();
 
-        if (now <= start) return 0;
-        if (now >= end) return 100;
+        if (now <= start) {
+            return 0;
+        }
+
+        if (now >= end) {
+            return 100;
+        }
 
         return Math.round(
-            ((now - start) / (end - start)) * 100
+            ((now - start) /
+                (end - start)) *
+                100
         );
     };
 
 
-    const yearProgress = calculateYearProgress();
+    const yearProgress =
+        calculateYearProgress();
 
 
     // ========================================================
@@ -558,7 +674,10 @@ const AcademicsDashboard = () => {
     // ========================================================
 
     const formatDate = (date) => {
-        if (!date) return "—";
+
+        if (!date) {
+            return "—";
+        }
 
         return new Date(date).toLocaleDateString(
             "en-KE",
@@ -576,38 +695,48 @@ const AcademicsDashboard = () => {
     // ========================================================
 
     return (
-        <div className="min-h-screen bg-gray-50">
+
+        <div className="min-h-screen bg-gray-100">
 
             {/* =================================================
                 HEADER
             ================================================= */}
 
-            <div className="bg-white border-b border-gray-200">
-                <div className="
-                    max-w-7xl
-                    mx-auto
-                    px-4 sm:px-6 lg:px-8
-                    py-6
-                ">
+            <div className="bg-purple-900 text-white border-b border-purple-950">
 
-                    <div className="
-                        flex
-                        flex-col
-                        sm:flex-row
-                        sm:items-center
-                        sm:justify-between
-                        gap-4
-                    ">
+                <div
+                    className="
+                        max-w-7xl
+                        mx-auto
+                        px-4 sm:px-6 lg:px-8
+                        py-6
+                    "
+                >
+
+                    <div
+                        className="
+                            flex
+                            flex-col
+                            sm:flex-row
+                            sm:items-center
+                            sm:justify-between
+                            gap-4
+                        "
+                    >
 
                         <div>
-                            <div className="
-                                flex
-                                items-center
-                                gap-2
-                                text-sm
-                                text-gray-500
-                                mb-1
-                            ">
+
+                            <div
+                                className="
+                                    flex
+                                    items-center
+                                    gap-2
+                                    text-sm
+                                    text-purple-200
+                                    mb-1
+                                "
+                            >
+
                                 <Icons.AcademicCap
                                     className="w-4 h-4"
                                 />
@@ -615,65 +744,112 @@ const AcademicsDashboard = () => {
                                 <span>
                                     Academics Management
                                 </span>
+
                             </div>
 
-                            <h1 className="
-                                text-2xl
-                                sm:text-3xl
-                                font-bold
-                                text-gray-900
-                            ">
+
+                            <h1
+                                className="
+                                    text-2xl
+                                    sm:text-3xl
+                                    font-bold
+                                "
+                            >
                                 Academic Dashboard
                             </h1>
 
-                            <p className="
-                                mt-1
-                                text-sm
-                                text-gray-500
-                            ">
+
+                            <p
+                                className="
+                                    mt-1
+                                    text-sm
+                                    text-purple-200
+                                "
+                            >
                                 Manage the school's academic
                                 structure, terms, classes and
                                 calendar.
                             </p>
+
                         </div>
 
 
-                        {/* Refresh */}
+                        <div className="flex items-center gap-3">
 
-                        <button
-                            onClick={fetchDashboardData}
-                            disabled={loading}
-                            className="
-                                inline-flex
-                                items-center
-                                justify-center
-                                gap-2
-                                px-4
-                                py-2.5
-                                rounded-xl
-                                border border-gray-200
-                                bg-white
-                                text-sm
-                                font-medium
-                                text-gray-700
-                                hover:bg-gray-50
-                                disabled:opacity-50
-                                transition
-                            "
-                        >
-                            <Icons.Refresh
-                                className={`w-4 h-4 ${
-                                    loading
-                                        ? "animate-spin"
-                                        : ""
-                                }`}
-                            />
+                            {/* Academic Years */}
 
-                            Refresh
-                        </button>
+                            <Link
+                                to="/academics/years"
+                                className="
+                                    inline-flex
+                                    items-center
+                                    justify-center
+                                    gap-2
+                                    px-4
+                                    py-2.5
+                                    rounded-xl
+                                    bg-white
+                                    text-purple-800
+                                    text-sm
+                                    font-semibold
+                                    hover:bg-purple-50
+                                    transition
+                                "
+                            >
+
+                                <Icons.Calendar
+                                    className="w-4 h-4"
+                                />
+
+                                Academic Years
+
+                            </Link>
+
+
+                            {/* Refresh */}
+
+                            <button
+                                onClick={
+                                    fetchDashboardData
+                                }
+                                disabled={loading}
+                                className="
+                                    inline-flex
+                                    items-center
+                                    justify-center
+                                    gap-2
+                                    px-4
+                                    py-2.5
+                                    rounded-xl
+                                    border border-purple-700
+                                    bg-purple-800
+                                    text-sm
+                                    font-medium
+                                    text-white
+                                    hover:bg-purple-700
+                                    disabled:opacity-50
+                                    transition
+                                "
+                            >
+
+                                <Icons.Refresh
+                                    className={`w-4 h-4 ${
+                                        loading
+                                            ? "animate-spin"
+                                            : ""
+                                    }`}
+                                />
+
+                                Refresh
+
+                            </button>
+
+                        </div>
 
                     </div>
+
                 </div>
+
             </div>
 
 
@@ -681,34 +857,45 @@ const AcademicsDashboard = () => {
                 CONTENT
             ================================================= */}
 
-            <main className="
-                max-w-7xl
-                mx-auto
-                px-4 sm:px-6 lg:px-8
-                py-6
-            ">
+            <main
+                className="
+                    max-w-7xl
+                    mx-auto
+                    px-4 sm:px-6 lg:px-8
+                    py-6
+                "
+            >
 
                 {/* =================================================
                     ERROR
                 ================================================= */}
 
                 {error && (
-                    <div className="
-                        mb-6
-                        flex
-                        items-start
-                        gap-3
-                        rounded-xl
-                        border border-red-200
-                        bg-red-50
-                        p-4
-                        text-red-700
-                    ">
+
+                    <div
+                        className="
+                            mb-6
+                            flex
+                            items-start
+                            gap-3
+                            rounded-xl
+                            border border-red-200
+                            bg-red-50
+                            p-4
+                            text-red-700
+                        "
+                    >
+
                         <Icons.AlertCircle
-                            className="w-5 h-5 flex-shrink-0 mt-0.5"
+                            className="
+                                w-5 h-5
+                                flex-shrink-0
+                                mt-0.5
+                            "
                         />
 
                         <div>
+
                             <p className="font-medium">
                                 Unable to load academic data
                             </p>
@@ -716,8 +903,11 @@ const AcademicsDashboard = () => {
                             <p className="text-sm mt-1">
                                 {error}
                             </p>
+
                         </div>
+
                     </div>
+
                 )}
 
 
@@ -725,73 +915,101 @@ const AcademicsDashboard = () => {
                     CURRENT ACADEMIC YEAR
                 ================================================= */}
 
-                <div className="
-                    bg-gray-900
-                    rounded-2xl
-                    p-6
-                    text-white
-                    mb-6
-                ">
+                <div
+                    className="
+                        bg-gray-900
+                        rounded-2xl
+                        p-6
+                        text-white
+                        mb-6
+                        shadow-sm
+                        border border-gray-800
+                    "
+                >
 
-                    <div className="
-                        flex
-                        flex-col
-                        lg:flex-row
-                        lg:items-center
-                        lg:justify-between
-                        gap-6
-                    ">
+                    <div
+                        className="
+                            flex
+                            flex-col
+                            lg:flex-row
+                            lg:items-center
+                            lg:justify-between
+                            gap-6
+                        "
+                    >
 
                         <div>
 
-                            <div className="
-                                flex
-                                items-center
-                                gap-2
-                                text-sm
-                                text-gray-300
-                            ">
+                            <div
+                                className="
+                                    flex
+                                    items-center
+                                    gap-2
+                                    text-sm
+                                    text-purple-300
+                                "
+                            >
+
                                 <Icons.Calendar
                                     className="w-4 h-4"
                                 />
 
                                 Current Academic Year
+
                             </div>
 
+
                             {loading ? (
-                                <div className="
-                                    mt-2
-                                    h-9
-                                    w-32
-                                    rounded
-                                    bg-gray-700
-                                    animate-pulse
-                                " />
+
+                                <div
+                                    className="
+                                        mt-2
+                                        h-9
+                                        w-32
+                                        rounded
+                                        bg-gray-700
+                                        animate-pulse
+                                    "
+                                />
+
                             ) : (
-                                <h2 className="
-                                    mt-1
-                                    text-3xl
-                                    font-bold
-                                ">
+
+                                <h2
+                                    className="
+                                        mt-1
+                                        text-3xl
+                                        font-bold
+                                    "
+                                >
                                     {academicYear?.name ||
                                         "No current year"}
                                 </h2>
+
                             )}
 
+
                             {academicYear && (
-                                <p className="
-                                    mt-2
-                                    text-sm
-                                    text-gray-300
-                                ">
+
+                                <p
+                                    className="
+                                        mt-2
+                                        text-sm
+                                        text-gray-400
+                                    "
+                                >
+
                                     {formatDate(
                                         academicYear.start_date
                                     )}
+
                                     {" — "}
+
                                     {formatDate(
                                         academicYear.end_date
                                     )}
+
                                 </p>
+
                             )}
 
                         </div>
@@ -799,46 +1017,62 @@ const AcademicsDashboard = () => {
 
                         {/* Current Term */}
 
-                        <div className="
-                            min-w-[220px]
-                            rounded-xl
-                            bg-white/10
-                            border border-white/10
-                            p-4
-                        ">
+                        <div
+                            className="
+                                min-w-[240px]
+                                rounded-xl
+                                bg-purple-900/50
+                                border border-purple-700/50
+                                p-4
+                            "
+                        >
 
-                            <p className="
-                                text-xs
-                                uppercase
-                                tracking-wide
-                                text-gray-400
-                            ">
+                            <p
+                                className="
+                                    text-xs
+                                    uppercase
+                                    tracking-wide
+                                    text-purple-300
+                                "
+                            >
                                 Current Term
                             </p>
 
-                            <p className="
-                                mt-1
-                                text-lg
-                                font-semibold
-                            ">
+
+                            <p
+                                className="
+                                    mt-1
+                                    text-lg
+                                    font-semibold
+                                "
+                            >
                                 {currentTerm?.term_display ||
                                     "Not set"}
                             </p>
 
+
                             {currentTerm && (
-                                <p className="
-                                    mt-1
-                                    text-xs
-                                    text-gray-300
-                                ">
+
+                                <p
+                                    className="
+                                        mt-1
+                                        text-xs
+                                        text-gray-400
+                                    "
+                                >
+
                                     {formatDate(
                                         currentTerm.start_date
                                     )}
+
                                     {" — "}
+
                                     {formatDate(
                                         currentTerm.end_date
                                     )}
+
                                 </p>
+
                             )}
 
                         </div>
@@ -849,15 +1083,19 @@ const AcademicsDashboard = () => {
                     {/* Year Progress */}
 
                     {academicYear && (
+
                         <div className="mt-6">
 
-                            <div className="
-                                flex
-                                justify-between
-                                text-xs
-                                text-gray-400
-                                mb-2
-                            ">
+                            <div
+                                className="
+                                    flex
+                                    justify-between
+                                    text-xs
+                                    text-gray-400
+                                    mb-2
+                                "
+                            >
+
                                 <span>
                                     Academic year progress
                                 </span>
@@ -865,28 +1103,36 @@ const AcademicsDashboard = () => {
                                 <span>
                                     {yearProgress}%
                                 </span>
+
                             </div>
 
-                            <div className="
-                                h-2
-                                bg-white/10
-                                rounded-full
-                                overflow-hidden
-                            ">
+
+                            <div
+                                className="
+                                    h-2
+                                    bg-gray-800
+                                    rounded-full
+                                    overflow-hidden
+                                "
+                            >
+
                                 <div
                                     className="
                                         h-full
-                                        bg-white
+                                        bg-purple-500
                                         rounded-full
                                         transition-all
                                     "
                                     style={{
-                                        width: `${yearProgress}%`,
+                                        width:
+                                            `${yearProgress}%`,
                                     }}
                                 />
+
                             </div>
 
                         </div>
+
                     )}
 
                 </div>
@@ -896,14 +1142,30 @@ const AcademicsDashboard = () => {
                     STAT CARDS
                 ================================================= */}
 
-                <div className="
-                    grid
-                    grid-cols-1
-                    sm:grid-cols-2
-                    lg:grid-cols-4
-                    gap-4
-                    mb-6
-                ">
+                <div
+                    className="
+                        grid
+                        grid-cols-1
+                        sm:grid-cols-2
+                        lg:grid-cols-4
+                        gap-4
+                        mb-6
+                    "
+                >
+
+                    <StatCard
+                        title="Academic Years"
+                        value={academicYears.length}
+                        subtitle="Configured years"
+                        href="/academics/years"
+                        icon={
+                            <Icons.Calendar
+                                className="w-5 h-5"
+                            />
+                        }
+                        loading={loading}
+                    />
+
 
                     <StatCard
                         title="Academic Terms"
@@ -911,10 +1173,13 @@ const AcademicsDashboard = () => {
                         subtitle="Configured terms"
                         href="/academics/terms"
                         icon={
-                            <Icons.Calendar className="w-5 h-5" />
+                            <Icons.Calendar
+                                className="w-5 h-5"
+                            />
                         }
                         loading={loading}
                     />
+
 
                     <StatCard
                         title="Class Levels"
@@ -922,10 +1187,13 @@ const AcademicsDashboard = () => {
                         subtitle="Active classes"
                         href="/academics/classes"
                         icon={
-                            <Icons.Layers className="w-5 h-5" />
+                            <Icons.Layers
+                                className="w-5 h-5"
+                            />
                         }
                         loading={loading}
                     />
+
 
                     <StatCard
                         title="Streams"
@@ -933,18 +1201,9 @@ const AcademicsDashboard = () => {
                         subtitle="Active streams"
                         href="/academics/streams"
                         icon={
-                            <Icons.Users className="w-5 h-5" />
-                        }
-                        loading={loading}
-                    />
-
-                    <StatCard
-                        title="Calendar Events"
-                        value={calendarEvents.length}
-                        subtitle="Active academic events"
-                        href="/academics/calendar"
-                        icon={
-                            <Icons.Calendar className="w-5 h-5" />
+                            <Icons.Users
+                                className="w-5 h-5"
+                            />
                         }
                         loading={loading}
                     />
@@ -956,59 +1215,74 @@ const AcademicsDashboard = () => {
                     MAIN GRID
                 ================================================= */}
 
-                <div className="
-                    grid
-                    grid-cols-1
-                    lg:grid-cols-3
-                    gap-6
-                ">
+                <div
+                    className="
+                        grid
+                        grid-cols-1
+                        lg:grid-cols-3
+                        gap-6
+                    "
+                >
 
                     {/* =================================================
                         TERMS
                     ================================================= */}
 
-                    <div className="
-                        lg:col-span-2
-                        bg-white
-                        border border-gray-200
-                        rounded-2xl
-                        shadow-sm
-                    ">
+                    <div
+                        className="
+                            lg:col-span-2
+                            bg-gray-50
+                            border border-gray-200
+                            rounded-2xl
+                            shadow-sm
+                            overflow-hidden
+                        "
+                    >
 
-                        <div className="
-                            px-5
-                            py-4
-                            border-b border-gray-200
-                            flex
-                            items-center
-                            justify-between
-                        ">
+                        <div
+                            className="
+                                px-5
+                                py-4
+                                bg-gray-200
+                                border-b border-gray-300
+                                flex
+                                items-center
+                                justify-between
+                            "
+                        >
 
                             <div>
-                                <h2 className="
-                                    font-semibold
-                                    text-gray-900
-                                ">
+
+                                <h2
+                                    className="
+                                        font-semibold
+                                        text-gray-900
+                                    "
+                                >
                                     Academic Terms
                                 </h2>
 
-                                <p className="
-                                    text-xs
-                                    text-gray-500
-                                    mt-0.5
-                                ">
-                                    Terms configured for the
+                                <p
+                                    className="
+                                        text-xs
+                                        text-gray-500
+                                        mt-0.5
+                                    "
+                                >
+                                    Terms for the current
                                     academic year
                                 </p>
+
                             </div>
+
 
                             <Link
                                 to="/academics/terms"
                                 className="
                                     text-sm
-                                    font-medium
-                                    text-gray-700
-                                    hover:text-gray-900
+                                    font-semibold
+                                    text-purple-700
+                                    hover:text-purple-900
                                 "
                             >
                                 View all
@@ -1017,158 +1291,219 @@ const AcademicsDashboard = () => {
                         </div>
 
 
-                        <div className="divide-y divide-gray-100">
+                        <div className="divide-y divide-gray-200">
 
                             {loading ? (
-                                [1, 2, 3].map((item) => (
-                                    <div
-                                        key={item}
-                                        className="p-5 animate-pulse"
-                                    >
-                                        <div className="
-                                            h-4
-                                            bg-gray-200
-                                            rounded
-                                            w-24
-                                        " />
 
-                                        <div className="
-                                            mt-2
-                                            h-3
-                                            bg-gray-200
-                                            rounded
-                                            w-40
-                                        " />
-                                    </div>
-                                ))
-                            ) : terms.length === 0 ? (
+                                [1, 2, 3].map(
+                                    (item) => (
 
-                                <div className="
-                                    p-8
-                                    text-center
-                                    text-sm
-                                    text-gray-500
-                                ">
-                                    No academic terms configured.
+                                        <div
+                                            key={item}
+                                            className="
+                                                p-5
+                                                animate-pulse
+                                            "
+                                        >
+
+                                            <div
+                                                className="
+                                                    h-4
+                                                    bg-gray-200
+                                                    rounded
+                                                    w-24
+                                                "
+                                            />
+
+                                            <div
+                                                className="
+                                                    mt-2
+                                                    h-3
+                                                    bg-gray-200
+                                                    rounded
+                                                    w-40
+                                                "
+                                            />
+
+                                        </div>
+
+                                    )
+                                )
+
+                            ) : !academicYear ? (
+
+                                <div
+                                    className="
+                                        p-8
+                                        text-center
+                                        text-sm
+                                        text-gray-500
+                                    "
+                                >
+                                    No current academic year
+                                    has been configured.
                                 </div>
 
                             ) : (
 
                                 terms
-                                    .filter((term) =>
-                                        academicYear
-                                            ? term.academic_year ===
-                                              academicYear.id
-                                            : true
+                                    .filter(
+                                        (term) =>
+                                            String(
+                                                term.academic_year
+                                            ) ===
+                                            String(
+                                                academicYear.id
+                                            )
                                     )
                                     .sort(
                                         (a, b) =>
-                                            a.term.localeCompare(
-                                                b.term
+                                            String(
+                                                a.term
+                                            ).localeCompare(
+                                                String(
+                                                    b.term
+                                                )
                                             )
                                     )
-                                    .map((term) => (
+                                    .map(
+                                        (term) => (
 
-                                        <Link
-                                            key={term.id}
-                                            to={`/academics/terms/${term.id}`}
-                                            className="
-                                                flex
-                                                items-center
-                                                justify-between
-                                                p-5
-                                                hover:bg-gray-50
-                                                transition
-                                            "
-                                        >
-
-                                            <div className="
-                                                flex
-                                                items-center
-                                                gap-3
-                                            ">
-
-                                                <div className="
-                                                    w-9
-                                                    h-9
-                                                    rounded-lg
-                                                    bg-gray-100
+                                            <Link
+                                                key={
+                                                    term.id
+                                                }
+                                                to={`/academics/terms/${term.id}`}
+                                                className="
                                                     flex
                                                     items-center
-                                                    justify-center
-                                                    text-gray-700
-                                                ">
-                                                    <Icons.Calendar
-                                                        className="w-4 h-4"
-                                                    />
-                                                </div>
+                                                    justify-between
+                                                    p-5
+                                                    bg-gray-50
+                                                    hover:bg-white
+                                                    transition
+                                                "
+                                            >
 
-                                                <div>
-
-                                                    <div className="
+                                                <div
+                                                    className="
                                                         flex
                                                         items-center
-                                                        gap-2
-                                                    ">
+                                                        gap-3
+                                                    "
+                                                >
 
-                                                        <p className="
-                                                            text-sm
-                                                            font-semibold
-                                                            text-gray-900
-                                                        ">
-                                                            {term.term_display}
-                                                        </p>
+                                                    <div
+                                                        className="
+                                                            w-9
+                                                            h-9
+                                                            rounded-lg
+                                                            bg-purple-100
+                                                            flex
+                                                            items-center
+                                                            justify-center
+                                                            text-purple-700
+                                                        "
+                                                    >
 
-                                                        {term.is_current && (
-                                                            <span className="
-                                                                inline-flex
-                                                                items-center
-                                                                gap-1
-                                                                px-2
-                                                                py-0.5
-                                                                rounded-full
-                                                                bg-gray-100
-                                                                text-gray-700
-                                                                text-[10px]
-                                                                font-semibold
-                                                            ">
-                                                                <Icons.CheckCircle
-                                                                    className="w-3 h-3"
-                                                                />
-                                                                Current
-                                                            </span>
-                                                        )}
+                                                        <Icons.Calendar
+                                                            className="w-4 h-4"
+                                                        />
 
                                                     </div>
 
-                                                    <p className="
-                                                        text-xs
-                                                        text-gray-500
-                                                        mt-1
-                                                    ">
-                                                        {formatDate(
-                                                            term.start_date
-                                                        )}
-                                                        {" — "}
-                                                        {formatDate(
-                                                            term.end_date
-                                                        )}
-                                                    </p>
+
+                                                    <div>
+
+                                                        <div
+                                                            className="
+                                                                flex
+                                                                items-center
+                                                                gap-2
+                                                            "
+                                                        >
+
+                                                            <p
+                                                                className="
+                                                                    text-sm
+                                                                    font-semibold
+                                                                    text-gray-900
+                                                                "
+                                                            >
+                                                                {
+                                                                    term.term_display
+                                                                }
+                                                            </p>
+
+
+                                                            {term.is_current && (
+
+                                                                <span
+                                                                    className="
+                                                                        inline-flex
+                                                                        items-center
+                                                                        gap-1
+                                                                        px-2
+                                                                        py-0.5
+                                                                        rounded-full
+                                                                        bg-purple-100
+                                                                        text-purple-700
+                                                                        text-[10px]
+                                                                        font-semibold
+                                                                    "
+                                                                >
+
+                                                                    <Icons.CheckCircle
+                                                                        className="w-3 h-3"
+                                                                    />
+
+                                                                    Current
+
+                                                                </span>
+
+                                                            )}
+
+                                                        </div>
+
+
+                                                        <p
+                                                            className="
+                                                                text-xs
+                                                                text-gray-500
+                                                                mt-1
+                                                        "
+                                                        >
+
+                                                            {formatDate(
+                                                                term.start_date
+                                                            )}
+
+                                                            {" — "}
+
+                                                            {formatDate(
+                                                                term.end_date
+                                                            )}
+
+                                                        </p>
+
+                                                    </div>
 
                                                 </div>
 
-                                            </div>
 
-                                            <Icons.ArrowRight
-                                                className="
-                                                    w-4
-                                                    h-4
-                                                    text-gray-400
-                                                "
-                                            />
+                                                <Icons.ArrowRight
+                                                    className="
+                                                        w-4
+                                                        h-4
+                                                        text-gray-400
+                                                    "
+                                                />
 
-                                        </Link>
-                                    ))
+                                            </Link>
+
+                                        )
+                                    )
+
                             )}
 
                         </div>
@@ -1180,70 +1515,109 @@ const AcademicsDashboard = () => {
                         QUICK ACTIONS
                     ================================================= */}
 
-                    <div className="
-                        bg-white
-                        border border-gray-200
-                        rounded-2xl
-                        shadow-sm
-                        p-5
-                    ">
+                    <div
+                        className="
+                            bg-gray-50
+                            border border-gray-200
+                            rounded-2xl
+                            shadow-sm
+                            p-5
+                        "
+                    >
 
                         <div className="mb-4">
 
-                            <h2 className="
-                                font-semibold
-                                text-gray-900
-                            ">
+                            <h2
+                                className="
+                                    font-semibold
+                                    text-gray-900
+                                "
+                            >
                                 Quick Actions
                             </h2>
 
-                            <p className="
-                                text-xs
-                                text-gray-500
-                                mt-0.5
-                            ">
-                                Common academic management tasks
+                            <p
+                                className="
+                                    text-xs
+                                    text-gray-500
+                                    mt-0.5
+                                "
+                            >
+                                Common academic management
+                                tasks
                             </p>
 
                         </div>
 
-                        <div className="
-                            space-y-3
-                        ">
+
+                        <div className="space-y-3">
+
+                            {/* YEARS */}
+
+                            <QuickAction
+                                title="Manage Academic Years"
+                                description="View and manage academic years"
+                                href="/academics/years"
+                                icon={
+                                    <Icons.Calendar
+                                        className="w-5 h-5"
+                                    />
+                                }
+                            />
+
+
+                            {/* ADD YEAR */}
 
                             <QuickAction
                                 title="Add Academic Year"
                                 description="Create a new academic year"
                                 href="/academics/years/new"
                                 icon={
-                                    <Icons.Plus className="w-5 h-5" />
+                                    <Icons.Plus
+                                        className="w-5 h-5"
+                                    />
                                 }
                             />
+
+
+                            {/* ADD TERM */}
 
                             <QuickAction
                                 title="Add Term"
                                 description="Configure a school term"
                                 href="/academics/terms/new"
                                 icon={
-                                    <Icons.Plus className="w-5 h-5" />
+                                    <Icons.Plus
+                                        className="w-5 h-5"
+                                    />
                                 }
                             />
+
+
+                            {/* CALENDAR */}
 
                             <QuickAction
                                 title="Add Calendar Event"
                                 description="Add a holiday or school event"
                                 href="/academics/calendar/new"
                                 icon={
-                                    <Icons.Plus className="w-5 h-5" />
+                                    <Icons.Plus
+                                        className="w-5 h-5"
+                                    />
                                 }
                             />
+
+
+                            {/* CLASSES */}
 
                             <QuickAction
                                 title="Manage Classes"
                                 description="Manage grades and class levels"
                                 href="/academics/classes"
                                 icon={
-                                    <Icons.Layers className="w-5 h-5" />
+                                    <Icons.Layers
+                                        className="w-5 h-5"
+                                    />
                                 }
                             />
 
@@ -1258,48 +1632,61 @@ const AcademicsDashboard = () => {
                     UPCOMING EVENTS
                 ================================================= */}
 
-                <div className="
-                    mt-6
-                    bg-white
-                    border border-gray-200
-                    rounded-2xl
-                    shadow-sm
-                ">
+                <div
+                    className="
+                        mt-6
+                        bg-gray-50
+                        border border-gray-200
+                        rounded-2xl
+                        shadow-sm
+                        overflow-hidden
+                    "
+                >
 
-                    <div className="
-                        px-5
-                        py-4
-                        border-b border-gray-200
-                        flex
-                        items-center
-                        justify-between
-                    ">
+                    <div
+                        className="
+                            px-5
+                            py-4
+                            bg-gray-200
+                            border-b border-gray-300
+                            flex
+                            items-center
+                            justify-between
+                        "
+                    >
 
                         <div>
-                            <h2 className="
-                                font-semibold
-                                text-gray-900
-                            ">
+
+                            <h2
+                                className="
+                                    font-semibold
+                                    text-gray-900
+                                "
+                            >
                                 Upcoming Academic Events
                             </h2>
 
-                            <p className="
-                                text-xs
-                                text-gray-500
-                                mt-0.5
-                            ">
+                            <p
+                                className="
+                                    text-xs
+                                    text-gray-500
+                                    mt-0.5
+                                "
+                            >
                                 Important dates on the school
                                 calendar
                             </p>
+
                         </div>
+
 
                         <Link
                             to="/academics/calendar"
                             className="
                                 text-sm
-                                font-medium
-                                text-gray-700
-                                hover:text-gray-900
+                                font-semibold
+                                text-purple-700
+                                hover:text-purple-900
                             "
                         >
                             View calendar
@@ -1308,41 +1695,53 @@ const AcademicsDashboard = () => {
                     </div>
 
 
-                    <div className="divide-y divide-gray-100">
+                    <div className="divide-y divide-gray-200">
 
                         {loading ? (
 
-                            [1, 2, 3].map((item) => (
-                                <div
-                                    key={item}
-                                    className="
-                                        p-5
-                                        animate-pulse
-                                    "
-                                >
-                                    <div className="
-                                        h-4
-                                        bg-gray-200
-                                        rounded
-                                        w-48
-                                    " />
+                            [1, 2, 3].map(
+                                (item) => (
 
-                                    <div className="
-                                        mt-2
-                                        h-3
-                                        bg-gray-200
-                                        rounded
-                                        w-32
-                                    " />
-                                </div>
-                            ))
+                                    <div
+                                        key={item}
+                                        className="
+                                            p-5
+                                            animate-pulse
+                                        "
+                                    >
+
+                                        <div
+                                            className="
+                                                h-4
+                                                bg-gray-200
+                                                rounded
+                                                w-48
+                                            "
+                                        />
+
+                                        <div
+                                            className="
+                                                mt-2
+                                                h-3
+                                                bg-gray-200
+                                                rounded
+                                                w-32
+                                            "
+                                        />
+
+                                    </div>
+
+                                )
+                            )
 
                         ) : upcomingEvents.length === 0 ? (
 
-                            <div className="
-                                p-8
-                                text-center
-                            ">
+                            <div
+                                className="
+                                    p-8
+                                    text-center
+                                "
+                            >
 
                                 <Icons.Calendar
                                     className="
@@ -1353,11 +1752,13 @@ const AcademicsDashboard = () => {
                                     "
                                 />
 
-                                <p className="
-                                    mt-2
-                                    text-sm
-                                    text-gray-500
-                                ">
+                                <p
+                                    className="
+                                        mt-2
+                                        text-sm
+                                        text-gray-500
+                                    "
+                                >
                                     No upcoming academic events.
                                 </p>
 
@@ -1365,105 +1766,131 @@ const AcademicsDashboard = () => {
 
                         ) : (
 
-                            upcomingEvents.map((event) => (
+                            upcomingEvents.map(
+                                (event) => (
 
-                                <Link
-                                    key={event.id}
-                                    to={`/academics/calendar/${event.id}`}
-                                    className="
-                                        flex
-                                        items-center
-                                        justify-between
-                                        gap-4
-                                        p-5
-                                        hover:bg-gray-50
-                                        transition
-                                    "
-                                >
-
-                                    <div className="
-                                        flex
-                                        items-center
-                                        gap-4
-                                        min-w-0
-                                    ">
-
-                                        <div className="
-                                            w-10
-                                            h-10
-                                            rounded-xl
-                                            bg-gray-100
+                                    <Link
+                                        key={event.id}
+                                        to={`/academics/calendar/${event.id}`}
+                                        className="
                                             flex
                                             items-center
-                                            justify-center
-                                            text-gray-700
-                                            flex-shrink-0
-                                        ">
-                                            <Icons.Calendar
-                                                className="w-5 h-5"
-                                            />
-                                        </div>
+                                            justify-between
+                                            gap-4
+                                            p-5
+                                            bg-gray-50
+                                            hover:bg-white
+                                            transition
+                                        "
+                                    >
 
-                                        <div className="min-w-0">
-
-                                            <p className="
-                                                text-sm
-                                                font-semibold
-                                                text-gray-900
-                                                truncate
-                                            ">
-                                                {event.title}
-                                            </p>
-
-                                            <div className="
+                                        <div
+                                            className="
                                                 flex
-                                                flex-wrap
                                                 items-center
-                                                gap-2
-                                                mt-1
-                                            ">
+                                                gap-4
+                                                min-w-0
+                                            "
+                                        >
 
-                                                <span className="
-                                                    text-xs
-                                                    text-gray-500
-                                                ">
-                                                    {formatDate(
-                                                        event.start_date
-                                                    )}
-                                                </span>
+                                            <div
+                                                className="
+                                                    w-10
+                                                    h-10
+                                                    rounded-xl
+                                                    bg-purple-100
+                                                    flex
+                                                    items-center
+                                                    justify-center
+                                                    text-purple-700
+                                                    flex-shrink-0
+                                                "
+                                            >
 
-                                                <span className="
-                                                    text-gray-300
-                                                ">
-                                                    •
-                                                </span>
+                                                <Icons.Calendar
+                                                    className="w-5 h-5"
+                                                />
 
-                                                <span className="
-                                                    text-xs
-                                                    text-gray-500
-                                                ">
-                                                    {event.event_type_display}
-                                                </span>
+                                            </div>
+
+
+                                            <div className="min-w-0">
+
+                                                <p
+                                                    className="
+                                                        text-sm
+                                                        font-semibold
+                                                        text-gray-900
+                                                        truncate
+                                                    "
+                                                >
+                                                    {event.title}
+                                                </p>
+
+
+                                                <div
+                                                    className="
+                                                        flex
+                                                        flex-wrap
+                                                        items-center
+                                                        gap-2
+                                                        mt-1
+                                                    "
+                                                >
+
+                                                    <span
+                                                        className="
+                                                            text-xs
+                                                            text-gray-500
+                                                        "
+                                                    >
+                                                        {formatDate(
+                                                            event.start_date
+                                                        )}
+                                                    </span>
+
+
+                                                    <span
+                                                        className="
+                                                            text-gray-300
+                                                        "
+                                                    >
+                                                        •
+                                                    </span>
+
+
+                                                    <span
+                                                        className="
+                                                            text-xs
+                                                            text-gray-500
+                                                        "
+                                                    >
+                                                        {
+                                                            event.event_type_display
+                                                        }
+                                                    </span>
+
+                                                </div>
 
                                             </div>
 
                                         </div>
 
-                                    </div>
 
+                                        <Icons.ArrowRight
+                                            className="
+                                                w-4
+                                                h-4
+                                                text-gray-400
+                                                flex-shrink-0
+                                            "
+                                        />
 
-                                    <Icons.ArrowRight
-                                        className="
-                                            w-4
-                                            h-4
-                                            text-gray-400
-                                            flex-shrink-0
-                                        "
-                                    />
+                                    </Link>
 
-                                </Link>
+                                )
+                            )
 
-                            ))
                         )}
 
                     </div>
@@ -1475,55 +1902,70 @@ const AcademicsDashboard = () => {
                     ACADEMIC STRUCTURE
                 ================================================= */}
 
-                <div className="
-                    mt-6
-                    grid
-                    grid-cols-1
-                    md:grid-cols-2
-                    gap-6
-                ">
+                <div
+                    className="
+                        mt-6
+                        grid
+                        grid-cols-1
+                        md:grid-cols-2
+                        gap-6
+                    "
+                >
 
-                    {/* Classes */}
+                    {/* =================================================
+                        CLASS LEVELS
+                    ================================================= */}
 
-                    <div className="
-                        bg-white
-                        border border-gray-200
-                        rounded-2xl
-                        shadow-sm
-                        p-5
-                    ">
+                    <div
+                        className="
+                            bg-gray-50
+                            border border-gray-200
+                            rounded-2xl
+                            shadow-sm
+                            p-5
+                        "
+                    >
 
-                        <div className="
-                            flex
-                            items-center
-                            justify-between
-                            mb-4
-                        ">
+                        <div
+                            className="
+                                flex
+                                items-center
+                                justify-between
+                                mb-4
+                            "
+                        >
 
                             <div>
-                                <h2 className="
-                                    font-semibold
-                                    text-gray-900
-                                ">
+
+                                <h2
+                                    className="
+                                        font-semibold
+                                        text-gray-900
+                                    "
+                                >
                                     Class Levels
                                 </h2>
 
-                                <p className="
-                                    text-xs
-                                    text-gray-500
-                                    mt-0.5
-                                ">
+                                <p
+                                    className="
+                                        text-xs
+                                        text-gray-500
+                                        mt-0.5
+                                    "
+                                >
                                     Active grades and classes
                                 </p>
+
                             </div>
+
 
                             <Link
                                 to="/academics/classes"
                                 className="
                                     text-sm
-                                    font-medium
-                                    text-gray-700
-                                    hover:text-gray-900
+                                    font-semibold
+                                    text-purple-700
+                                    hover:text-purple-900
                                 "
                             >
                                 Manage
@@ -1534,92 +1976,123 @@ const AcademicsDashboard = () => {
 
                         {classLevels.length === 0 ? (
 
-                            <p className="
-                                text-sm
-                                text-gray-500
-                                py-4
-                            ">
+                            <p
+                                className="
+                                    text-sm
+                                    text-gray-500
+                                    py-4
+                                "
+                            >
                                 No class levels configured.
                             </p>
 
                         ) : (
 
-                            <div className="
-                                grid
-                                grid-cols-2
-                                sm:grid-cols-3
-                                gap-2
-                            ">
+                            <div
+                                className="
+                                    grid
+                                    grid-cols-2
+                                    sm:grid-cols-3
+                                    gap-2
+                                "
+                            >
 
                                 {classLevels
                                     .slice(0, 9)
-                                    .map((classLevel) => (
+                                    .map(
+                                        (classLevel) => (
 
-                                        <Link
-                                            key={classLevel.id}
-                                            to={`/academics/classes/${classLevel.id}`}
-                                            className="
-                                                rounded-lg
-                                                border border-gray-200
-                                                p-3
-                                                hover:bg-gray-50
-                                                transition
-                                            "
-                                        >
+                                            <Link
+                                                key={
+                                                    classLevel.id
+                                                }
+                                                to={`/academics/classes/${classLevel.id}`}
+                                                className="
+                                                    rounded-lg
+                                                    border border-gray-200
+                                                    bg-gray-100
+                                                    p-3
+                                                    hover:bg-white
+                                                    hover:border-purple-200
+                                                    transition
+                                                "
+                                            >
 
-                                            <p className="
-                                                text-sm
-                                                font-semibold
-                                                text-gray-900
-                                                truncate
-                                            ">
-                                                {classLevel.name}
-                                            </p>
+                                                <p
+                                                    className="
+                                                        text-sm
+                                                        font-semibold
+                                                        text-gray-900
+                                                        truncate
+                                                    "
+                                                >
+                                                    {
+                                                        classLevel.name
+                                                    }
+                                                </p>
 
-                                            <p className="
-                                                text-xs
-                                                text-gray-500
-                                                mt-1
-                                            ">
-                                                {classLevel.streams_count ?? 0}
-                                                {" "}
-                                                streams
-                                            </p>
 
-                                        </Link>
+                                                <p
+                                                    className="
+                                                        text-xs
+                                                        text-gray-500
+                                                        mt-1
+                                                    "
+                                                >
+                                                    {
+                                                        classLevel.streams_count ??
+                                                        0
+                                                    }
 
-                                    ))}
+                                                    {" "}
+
+                                                    streams
+                                                </p>
+
+                                            </Link>
+
+                                        )
+                                    )}
 
                             </div>
+
                         )}
 
                     </div>
 
 
-                    {/* Academic Status */}
+                    {/* =================================================
+                        ACADEMIC STATUS
+                    ================================================= */}
 
-                    <div className="
-                        bg-white
-                        border border-gray-200
-                        rounded-2xl
-                        shadow-sm
-                        p-5
-                    ">
+                    <div
+                        className="
+                            bg-gray-50
+                            border border-gray-200
+                            rounded-2xl
+                            shadow-sm
+                            p-5
+                        "
+                    >
 
                         <div className="mb-4">
 
-                            <h2 className="
-                                font-semibold
-                                text-gray-900
-                            ">
+                            <h2
+                                className="
+                                    font-semibold
+                                    text-gray-900
+                                "
+                            >
                                 Academic Status
                             </h2>
 
-                            <p className="
-                                text-xs
-                                text-gray-500
-                                mt-0.5
-                            ">
+                            <p
+                                className="
+                                    text-xs
+                                    text-gray-500
+                                    mt-0.5
+                                "
+                            >
                                 Configuration overview
                             </p>
 
@@ -1628,84 +2101,112 @@ const AcademicsDashboard = () => {
 
                         <div className="space-y-3">
 
-                            <div className="
-                                flex
-                                items-center
-                                justify-between
-                                p-3
-                                rounded-lg
-                                bg-gray-50
-                            ">
+                            {/* ACADEMIC YEAR */}
 
-                                <div className="
+                            <div
+                                className="
                                     flex
                                     items-center
-                                    gap-3
-                                ">
+                                    justify-between
+                                    p-3
+                                    rounded-lg
+                                    bg-gray-100
+                                    border border-gray-200
+                                "
+                            >
+
+                                <div
+                                    className="
+                                        flex
+                                        items-center
+                                        gap-3
+                                    "
+                                >
+
                                     <Icons.CheckCircle
                                         className="
                                             w-5
                                             h-5
-                                            text-gray-700
+                                            text-purple-700
                                         "
                                     />
 
-                                    <span className="
-                                        text-sm
-                                        text-gray-700
-                                    ">
+                                    <span
+                                        className="
+                                            text-sm
+                                            text-gray-700
+                                        "
+                                    >
                                         Academic Year
                                     </span>
+
                                 </div>
 
-                                <span className="
-                                    text-xs
-                                    font-semibold
-                                    text-gray-700
-                                ">
+
+                                <span
+                                    className="
+                                        text-xs
+                                        font-semibold
+                                        text-gray-700
+                                    "
+                                >
                                     {academicYear
-                                        ? "Configured"
+                                        ? academicYear.name
                                         : "Not Set"}
                                 </span>
 
                             </div>
 
 
-                            <div className="
-                                flex
-                                items-center
-                                justify-between
-                                p-3
-                                rounded-lg
-                                bg-gray-50
-                            ">
+                            {/* CURRENT TERM */}
 
-                                <div className="
+                            <div
+                                className="
                                     flex
                                     items-center
-                                    gap-3
-                                ">
+                                    justify-between
+                                    p-3
+                                    rounded-lg
+                                    bg-gray-100
+                                    border border-gray-200
+                                "
+                            >
+
+                                <div
+                                    className="
+                                        flex
+                                        items-center
+                                        gap-3
+                                    "
+                                >
+
                                     <Icons.CheckCircle
                                         className="
                                             w-5
                                             h-5
-                                            text-gray-700
+                                            text-purple-700
                                         "
                                     />
 
-                                    <span className="
-                                        text-sm
-                                        text-gray-700
-                                    ">
+                                    <span
+                                        className="
+                                            text-sm
+                                            text-gray-700
+                                        "
+                                    >
                                         Current Term
                                     </span>
+
                                 </div>
 
-                                <span className="
-                                    text-xs
-                                    font-semibold
-                                    text-gray-700
-                                ">
+
+                                <span
+                                    className="
+                                        text-xs
+                                        font-semibold
+                                        text-gray-700
+                                    "
+                                >
                                     {currentTerm
                                         ? currentTerm.term_display
                                         : "Not Set"}
@@ -1714,88 +2215,224 @@ const AcademicsDashboard = () => {
                             </div>
 
 
-                            <div className="
-                                flex
-                                items-center
-                                justify-between
-                                p-3
-                                rounded-lg
-                                bg-gray-50
-                            ">
+                            {/* TERMS */}
 
-                                <div className="
+                            <div
+                                className="
                                     flex
                                     items-center
-                                    gap-3
-                                ">
+                                    justify-between
+                                    p-3
+                                    rounded-lg
+                                    bg-gray-100
+                                    border border-gray-200
+                                "
+                            >
+
+                                <div
+                                    className="
+                                        flex
+                                        items-center
+                                        gap-3
+                                    "
+                                >
+
                                     <Icons.CheckCircle
                                         className="
                                             w-5
                                             h-5
-                                            text-gray-700
+                                            text-purple-700
                                         "
                                     />
 
-                                    <span className="
-                                        text-sm
-                                        text-gray-700
-                                    ">
+                                    <span
+                                        className="
+                                            text-sm
+                                            text-gray-700
+                                        "
+                                    >
                                         Terms
                                     </span>
+
                                 </div>
 
-                                <span className="
-                                    text-xs
-                                    font-semibold
-                                    text-gray-700
-                                ">
-                                    {terms.length}/3
+
+                                <span
+                                    className="
+                                        text-xs
+                                        font-semibold
+                                        text-gray-700
+                                    "
+                                >
+                                    {terms.filter(
+                                        (term) =>
+                                            academicYear &&
+                                            String(
+                                                term.academic_year
+                                            ) ===
+                                            String(
+                                                academicYear.id
+                                            )
+                                    ).length}
+                                    /3
                                 </span>
 
                             </div>
 
 
-                            <div className="
-                                flex
-                                items-center
-                                justify-between
-                                p-3
-                                rounded-lg
-                                bg-gray-50
-                            ">
+                            {/* CLASS LEVELS */}
 
-                                <div className="
+                            <div
+                                className="
                                     flex
                                     items-center
-                                    gap-3
-                                ">
+                                    justify-between
+                                    p-3
+                                    rounded-lg
+                                    bg-gray-100
+                                    border border-gray-200
+                                "
+                            >
+
+                                <div
+                                    className="
+                                        flex
+                                        items-center
+                                        gap-3
+                                    "
+                                >
+
                                     <Icons.CheckCircle
                                         className="
                                             w-5
                                             h-5
-                                            text-gray-700
+                                            text-purple-700
                                         "
                                     />
 
-                                    <span className="
-                                        text-sm
-                                        text-gray-700
-                                    ">
+                                    <span
+                                        className="
+                                            text-sm
+                                            text-gray-700
+                                        "
+                                    >
                                         Class Levels
                                     </span>
+
                                 </div>
 
-                                <span className="
-                                    text-xs
-                                    font-semibold
-                                    text-gray-700
-                                ">
+
+                                <span
+                                    className="
+                                        text-xs
+                                        font-semibold
+                                        text-gray-700
+                                    "
+                                >
                                     {classLevels.length}
                                 </span>
 
                             </div>
 
                         </div>
+
+                    </div>
+
+                </div>
+
+
+                {/* =================================================
+                    ACADEMIC YEARS SHORTCUT
+                ================================================= */}
+
+                <div
+                    className="
+                        mt-6
+                        rounded-2xl
+                        bg-purple-800
+                        border border-purple-900
+                        p-5
+                        text-white
+                    "
+                >
+
+                    <div
+                        className="
+                            flex
+                            flex-col
+                            sm:flex-row
+                            sm:items-center
+                            sm:justify-between
+                            gap-4
+                        "
+                    >
+
+                        <div>
+
+                            <div
+                                className="
+                                    flex
+                                    items-center
+                                    gap-2
+                                "
+                            >
+
+                                <Icons.Calendar
+                                    className="w-5 h-5"
+                                />
+
+                                <h2
+                                    className="
+                                        font-semibold
+                                    "
+                                >
+                                    Academic Year Management
+                                </h2>
+
+                            </div>
+
+
+                            <p
+                                className="
+                                    text-sm
+                                    text-purple-200
+                                    mt-1
+                                "
+                            >
+                                Set the current academic year,
+                                configure dates and manage
+                                previous and upcoming years.
+                            </p>
+
+                        </div>
+
+
+                        <Link
+                            to="/academics/years"
+                            className="
+                                inline-flex
+                                items-center
+                                justify-center
+                                gap-2
+                                px-5
+                                py-2.5
+                                rounded-xl
+                                bg-white
+                                text-purple-800
+                                font-semibold
+                                text-sm
+                                hover:bg-purple-50
+                                transition
+                            "
+                        >
+
+                            Manage Academic Years
+
+                            <Icons.ArrowRight
+                                className="w-4 h-4"
+                            />
+
+                        </Link>
 
                     </div>
 
@@ -1809,3 +2446,4 @@ const AcademicsDashboard = () => {
 
 
 export default AcademicsDashboard;
+

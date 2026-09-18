@@ -9,7 +9,6 @@ import {
     Users,
     GraduationCap,
     UserPlus,
-    MapPin,
     Mail,
     Phone,
     User,
@@ -40,26 +39,83 @@ const FamilyDetailsPage = () => {
             setLoading(true);
             setError("");
 
-            const [familyResponse, studentsResponse, parentsResponse] =
-                await Promise.all([
-                    axiosInstance.get(`/students/families/${id}/`),
-                    axiosInstance.get(`/students/students/?family=${id}`),
-                    axiosInstance.get(`/students/parents/?family=${id}`),
-                ]);
+            const [
+                familyResponse,
+                studentsResponse,
+                parentsResponse,
+            ] = await Promise.all([
+                axiosInstance.get(`/students/families/${id}/`),
+
+                axiosInstance.get(
+                    `/students/students/?family=${id}`
+                ),
+
+                axiosInstance.get(
+                    `/students/parents/?family=${id}`
+                ),
+            ]);
+
+
+            // ----------------------------------------------------
+            // FAMILY
+            // ----------------------------------------------------
 
             setFamily(familyResponse.data);
 
-            setStudents(
-                Array.isArray(studentsResponse.data)
-                    ? studentsResponse.data
-                    : studentsResponse.data.results || []
-            );
 
-            setParents(
-                Array.isArray(parentsResponse.data)
-                    ? parentsResponse.data
-                    : parentsResponse.data.results || []
-            );
+            // ----------------------------------------------------
+            // STUDENTS
+            // ----------------------------------------------------
+
+            const studentsData = Array.isArray(studentsResponse.data)
+                ? studentsResponse.data
+                : studentsResponse.data.results || [];
+
+            setStudents(studentsData);
+
+
+            // ----------------------------------------------------
+            // PARENTS / GUARDIANS
+            // ----------------------------------------------------
+            //
+            // The backend should already filter using:
+            //
+            //     ?family=<id>
+            //
+            // We also filter here so this page NEVER displays
+            // parents belonging to another family.
+            //
+            // Supports both:
+            //
+            //     parent.family
+            //
+            // and the newer:
+            //
+            //     parent.family_details.id
+            //
+            // ----------------------------------------------------
+
+            const parentsData = Array.isArray(parentsResponse.data)
+                ? parentsResponse.data
+                : parentsResponse.data.results || [];
+
+
+            const familyParents = parentsData.filter((parent) => {
+
+                const parentFamilyId =
+                    parent.family_details?.id ??
+                    parent.family;
+
+
+                return (
+                    parentFamilyId !== null &&
+                    parentFamilyId !== undefined &&
+                    String(parentFamilyId) === String(id)
+                );
+            });
+
+
+            setParents(familyParents);
 
         } catch (err) {
             console.error("Failed to load family:", err);
@@ -75,7 +131,9 @@ const FamilyDetailsPage = () => {
 
 
     useEffect(() => {
-        fetchFamily();
+        if (id) {
+            fetchFamily();
+        }
     }, [id]);
 
 
@@ -155,6 +213,7 @@ const FamilyDetailsPage = () => {
                     Back to Families
                 </button>
 
+
                 <div className="bg-red-100 border border-red-300 rounded-2xl p-6 text-red-800 flex items-start gap-3">
 
                     <AlertCircle
@@ -163,6 +222,7 @@ const FamilyDetailsPage = () => {
                     />
 
                     <div>
+
                         <p className="font-bold">
                             Unable to load family
                         </p>
@@ -170,6 +230,7 @@ const FamilyDetailsPage = () => {
                         <p className="text-sm mt-1">
                             {error || "Family record could not be found."}
                         </p>
+
                     </div>
 
                 </div>
@@ -220,6 +281,7 @@ const FamilyDetailsPage = () => {
 
                             </div>
 
+
                             <div>
 
                                 <div className="flex flex-wrap items-center gap-3">
@@ -227,6 +289,7 @@ const FamilyDetailsPage = () => {
                                     <h1 className="text-2xl md:text-3xl font-bold text-white">
                                         {family.family_name}
                                     </h1>
+
 
                                     {family.is_active ? (
 
@@ -244,9 +307,11 @@ const FamilyDetailsPage = () => {
 
                                 </div>
 
+
                                 <p className="text-purple-200 mt-1">
                                     {family.family_id}
                                 </p>
+
 
                                 <p className="text-purple-300 text-sm mt-2">
                                     Family and household record
@@ -293,11 +358,14 @@ const FamilyDetailsPage = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
 
+                {/* STUDENTS */}
+
                 <div className="bg-gray-50 border border-gray-200 rounded-2xl shadow-sm p-5">
 
                     <div className="flex items-center justify-between">
 
                         <div>
+
                             <p className="text-sm text-gray-500">
                                 Students
                             </p>
@@ -305,13 +373,17 @@ const FamilyDetailsPage = () => {
                             <p className="text-3xl font-bold text-gray-800 mt-1">
                                 {students.length}
                             </p>
+
                         </div>
 
+
                         <div className="bg-purple-100 p-3 rounded-xl">
+
                             <GraduationCap
                                 size={24}
                                 className="text-purple-700"
                             />
+
                         </div>
 
                     </div>
@@ -319,11 +391,14 @@ const FamilyDetailsPage = () => {
                 </div>
 
 
+                {/* PARENTS */}
+
                 <div className="bg-gray-50 border border-gray-200 rounded-2xl shadow-sm p-5">
 
                     <div className="flex items-center justify-between">
 
                         <div>
+
                             <p className="text-sm text-gray-500">
                                 Parents / Guardians
                             </p>
@@ -331,13 +406,17 @@ const FamilyDetailsPage = () => {
                             <p className="text-3xl font-bold text-gray-800 mt-1">
                                 {parents.length}
                             </p>
+
                         </div>
 
+
                         <div className="bg-blue-100 p-3 rounded-xl">
+
                             <Users
                                 size={24}
                                 className="text-blue-700"
                             />
+
                         </div>
 
                     </div>
@@ -345,11 +424,14 @@ const FamilyDetailsPage = () => {
                 </div>
 
 
+                {/* STATUS */}
+
                 <div className="bg-gray-50 border border-gray-200 rounded-2xl shadow-sm p-5">
 
                     <div className="flex items-center justify-between">
 
                         <div>
+
                             <p className="text-sm text-gray-500">
                                 Family Status
                             </p>
@@ -359,13 +441,17 @@ const FamilyDetailsPage = () => {
                                     ? "Active"
                                     : "Inactive"}
                             </p>
+
                         </div>
 
+
                         <div className="bg-gray-200 p-3 rounded-xl">
+
                             <Home
                                 size={24}
                                 className="text-gray-600"
                             />
+
                         </div>
 
                     </div>
@@ -391,6 +477,7 @@ const FamilyDetailsPage = () => {
                         />
 
                         <div>
+
                             <h2 className="text-lg font-bold text-gray-800">
                                 Family Information
                             </h2>
@@ -398,6 +485,7 @@ const FamilyDetailsPage = () => {
                             <p className="text-sm text-gray-500">
                                 Household and residential information
                             </p>
+
                         </div>
 
                     </div>
@@ -438,6 +526,7 @@ const FamilyDetailsPage = () => {
                             label="Postal Address"
                             value={family.postal_address}
                         />
+
 
                         <div className="md:col-span-2 lg:col-span-3">
 
@@ -541,6 +630,7 @@ const FamilyDetailsPage = () => {
 
                                         </div>
 
+
                                         <div className="min-w-0">
 
                                             <p className="font-semibold text-gray-800 truncate">
@@ -548,10 +638,12 @@ const FamilyDetailsPage = () => {
                                                     `${student.first_name || ""} ${student.last_name || ""}`}
                                             </p>
 
+
                                             <p className="text-sm text-purple-700 mt-1">
                                                 {student.admission_number ||
                                                     student.student_id}
                                             </p>
+
 
                                             <span
                                                 className={`inline-flex mt-2 px-2.5 py-1 rounded-full text-xs font-semibold ${
@@ -726,10 +818,13 @@ const FamilyDetailsPage = () => {
 
                                                 {parent.occupation && (
                                                     <div className="text-sm text-gray-500">
+
                                                         {parent.occupation}
+
                                                         {parent.employer
                                                             ? ` • ${parent.employer}`
                                                             : ""}
+
                                                     </div>
                                                 )}
 

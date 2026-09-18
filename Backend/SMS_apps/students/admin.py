@@ -8,6 +8,7 @@ from .models import (
     StudentEnrollment,
     EmergencyContact,
     StudentDocument,
+    StudentProgression,
 )
 
 
@@ -124,7 +125,7 @@ class ParentGuardianAdmin(admin.ModelAdmin):
         "last_name",
         "national_id_number",
         "mobile_number",
-        "alternative_mobile",
+        "alternative_mobile_number",
         "email",
         "occupation",
         "employer",
@@ -166,7 +167,7 @@ class ParentGuardianAdmin(admin.ModelAdmin):
                 "fields": (
                     "family",
                     "mobile_number",
-                    "alternative_mobile",
+                    "alternative_mobile_number",
                     "email",
                     "address",
                 )
@@ -223,7 +224,10 @@ class StudentAdmin(admin.ModelAdmin):
         "gender",
         "nationality",
         "home_county",
-        "home_sub_county",
+        "home_subcounty",
+        "birth_certificate_submitted",
+        "has_allergies_or_illness",
+        "has_special_abilities",
     )
 
     search_fields = (
@@ -237,7 +241,7 @@ class StudentAdmin(admin.ModelAdmin):
         "nemis_kemis_number",
         "child_assessment_number",
         "home_county",
-        "home_sub_county",
+        "home_subcounty",
         "family__family_name",
     )
 
@@ -281,6 +285,7 @@ class StudentAdmin(admin.ModelAdmin):
                     "place_of_birth",
                     "gender",
                     "nationality",
+                    "religion",
                 )
             },
         ),
@@ -290,6 +295,7 @@ class StudentAdmin(admin.ModelAdmin):
                 "fields": (
                     "birth_certificate_entry_number",
                     "birth_certificate_number",
+                    "birth_certificate_submitted",
                 )
             },
         ),
@@ -308,7 +314,25 @@ class StudentAdmin(admin.ModelAdmin):
                 "fields": (
                     "family",
                     "home_county",
-                    "home_sub_county",
+                    "home_subcounty",
+                )
+            },
+        ),
+        (
+            "Medical / Health Information",
+            {
+                "fields": (
+                    "has_allergies_or_illness",
+                    "allergies_or_illness_details",
+                )
+            },
+        ),
+        (
+            "Special Abilities",
+            {
+                "fields": (
+                    "has_special_abilities",
+                    "special_abilities_details",
                 )
             },
         ),
@@ -336,7 +360,7 @@ class StudentParentAdmin(admin.ModelAdmin):
         "relationship",
         "is_primary",
         "has_parental_responsibility",
-        "receives_communications",
+        "receives_communication",
         "receives_fee_notifications",
         "is_emergency_contact",
     )
@@ -345,7 +369,7 @@ class StudentParentAdmin(admin.ModelAdmin):
         "relationship",
         "is_primary",
         "has_parental_responsibility",
-        "receives_communications",
+        "receives_communication",
         "receives_fee_notifications",
         "is_emergency_contact",
     )
@@ -484,7 +508,7 @@ class StudentEnrollmentAdmin(admin.ModelAdmin):
 class EmergencyContactAdmin(admin.ModelAdmin):
     list_display = (
         "student",
-        "full_name",
+        "name",
         "relationship",
         "mobile_number",
         "priority",
@@ -502,10 +526,10 @@ class EmergencyContactAdmin(admin.ModelAdmin):
         "student__admission_number",
         "student__first_name",
         "student__last_name",
-        "full_name",
+        "name",
         "relationship",
         "mobile_number",
-        "alternative_mobile",
+        "alternative_mobile_number",
         "email",
     )
 
@@ -606,4 +630,103 @@ class StudentDocumentAdmin(admin.ModelAdmin):
     )
 
 
+# ============================================================
+# STUDENT PROGRESSION ADMIN
+# ============================================================
+
+@admin.register(StudentProgression)
+class StudentProgressionAdmin(admin.ModelAdmin):
+    list_display = (
+        "student",
+        "from_enrollment",
+        "decision",
+        "to_academic_year",
+        "to_class_level",
+        "to_stream",
+        "to_enrollment",
+        "decision_date",
+    )
+
+    list_filter = (
+        "decision",
+        "to_academic_year",
+        "to_class_level",
+        "to_stream",
+        "decision_date",
+    )
+
+    search_fields = (
+        "student__student_id",
+        "student__admission_number",
+        "student__first_name",
+        "student__middle_name",
+        "student__last_name",
+        "remarks",
+    )
+
+    autocomplete_fields = (
+        "student",
+    )
+
+    readonly_fields = (
+        "decision_date",
+        "created_at",
+        "updated_at",
+    )
+
+    date_hierarchy = "decision_date"
+
+    ordering = (
+        "-decision_date",
+        "-id",
+    )
+
+    fieldsets = (
+        (
+            "Student",
+            {
+                "fields": (
+                    "student",
+                )
+            },
+        ),
+        (
+            "Previous Enrollment",
+            {
+                "fields": (
+                    "from_enrollment",
+                )
+            },
+        ),
+        (
+            "Progression Decision",
+            {
+                "fields": (
+                    "decision",
+                    "decision_date",
+                    "remarks",
+                )
+            },
+        ),
+        (
+            "New Academic Placement",
+            {
+                "fields": (
+                    "to_academic_year",
+                    "to_class_level",
+                    "to_stream",
+                    "to_enrollment",
+                )
+            },
+        ),
+        (
+            "System Information",
+            {
+                "fields": (
+                    "created_at",
+                    "updated_at",
+                )
+            },
+        ),
+    )
 

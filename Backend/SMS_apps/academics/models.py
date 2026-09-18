@@ -426,8 +426,19 @@ class AcademicCalendarEvent(models.Model):
             terms = self.academic_year.terms.all()
 
             if terms.count() == 3:
-                year_start = terms.order_by("start_date").first().start_date
-                year_end = terms.order_by("-end_date").first().end_date
+                year_start = (
+                    terms
+                    .order_by("start_date")
+                    .first()
+                    .start_date
+                )
+
+                year_end = (
+                    terms
+                    .order_by("-end_date")
+                    .first()
+                    .end_date
+                )
 
                 if self.start_date < year_start:
                     raise ValidationError({
@@ -448,10 +459,6 @@ class AcademicCalendarEvent(models.Model):
         # ----------------------------------------------------
         # Prevent overlapping calendar events of the same
         # type within the same academic year.
-        #
-        # This prevents accidental duplicate breaks/holidays
-        # while still allowing different event types to overlap
-        # when necessary.
         # ----------------------------------------------------
 
         if (
@@ -501,6 +508,24 @@ class ClassLevel(models.Model):
 
     Grades are managed dynamically by the school rather than
     being hard-coded into the application.
+
+    The next_class_level field defines the normal progression
+    path for students.
+
+    Examples:
+
+        Grade 1 -> Grade 2
+        Grade 2 -> Grade 3
+        ...
+        Grade 8 -> Grade 9
+        Grade 9 -> None
+
+    Or for another school structure:
+
+        Form 1 -> Form 2
+        Form 2 -> Form 3
+        Form 3 -> Form 4
+        Form 4 -> None
     """
 
     name = models.CharField(
@@ -519,6 +544,31 @@ class ClassLevel(models.Model):
 
     display_order = models.PositiveIntegerField(
         default=0,
+    )
+
+    # --------------------------------------------------------
+    # PROGRESSION CONFIGURATION
+    # --------------------------------------------------------
+    #
+    # A class can point to the class that normally follows it.
+    #
+    # NULL means there is no configured next class.
+    #
+    # SET_NULL is important because deleting a target class
+    # must not delete the current class.
+    # --------------------------------------------------------
+
+    next_class_level = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="previous_class_levels",
+        help_text=(
+            "The class level students normally progress to "
+            "after completing this class. Leave blank for "
+            "the final class."
+        ),
     )
 
     is_active = models.BooleanField(
@@ -546,10 +596,36 @@ class ClassLevel(models.Model):
             models.Index(
                 fields=["is_active"],
             ),
+            models.Index(
+                fields=["next_class_level"],
+            ),
         ]
 
     def __str__(self):
         return self.name
+
+    def clean(self):
+        """
+        Validate progression configuration.
+        """
+
+        # ----------------------------------------------------
+        # Prevent a class from pointing to itself
+        # ----------------------------------------------------
+
+        if (
+            self.pk
+            and self.next_class_level_id == self.pk
+        ):
+            raise ValidationError({
+                "next_class_level": (
+                    "A class level cannot be its own next class."
+                )
+            })
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 
 # ============================================================

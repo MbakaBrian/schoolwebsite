@@ -1,30 +1,85 @@
 from django.urls import path
 
 from .views import (
+    # ------------------------------------------------------
+    # Reference / Configuration
+    # ------------------------------------------------------
+    AdmissionNumberConfigView,
+    StudentReferenceDataView,
+
+    # ------------------------------------------------------
+    # Families
+    # ------------------------------------------------------
     FamilyListCreateView,
     FamilyDetailView,
 
+    # ------------------------------------------------------
+    # Parents / Guardians
+    # ------------------------------------------------------
     ParentGuardianListCreateView,
     ParentGuardianDetailView,
 
+    # ------------------------------------------------------
+    # Students
+    # ------------------------------------------------------
     StudentListCreateView,
     StudentDetailView,
 
+    # ------------------------------------------------------
+    # Student ↔ Parent / Guardian
+    # ------------------------------------------------------
     StudentParentListCreateView,
     StudentParentDetailView,
 
+    # ------------------------------------------------------
+    # Student Enrollments
+    # ------------------------------------------------------
     StudentEnrollmentListCreateView,
     StudentEnrollmentDetailView,
 
+    # ------------------------------------------------------
+    # Student Progression
+    # ------------------------------------------------------
+    StudentProgressionListCreateView,
+    StudentProgressionDetailView,
+
+    # ------------------------------------------------------
+    # Emergency Contacts
+    # ------------------------------------------------------
     EmergencyContactListCreateView,
     EmergencyContactDetailView,
 
+    # ------------------------------------------------------
+    # Student Documents
+    # ------------------------------------------------------
     StudentDocumentListCreateView,
     StudentDocumentDetailView,
+
+    # ------------------------------------------------------
+    # Batch Student Progression
+    # ------------------------------------------------------
+    BatchStudentProgressionView,
 )
 
 
 urlpatterns = [
+
+    # ======================================================
+    # REFERENCE / CONFIGURATION
+    # ======================================================
+
+    path(
+        "admission-number-config/",
+        AdmissionNumberConfigView.as_view(),
+        name="admission-number-config",
+    ),
+
+    path(
+        "reference-data/",
+        StudentReferenceDataView.as_view(),
+        name="student-reference-data",
+    ),
+
 
     # ======================================================
     # FAMILIES
@@ -108,6 +163,29 @@ urlpatterns = [
         "enrollments/<int:pk>/",
         StudentEnrollmentDetailView.as_view(),
         name="enrollment-detail",
+    ),
+
+
+    # ======================================================
+    # STUDENT PROGRESSION
+    # ======================================================
+
+    path(
+        "progressions/",
+        StudentProgressionListCreateView.as_view(),
+        name="student-progression-list-create",
+    ),
+
+    path(
+        "progressions/<int:pk>/",
+        StudentProgressionDetailView.as_view(),
+        name="student-progression-detail",
+    ),
+
+    path(
+        "progressions/batch/",
+        BatchStudentProgressionView.as_view(),
+        name="batch-student-progression",
     ),
 
 

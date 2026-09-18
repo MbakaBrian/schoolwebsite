@@ -1,1061 +1,1589 @@
-import React, { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import axiosInstance from "../../../../../utils/axiosInstance";
+// ==================================================
+// STUDENT DETAILS PAGE
+// ==================================================
+// Path:
+// src/pages/SMS/HeadteacherPages/StudentManagement/Students/StudentDetailsPage.jsx
+//
+// Purpose:
+// - Display complete student overview
+// - Provide easy navigation to related student modules
+// - Display family information
+// - Display current/latest enrollment
+// - Provide quick access to edit, parents, documents,
+//   emergency contacts and progression
+// ==================================================
 
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
-    ArrowLeft,
-    Pencil,
-    User,
-    Users,
-    CalendarDays,
-    MapPin,
-    HeartPulse,
-    GraduationCap,
-    FileText,
-    ShieldCheck,
-    AlertCircle,
-    RefreshCw,
-    Loader2,
-    CheckCircle2,
-    XCircle,
+  ArrowLeft,
+  Edit,
+  User,
+  Users,
+  GraduationCap,
+  CalendarDays,
+  MapPin,
+  Phone,
+  Mail,
+  HeartPulse,
+  Award,
+  FileText,
+  GitBranch,
+  UserRound,
+  School,
+  ShieldAlert,
+  BookOpen,
+  Home,
+  ChevronRight,
+  AlertCircle,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 
+import axiosInstance from "../../../../../utils/axiosInstance";
 
-// ============================================================
-// HELPERS
-// ============================================================
 
-const getStudentName = (student) => {
-    if (student.full_name) {
-        return student.full_name;
-    }
+// ==================================================
+// HELPER FUNCTIONS
+// ==================================================
 
-    return [
-        student.first_name,
-        student.middle_name,
-        student.last_name,
-    ]
-        .filter(Boolean)
-        .join(" ") || "Unnamed Student";
+const extractList = (data) => {
+  if (Array.isArray(data)) return data;
+
+  if (Array.isArray(data?.results)) {
+    return data.results;
+  }
+
+  return [];
+};
+
+
+const getRelationName = (value, fallback = "Not provided") => {
+  if (!value) return fallback;
+
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (typeof value === "number") {
+    return fallback;
+  }
+
+  return (
+    value.name ||
+    value.full_name ||
+    value.title ||
+    value.label ||
+    value.display_name ||
+    fallback
+  );
 };
 
 
 const formatDate = (date) => {
-    if (!date) {
-        return "Not provided";
-    }
+  if (!date) return "Not provided";
 
-    return new Date(date).toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
+  try {
+    return new Date(date).toLocaleDateString("en-KE", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
+  } catch {
+    return date;
+  }
 };
 
 
-const getStatusLabel = (status) => {
-    const labels = {
-        active: "Active",
-        inactive: "Inactive",
-        graduated: "Graduated",
-        transferred: "Transferred",
-        withdrawn: "Withdrawn",
-    };
+const formatShortDate = (date) => {
+  if (!date) return "Not provided";
 
-    return labels[status] || status || "Unknown";
+  try {
+    return new Date(date).toLocaleDateString("en-KE", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  } catch {
+    return date;
+  }
 };
 
 
-const getStatusClasses = (status) => {
-    switch (status) {
-        case "active":
-            return "bg-purple-100 text-purple-700 border-purple-200";
+const calculateAge = (dob) => {
+  if (!dob) return "N/A";
 
-        case "graduated":
-            return "bg-gray-200 text-gray-700 border-gray-300";
+  const birthDate = new Date(dob);
+  const today = new Date();
 
-        case "transferred":
-            return "bg-blue-100 text-blue-700 border-blue-200";
+  let age = today.getFullYear() - birthDate.getFullYear();
 
-        case "withdrawn":
-            return "bg-red-100 text-red-700 border-red-200";
+  const monthDifference =
+    today.getMonth() - birthDate.getMonth();
 
-        case "inactive":
-            return "bg-gray-100 text-gray-600 border-gray-200";
+  if (
+    monthDifference < 0 ||
+    (monthDifference === 0 &&
+      today.getDate() < birthDate.getDate())
+  ) {
+    age--;
+  }
 
-        default:
-            return "bg-gray-100 text-gray-600 border-gray-200";
-    }
+  return age >= 0 ? age : "N/A";
 };
 
 
-const formatGender = (gender) => {
-    const labels = {
-        male: "Male",
-        female: "Female",
-        other: "Other",
-        not_specified: "Not specified",
-    };
+const formatStatus = (status) => {
+  if (!status) return "Unknown";
 
-    return labels[gender] || gender || "Not provided";
+  return status
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 };
 
 
-// ============================================================
-// SMALL UI COMPONENTS
-// ============================================================
+// ==================================================
+// STATUS BADGE
+// ==================================================
 
-const InfoItem = ({ label, value }) => (
-    <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-            {label}
-        </p>
+const StatusBadge = ({ status }) => {
+  const normalized = String(status || "").toLowerCase();
 
-        <p className="text-sm font-medium text-gray-700 mt-1 break-words">
-            {value || "Not provided"}
-        </p>
-    </div>
-);
+  let classes =
+    "bg-gray-200 text-gray-700 border-gray-300";
 
+  let Icon = AlertCircle;
 
-const SectionHeader = ({
-    icon: Icon,
-    title,
-    description,
-    purple = false,
-}) => (
-    <div
-        className={`px-5 sm:px-6 py-5 ${
-            purple
-                ? "bg-purple-800 text-white"
-                : "bg-gray-800 text-white"
-        }`}
+  if (["active", "completed"].includes(normalized)) {
+    classes =
+      "bg-green-100 text-green-700 border-green-200";
+    Icon = CheckCircle;
+  }
+
+  if (
+    ["inactive", "withdrawn", "transferred"].includes(
+      normalized
+    )
+  ) {
+    classes =
+      "bg-red-100 text-red-700 border-red-200";
+    Icon = XCircle;
+  }
+
+  if (normalized === "graduated") {
+    classes =
+      "bg-purple-100 text-purple-700 border-purple-200";
+    Icon = GraduationCap;
+  }
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold ${classes}`}
     >
-        <div className="flex items-center gap-3">
+      <Icon size={14} />
+      {formatStatus(status)}
+    </span>
+  );
+};
 
-            <div
-                className={`h-10 w-10 rounded-lg flex items-center justify-center ${
-                    purple
-                        ? "bg-purple-700"
-                        : "bg-gray-700"
-                }`}
-            >
-                <Icon size={20} />
-            </div>
 
-            <div>
-                <h2 className="font-semibold text-lg">
-                    {title}
-                </h2>
+// ==================================================
+// INFORMATION ITEM
+// ==================================================
 
-                {description && (
-                    <p
-                        className={`text-sm ${
-                            purple
-                                ? "text-purple-200"
-                                : "text-gray-300"
-                        }`}
-                    >
-                        {description}
-                    </p>
-                )}
-            </div>
-
-        </div>
+const InfoItem = ({
+  icon: Icon,
+  label,
+  value,
+}) => (
+  <div className="flex items-start gap-3 p-3 rounded-xl bg-gray-100 border border-gray-200">
+    <div className="flex-shrink-0 p-2 rounded-lg bg-purple-100 text-purple-700">
+      <Icon size={17} />
     </div>
+
+    <div className="min-w-0">
+      <p className="text-xs font-medium text-gray-500">
+        {label}
+      </p>
+
+      <p className="mt-1 text-sm font-semibold text-gray-800 break-words">
+        {value || "Not provided"}
+      </p>
+    </div>
+  </div>
 );
 
 
-// ============================================================
-// COMPONENT
-// ============================================================
+// ==================================================
+// SECTION CARD
+// ==================================================
+
+const SectionCard = ({
+  title,
+  icon: Icon,
+  children,
+  action,
+}) => (
+  <section className="bg-gray-50 border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+    <div className="flex items-center justify-between gap-4 px-5 py-4 bg-gray-200 border-b border-gray-300">
+      <div className="flex items-center gap-3">
+        <div className="p-2 rounded-lg bg-purple-800 text-white">
+          <Icon size={18} />
+        </div>
+
+        <h2 className="text-base md:text-lg font-bold text-gray-800">
+          {title}
+        </h2>
+      </div>
+
+      {action}
+    </div>
+
+    <div className="p-5">
+      {children}
+    </div>
+  </section>
+);
+
+
+// ==================================================
+// MAIN COMPONENT
+// ==================================================
 
 const StudentDetailsPage = () => {
-    const { id } = useParams();
-    const navigate = useNavigate();
+  const { id } = useParams();
+  const navigate = useNavigate();
 
-    const [student, setStudent] = useState(null);
+  const [student, setStudent] = useState(null);
+  const [family, setFamily] = useState(null);
+  const [enrollment, setEnrollment] = useState(null);
 
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [deactivating, setDeactivating] = useState(false);
 
-    const [error, setError] = useState("");
-    const [deactivating, setDeactivating] = useState(false);
+  const [error, setError] = useState("");
 
+  // --------------------------------------------------
+  // FETCH STUDENT
+  // --------------------------------------------------
 
-    // ========================================================
-    // FETCH STUDENT
-    // ========================================================
+  useEffect(() => {
+    const fetchStudentDetails = async () => {
+      try {
+        setLoading(true);
+        setError("");
 
-    const fetchStudent = async (showRefresh = false) => {
-        try {
-            if (showRefresh) {
-                setRefreshing(true);
-            } else {
-                setLoading(true);
-            }
+        const studentResponse =
+          await axiosInstance.get(
+            `/students/students/${id}/`
+          );
 
-            setError("");
+        const studentData = studentResponse.data;
 
-            const response = await axiosInstance.get(
-                `/students/students/${id}/`
-            );
+        setStudent(studentData);
 
-            setStudent(response.data);
+        // --------------------------------------------
+        // FAMILY
+        // --------------------------------------------
 
-        } catch (err) {
+        if (studentData.family_details) {
+          setFamily(studentData.family_details);
+        } else if (studentData.family) {
+          try {
+            const familyResponse =
+              await axiosInstance.get(
+                `/students/families/${studentData.family}/`
+              );
+
+            setFamily(familyResponse.data);
+          } catch (familyError) {
             console.error(
-                "Failed to fetch student:",
-                err
+              "Failed to load family:",
+              familyError
             );
 
-            setError(
-                err?.response?.data?.detail ||
-                "Unable to load student information."
-            );
-
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    };
-
-
-    useEffect(() => {
-        fetchStudent();
-    }, [id]);
-
-
-    // ========================================================
-    // DEACTIVATE STUDENT
-    // ========================================================
-
-    const handleDeactivate = async () => {
-        if (!student) {
-            return;
+            setFamily(null);
+          }
         }
 
-        const confirmed = window.confirm(
-            `Are you sure you want to deactivate ${getStudentName(
-                student
-            )}?`
-        );
-
-        if (!confirmed) {
-            return;
-        }
+        // --------------------------------------------
+        // ENROLLMENTS
+        // --------------------------------------------
 
         try {
-            setDeactivating(true);
-            setError("");
-
-            await axiosInstance.delete(
-                `/students/students/${id}/`
+          const enrollmentResponse =
+            await axiosInstance.get(
+              `/students/enrollments/?student=${id}`
             );
 
-            setStudent((previous) => ({
-                ...previous,
-                status: "inactive",
-            }));
+          const enrollments = extractList(
+            enrollmentResponse.data
+          );
 
-        } catch (err) {
-            console.error(
-                "Failed to deactivate student:",
-                err
-            );
+          /*
+           * Prefer the active enrollment.
+           * If the student is graduated/transferred/etc.,
+           * show the most recent historical enrollment.
+           */
 
-            setError(
-                err?.response?.data?.detail ||
-                "Unable to deactivate the student."
-            );
-        } finally {
-            setDeactivating(false);
+          const activeEnrollment = enrollments.find(
+            (item) =>
+              String(item.status).toLowerCase() ===
+              "active"
+          );
+
+          const latestEnrollment =
+            activeEnrollment || enrollments[0] || null;
+
+          setEnrollment(latestEnrollment);
+        } catch (enrollmentError) {
+          console.error(
+            "Failed to load enrollment:",
+            enrollmentError
+          );
+
+          setEnrollment(null);
         }
+      } catch (err) {
+        console.error(
+          "Failed to fetch student:",
+          err
+        );
+
+        if (err.response?.status === 404) {
+          setError("Student record was not found.");
+        } else {
+          setError(
+            "Failed to load the student record. Please try again."
+          );
+        }
+      } finally {
+        setLoading(false);
+      }
     };
 
-
-    // ========================================================
-    // LOADING
-    // ========================================================
-
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-gray-100 p-6">
-
-                <div className="max-w-6xl mx-auto">
-
-                    <div className="h-6 w-40 bg-gray-200 rounded animate-pulse mb-6" />
-
-                    <div className="bg-gray-200 rounded-2xl h-52 animate-pulse mb-6" />
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-                        <div className="h-72 bg-gray-200 rounded-2xl animate-pulse" />
-
-                        <div className="h-72 bg-gray-200 rounded-2xl animate-pulse" />
-
-                    </div>
-
-                </div>
-
-            </div>
-        );
+    if (id) {
+      fetchStudentDetails();
     }
+  }, [id]);
 
 
-    // ========================================================
-    // ERROR
-    // ========================================================
+  // --------------------------------------------------
+  // DEACTIVATE STUDENT
+  // --------------------------------------------------
 
-    if (error && !student) {
-        return (
-            <div className="min-h-screen bg-gray-100 p-4 sm:p-6">
+  const handleDeactivate = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to deactivate this student?"
+    );
 
-                <div className="max-w-6xl mx-auto">
+    if (!confirmed) return;
 
-                    <Link
-                        to="/sms/students"
-                        className="inline-flex items-center gap-2 text-sm font-medium text-purple-700 hover:text-purple-900 mb-6"
-                    >
-                        <ArrowLeft size={17} />
-                        Back to Students
-                    </Link>
+    try {
+      setDeactivating(true);
 
-                    <div className="bg-red-50 border border-red-200 rounded-2xl p-6">
+      await axiosInstance.delete(
+        `/students/students/${id}/`
+      );
 
-                        <div className="flex gap-3">
+      setStudent((previous) => ({
+        ...previous,
+        status: "inactive",
+      }));
+    } catch (err) {
+      console.error(
+        "Failed to deactivate student:",
+        err
+      );
 
-                            <AlertCircle
-                                size={22}
-                                className="text-red-600 flex-shrink-0"
-                            />
-
-                            <div>
-
-                                <h2 className="font-semibold text-red-800">
-                                    Unable to load student
-                                </h2>
-
-                                <p className="text-sm text-red-700 mt-1">
-                                    {error}
-                                </p>
-
-                                <button
-                                    type="button"
-                                    onClick={() => fetchStudent()}
-                                    className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition"
-                                >
-                                    <RefreshCw size={16} />
-                                    Try Again
-                                </button>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-        );
+      alert(
+        err.response?.data?.detail ||
+          "Failed to deactivate the student."
+      );
+    } finally {
+      setDeactivating(false);
     }
+  };
 
 
-    if (!student) {
-        return null;
-    }
+  // ==================================================
+  // LOADING STATE
+  // ==================================================
 
-
-    const studentName = getStudentName(student);
-
-    const familyName =
-        student.family_name ||
-        student.family?.family_name ||
-        "Family not provided";
-
-
-    // ========================================================
-    // MAIN UI
-    // ========================================================
-
+  if (loading) {
     return (
-        <div className="min-h-screen bg-gray-100 p-4 sm:p-6">
+      <div className="min-h-screen bg-gray-100 p-4 md:p-6">
+        <div className="max-w-7xl mx-auto">
 
-            <div className="max-w-6xl mx-auto">
+          <div className="h-10 w-40 bg-gray-300 rounded-lg animate-pulse mb-6" />
 
-                {/* ==================================================
-                    TOP NAVIGATION
-                ================================================== */}
+          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 animate-pulse">
+            <div className="h-8 w-64 bg-gray-300 rounded mb-3" />
+            <div className="h-4 w-40 bg-gray-300 rounded" />
+          </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-6">
+            <div className="h-48 bg-gray-50 border border-gray-200 rounded-2xl animate-pulse" />
+            <div className="h-48 bg-gray-50 border border-gray-200 rounded-2xl animate-pulse" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-                    <Link
-                        to="/sms/students"
-                        className="inline-flex items-center gap-2 text-sm font-medium text-purple-700 hover:text-purple-900"
-                    >
-                        <ArrowLeft size={17} />
-                        Back to Students
-                    </Link>
+
+  // ==================================================
+  // ERROR STATE
+  // ==================================================
+
+  if (error || !student) {
+    return (
+      <div className="min-h-screen bg-gray-100 p-4 md:p-6">
+        <div className="max-w-4xl mx-auto">
+
+          <button
+            onClick={() =>
+              navigate("/sms/students")
+            }
+            className="inline-flex items-center gap-2 px-4 py-2 mb-6 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition"
+          >
+            <ArrowLeft size={18} />
+            Back to Students
+          </button>
+
+          <div className="bg-gray-50 border border-red-200 rounded-2xl p-8 text-center">
+            <AlertCircle
+              size={42}
+              className="mx-auto text-red-500 mb-4"
+            />
+
+            <h2 className="text-xl font-bold text-gray-800">
+              Unable to Load Student
+            </h2>
+
+            <p className="text-gray-600 mt-2">
+              {error || "Student record was not found."}
+            </p>
+
+            <button
+              onClick={() =>
+                navigate("/sms/students")
+              }
+              className="mt-5 px-5 py-2.5 bg-purple-800 text-white rounded-lg hover:bg-purple-900 transition"
+            >
+              Return to Students
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
 
-                    <button
-                        type="button"
-                        onClick={() => fetchStudent(true)}
-                        disabled={refreshing}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-300 bg-gray-50 text-gray-700 font-medium hover:bg-gray-200 transition disabled:opacity-60"
-                    >
-                        <RefreshCw
-                            size={17}
-                            className={
-                                refreshing
-                                    ? "animate-spin"
-                                    : ""
-                            }
-                        />
+  // ==================================================
+  // STUDENT DATA
+  // ==================================================
 
-                        Refresh
-                    </button>
+  const fullName = [
+    student.first_name,
+    student.middle_name,
+    student.last_name,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const familyId =
+    family?.id ||
+    student.family ||
+    null;
+
+  const familyName =
+    family?.family_name ||
+    "No family assigned";
+
+  const className =
+    getRelationName(
+      enrollment?.class_level_details,
+      enrollment?.class_level_name
+        ? enrollment.class_level_name
+        : "Not assigned"
+    );
+
+  const streamName =
+    getRelationName(
+      enrollment?.stream_details,
+      enrollment?.stream_name
+        ? enrollment.stream_name
+        : "Not assigned"
+    );
+
+  const academicYearName =
+    getRelationName(
+      enrollment?.academic_year_details,
+      enrollment?.academic_year_name
+        ? enrollment.academic_year_name
+        : "Not assigned"
+    );
+
+
+  // ==================================================
+  // RENDER
+  // ==================================================
+
+  return (
+    <div className="min-h-screen bg-gray-100 p-4 md:p-6">
+
+      <div className="max-w-7xl mx-auto">
+
+        {/* ==================================================
+            BREADCRUMB
+        ================================================== */}
+
+        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 mb-4">
+          <button
+            onClick={() =>
+              navigate("/student-management")
+            }
+            className="hover:text-purple-700 transition"
+          >
+            Student Management
+          </button>
+
+          <ChevronRight size={15} />
+
+          <button
+            onClick={() =>
+              navigate("/sms/students")
+            }
+            className="hover:text-purple-700 transition"
+          >
+            Students
+          </button>
+
+          <ChevronRight size={15} />
+
+          <span className="font-medium text-gray-700">
+            {fullName || "Student Details"}
+          </span>
+        </div>
+
+
+        {/* ==================================================
+            TOP NAVIGATION
+        ================================================== */}
+
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+
+          <button
+            onClick={() =>
+              navigate("/sms/students")
+            }
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition shadow-sm"
+          >
+            <ArrowLeft size={18} />
+            Back to Students
+          </button>
+
+          <button
+            onClick={() =>
+              navigate(`/sms/students/${id}/edit`)
+            }
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-purple-800 text-white rounded-lg hover:bg-purple-900 transition shadow-sm"
+          >
+            <Edit size={18} />
+            Edit Student
+          </button>
+        </div>
+
+
+        {/* ==================================================
+            STUDENT HERO
+        ================================================== */}
+
+        <div className="bg-gray-800 text-white rounded-2xl shadow-lg overflow-hidden mb-5">
+
+          <div className="p-5 md:p-7">
+
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+
+              <div className="flex items-center gap-4">
+
+                <div className="w-20 h-20 rounded-2xl bg-purple-800 flex items-center justify-center overflow-hidden border-2 border-gray-600">
+
+                  {student.photo ? (
+                    <img
+                      src={student.photo}
+                      alt={fullName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User size={38} />
+                  )}
 
                 </div>
 
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold">
+                    {fullName || "Unnamed Student"}
+                  </h1>
 
-                {/* ==================================================
-                    ERROR ALERT
-                ================================================== */}
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
 
-                {error && (
-                    <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-red-700">
+                    <span className="text-gray-300 text-sm">
+                      Admission No:
+                    </span>
 
-                        <div className="flex items-center gap-3">
+                    <span className="font-semibold">
+                      {student.admission_number ||
+                        "Not provided"}
+                    </span>
 
-                            <AlertCircle size={19} />
+                  </div>
 
-                            <p className="text-sm font-medium">
-                                {error}
-                            </p>
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
 
-                        </div>
+                    <span className="text-gray-300 text-sm">
+                      Student ID:
+                    </span>
 
-                    </div>
+                    <span className="font-semibold">
+                      {student.student_id ||
+                        "Not provided"}
+                    </span>
+
+                  </div>
+                </div>
+              </div>
+
+
+              <div className="flex flex-col items-start lg:items-end gap-3">
+
+                <StatusBadge
+                  status={student.status}
+                />
+
+                {enrollment && (
+                  <div className="text-sm text-gray-300">
+                    {className}
+                    {streamName !== "Not assigned"
+                      ? ` • ${streamName}`
+                      : ""}
+                  </div>
                 )}
 
-
-                {/* ==================================================
-                    STUDENT HERO
-                ================================================== */}
-
-                <section className="bg-purple-800 rounded-2xl shadow-sm overflow-hidden mb-6">
-
-                    <div className="p-5 sm:p-7">
-
-                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-
-                            <div className="flex items-center gap-4">
-
-                                {/* Avatar */}
-
-                                <div className="h-20 w-20 rounded-2xl bg-purple-700 border border-purple-500 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
-
-                                    {student.photo ? (
-                                        <img
-                                            src={student.photo}
-                                            alt={studentName}
-                                            className="h-full w-full object-cover rounded-2xl"
-                                        />
-                                    ) : (
-                                        studentName
-                                            .charAt(0)
-                                            .toUpperCase()
-                                    )}
-
-                                </div>
-
-
-                                <div>
-
-                                    <p className="text-purple-200 text-sm font-medium">
-                                        Student Profile
-                                    </p>
-
-                                    <h1 className="text-2xl sm:text-3xl font-bold text-white mt-1">
-                                        {studentName}
-                                    </h1>
-
-                                    <div className="flex flex-wrap items-center gap-2 mt-3">
-
-                                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-purple-700 text-purple-100 text-xs font-semibold">
-                                            {student.student_id ||
-                                                "Student ID unavailable"}
-                                        </span>
-
-                                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-purple-700 text-purple-100 text-xs font-semibold">
-                                            {student.admission_number ||
-                                                "Admission number unavailable"}
-                                        </span>
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-
-                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-
-                                <span
-                                    className={`inline-flex items-center justify-center px-4 py-2 rounded-xl border text-sm font-semibold ${getStatusClasses(
-                                        student.status
-                                    )}`}
-                                >
-                                    {getStatusLabel(
-                                        student.status
-                                    )}
-                                </span>
-
-
-                                <Link
-                                    to={`/sms/students/${student.id}/edit`}
-                                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white text-purple-800 font-semibold hover:bg-purple-50 transition"
-                                >
-                                    <Pencil size={17} />
-                                    Edit Student
-                                </Link>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </section>
-
-
-                {/* ==================================================
-                    BASIC INFORMATION
-                ================================================== */}
-
-                <section className="bg-gray-50 border border-gray-200 rounded-2xl shadow-sm overflow-hidden mb-6">
-
-                    <SectionHeader
-                        icon={User}
-                        title="Personal Information"
-                        description="Basic information about the student."
-                        purple
-                    />
-
-                    <div className="p-5 sm:p-6">
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-
-                            <InfoItem
-                                label="First Name"
-                                value={student.first_name}
-                            />
-
-                            <InfoItem
-                                label="Middle Name"
-                                value={student.middle_name}
-                            />
-
-                            <InfoItem
-                                label="Last Name"
-                                value={student.last_name}
-                            />
-
-                            <InfoItem
-                                label="Gender"
-                                value={formatGender(student.gender)}
-                            />
-
-                            <InfoItem
-                                label="Date of Birth"
-                                value={formatDate(
-                                    student.date_of_birth
-                                )}
-                            />
-
-                            <InfoItem
-                                label="Place of Birth"
-                                value={student.place_of_birth}
-                            />
-
-                            <InfoItem
-                                label="Nationality"
-                                value={student.nationality}
-                            />
-
-                            <InfoItem
-                                label="Religion"
-                                value={student.religion}
-                            />
-
-                        </div>
-
-                    </div>
-
-                </section>
-
-
-                {/* ==================================================
-                    FAMILY
-                ================================================== */}
-
-                <section className="bg-gray-50 border border-gray-200 rounded-2xl shadow-sm overflow-hidden mb-6">
-
-                    <SectionHeader
-                        icon={Users}
-                        title="Family"
-                        description="Household information associated with this student."
-                    />
-
-                    <div className="p-5 sm:p-6">
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-
-                            <InfoItem
-                                label="Family"
-                                value={familyName}
-                            />
-
-                            <InfoItem
-                                label="Family ID"
-                                value={
-                                    student.family?.family_id
-                                }
-                            />
-
-                            <InfoItem
-                                label="Town"
-                                value={
-                                    student.family?.town
-                                }
-                            />
-
-                            <InfoItem
-                                label="County"
-                                value={
-                                    student.family?.county
-                                }
-                            />
-
-                            <InfoItem
-                                label="Sub-County"
-                                value={
-                                    student.family?.sub_county
-                                }
-                            />
-
-                            <InfoItem
-                                label="Address"
-                                value={
-                                    student.family?.address
-                                }
-                            />
-
-                            <InfoItem
-                                label="Postal Address"
-                                value={
-                                    student.family?.postal_address
-                                }
-                            />
-
-                        </div>
-
-                    </div>
-
-                </section>
-
-
-                {/* ==================================================
-                    BIRTH CERTIFICATE / IDENTIFICATION
-                ================================================== */}
-
-                <section className="bg-gray-50 border border-gray-200 rounded-2xl shadow-sm overflow-hidden mb-6">
-
-                    <SectionHeader
-                        icon={FileText}
-                        title="Identification & Birth Certificate"
-                        description="Official identification information."
-                        purple
-                    />
-
-                    <div className="p-5 sm:p-6">
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-
-                            <InfoItem
-                                label="Birth Certificate Number"
-                                value={
-                                    student.birth_certificate_number
-                                }
-                            />
-
-                            <InfoItem
-                                label="Birth Entry Number"
-                                value={
-                                    student.birth_certificate_entry_number
-                                }
-                            />
-
-                            <InfoItem
-                                label="NEMIS / KEMIS Number"
-                                value={
-                                    student.nemis_kemis_number
-                                }
-                            />
-
-                            <InfoItem
-                                label="Assessment Number"
-                                value={
-                                    student.child_assessment_number
-                                }
-                            />
-
-                        </div>
-
-
-                        <div className="mt-6 pt-5 border-t border-gray-200">
-
-                            {student.birth_certificate_submitted ? (
-
-                                <div className="inline-flex items-center gap-2 text-sm font-semibold text-green-700">
-
-                                    <CheckCircle2 size={18} />
-
-                                    Birth certificate submitted
-
-                                </div>
-
-                            ) : (
-
-                                <div className="inline-flex items-center gap-2 text-sm font-semibold text-gray-500">
-
-                                    <XCircle size={18} />
-
-                                    Birth certificate not yet submitted
-
-                                </div>
-
-                            )}
-
-                        </div>
-
-                    </div>
-
-                </section>
-
-
-                {/* ==================================================
-                    HOME INFORMATION
-                ================================================== */}
-
-                <section className="bg-gray-50 border border-gray-200 rounded-2xl shadow-sm overflow-hidden mb-6">
-
-                    <SectionHeader
-                        icon={MapPin}
-                        title="Home Information"
-                        description="Student's home location."
-                    />
-
-                    <div className="p-5 sm:p-6">
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-
-                            <InfoItem
-                                label="Home County"
-                                value={
-                                    student.home_county
-                                }
-                            />
-
-                            <InfoItem
-                                label="Home Sub-County"
-                                value={
-                                    student.home_sub_county
-                                }
-                            />
-
-                        </div>
-
-                    </div>
-
-                </section>
-
-
-                {/* ==================================================
-                    MEDICAL INFORMATION
-                ================================================== */}
-
-                <section className="bg-gray-50 border border-gray-200 rounded-2xl shadow-sm overflow-hidden mb-6">
-
-                    <SectionHeader
-                        icon={HeartPulse}
-                        title="Medical Information"
-                        description="Allergies, illnesses and medical conditions."
-                        purple
-                    />
-
-                    <div className="p-5 sm:p-6">
-
-                        <div className="flex items-center gap-3 mb-5">
-
-                            {student.has_allergies_or_illness ? (
-
-                                <>
-
-                                    <div className="h-9 w-9 rounded-full bg-red-100 text-red-600 flex items-center justify-center">
-                                        <AlertCircle size={18} />
-                                    </div>
-
-                                    <div>
-
-                                        <p className="font-semibold text-gray-800">
-                                            Medical condition reported
-                                        </p>
-
-                                        <p className="text-sm text-gray-500">
-                                            Additional medical information has been provided.
-                                        </p>
-
-                                    </div>
-
-                                </>
-
-                            ) : (
-
-                                <>
-
-                                    <div className="h-9 w-9 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
-                                        <ShieldCheck size={18} />
-                                    </div>
-
-                                    <div>
-
-                                        <p className="font-semibold text-gray-800">
-                                            No allergies or illness reported
-                                        </p>
-
-                                        <p className="text-sm text-gray-500">
-                                            No medical condition has been recorded.
-                                        </p>
-
-                                    </div>
-
-                                </>
-
-                            )}
-
-                        </div>
-
-
-                        {student.has_allergies_or_illness && (
-                            <div className="bg-gray-100 border border-gray-200 rounded-xl p-4">
-
-                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                                    Medical Details
-                                </p>
-
-                                <p className="text-sm text-gray-700 mt-2 whitespace-pre-wrap">
-                                    {student.medical_conditions ||
-                                        "No details provided."}
-                                </p>
-
-                            </div>
-                        )}
-
-                    </div>
-
-                </section>
-
-
-                {/* ==================================================
-                    SPECIAL ABILITIES
-                ================================================== */}
-
-                <section className="bg-gray-50 border border-gray-200 rounded-2xl shadow-sm overflow-hidden mb-6">
-
-                    <SectionHeader
-                        icon={GraduationCap}
-                        title="Special Abilities"
-                        description="Special talents, abilities or support information."
-                    />
-
-                    <div className="p-5 sm:p-6">
-
-                        {student.has_special_abilities ? (
-
-                            <div>
-
-                                <div className="flex items-center gap-3 mb-4">
-
-                                    <div className="h-9 w-9 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center">
-                                        <GraduationCap size={18} />
-                                    </div>
-
-                                    <p className="font-semibold text-gray-800">
-                                        Special abilities reported
-                                    </p>
-
-                                </div>
-
-                                <div className="bg-gray-100 border border-gray-200 rounded-xl p-4">
-
-                                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                                        Details
-                                    </p>
-
-                                    <p className="text-sm text-gray-700 mt-2 whitespace-pre-wrap">
-                                        {student.special_abilities ||
-                                            "No details provided."}
-                                    </p>
-
-                                </div>
-
-                            </div>
-
-                        ) : (
-
-                            <div className="flex items-center gap-3">
-
-                                <div className="h-9 w-9 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center">
-                                    <GraduationCap size={18} />
-                                </div>
-
-                                <div>
-
-                                    <p className="font-semibold text-gray-800">
-                                        No special abilities reported
-                                    </p>
-
-                                    <p className="text-sm text-gray-500">
-                                        No special abilities have been recorded.
-                                    </p>
-
-                                </div>
-
-                            </div>
-
-                        )}
-
-                    </div>
-
-                </section>
-
-
-                {/* ==================================================
-                    RECORD INFORMATION
-                ================================================== */}
-
-                <section className="bg-gray-50 border border-gray-200 rounded-2xl shadow-sm overflow-hidden mb-6">
-
-                    <SectionHeader
-                        icon={CalendarDays}
-                        title="Record Information"
-                        description="System record information."
-                        purple
-                    />
-
-                    <div className="p-5 sm:p-6">
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-
-                            <InfoItem
-                                label="Student ID"
-                                value={student.student_id}
-                            />
-
-                            <InfoItem
-                                label="Admission Number"
-                                value={student.admission_number}
-                            />
-
-                            <InfoItem
-                                label="Created"
-                                value={formatDate(
-                                    student.created_at
-                                )}
-                            />
-
-                            <InfoItem
-                                label="Last Updated"
-                                value={formatDate(
-                                    student.updated_at
-                                )}
-                            />
-
-                        </div>
-
-                    </div>
-
-                </section>
-
-
-                {/* ==================================================
-                    BOTTOM ACTIONS
-                ================================================== */}
-
-                <div className="flex flex-col sm:flex-row sm:justify-between gap-3 pb-8">
-
-                    <button
-                        type="button"
-                        onClick={handleDeactivate}
-                        disabled={
-                            deactivating ||
-                            student.status === "inactive"
-                        }
-                        className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-gray-300 bg-gray-50 text-gray-700 font-semibold hover:bg-gray-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {deactivating ? (
-                            <>
-                                <Loader2
-                                    size={17}
-                                    className="animate-spin"
-                                />
-
-                                Deactivating...
-                            </>
-                        ) : (
-                            <>
-                                <XCircle size={17} />
-
-                                {student.status === "inactive"
-                                    ? "Student Inactive"
-                                    : "Deactivate Student"}
-                            </>
-                        )}
-                    </button>
-
-
-                    <div className="flex flex-col sm:flex-row gap-3">
-
-                        <Link
-                            to="/sms/students"
-                            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-gray-300 bg-gray-50 text-gray-700 font-semibold hover:bg-gray-200 transition"
-                        >
-                            <ArrowLeft size={17} />
-                            Back to Students
-                        </Link>
-
-
-                        <Link
-                            to={`/sms/students/${student.id}/edit`}
-                            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-purple-700 text-white font-semibold hover:bg-purple-800 transition"
-                        >
-                            <Pencil size={17} />
-                            Edit Student
-                        </Link>
-
-                    </div>
-
-                </div>
+              </div>
 
             </div>
 
-        </div>
-    );
-};
+          </div>
 
+
+          {/* ==================================================
+              STUDENT QUICK NAVIGATION
+          ================================================== */}
+
+          <div className="bg-gray-900 border-t border-gray-700 px-3 py-3">
+
+            <div className="flex gap-2 overflow-x-auto pb-1">
+
+              <button
+                onClick={() =>
+                  window.scrollTo({
+                    top: 0,
+                    behavior: "smooth",
+                  })
+                }
+                className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-purple-800 text-white rounded-lg text-sm font-medium"
+              >
+                <User size={16} />
+                Overview
+              </button>
+
+
+              <button
+                onClick={() =>
+                  navigate(
+                    `/sms/students/${id}/edit`
+                  )
+                }
+                className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-gray-700 text-gray-100 rounded-lg text-sm font-medium hover:bg-gray-600 transition"
+              >
+                <Edit size={16} />
+                Edit
+              </button>
+
+
+              <button
+                onClick={() =>
+                  navigate("/sms/enrollments", {
+                    state: {
+                      studentId: id,
+                    },
+                  })
+                }
+                className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-gray-700 text-gray-100 rounded-lg text-sm font-medium hover:bg-gray-600 transition"
+              >
+                <School size={16} />
+                Enrollment
+              </button>
+
+
+              <button
+                onClick={() =>
+                  navigate("/sms/parents", {
+                    state: {
+                      studentId: id,
+                    },
+                  })
+                }
+                className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-gray-700 text-gray-100 rounded-lg text-sm font-medium hover:bg-gray-600 transition"
+              >
+                <Users size={16} />
+                Parents
+              </button>
+
+
+              <button
+                onClick={() =>
+                  navigate("/sms/emergency-contacts", {
+                    state: {
+                      studentId: id,
+                    },
+                  })
+                }
+                className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-gray-700 text-gray-100 rounded-lg text-sm font-medium hover:bg-gray-600 transition"
+              >
+                <ShieldAlert size={16} />
+                Emergency
+              </button>
+
+
+              <button
+                onClick={() =>
+                  navigate("/sms/documents", {
+                    state: {
+                      studentId: id,
+                    },
+                  })
+                }
+                className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-gray-700 text-gray-100 rounded-lg text-sm font-medium hover:bg-gray-600 transition"
+              >
+                <FileText size={16} />
+                Documents
+              </button>
+
+
+              <button
+                onClick={() =>
+                  navigate("/sms/progression", {
+                    state: {
+                      studentId: id,
+                    },
+                  })
+                }
+                className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-gray-700 text-gray-100 rounded-lg text-sm font-medium hover:bg-gray-600 transition"
+              >
+                <GitBranch size={16} />
+                Progression
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        {/* ==================================================
+            STUDENT OVERVIEW
+        ================================================== */}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+
+          {/* Personal Summary */}
+
+          <div className="lg:col-span-2">
+            <SectionCard
+              title="Personal Information"
+              icon={User}
+            >
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+                <InfoItem
+                  icon={User}
+                  label="Full Name"
+                  value={fullName}
+                />
+
+                <InfoItem
+                  icon={CalendarDays}
+                  label="Date of Birth"
+                  value={formatDate(
+                    student.date_of_birth
+                  )}
+                />
+
+                <InfoItem
+                  icon={CalendarDays}
+                  label="Age"
+                  value={`${calculateAge(
+                    student.date_of_birth
+                  )} years`}
+                />
+
+                <InfoItem
+                  icon={UserRound}
+                  label="Gender"
+                  value={formatStatus(
+                    student.gender
+                  )}
+                />
+
+                <InfoItem
+                  icon={MapPin}
+                  label="Place of Birth"
+                  value={student.place_of_birth}
+                />
+
+                <InfoItem
+                  icon={User}
+                  label="Nationality"
+                  value={student.nationality}
+                />
+
+                <InfoItem
+                  icon={BookOpen}
+                  label="Religion"
+                  value={student.religion}
+                />
+
+                <InfoItem
+                  icon={CalendarDays}
+                  label="Record Created"
+                  value={formatDate(
+                    student.created_at
+                  )}
+                />
+
+              </div>
+
+            </SectionCard>
+          </div>
+
+
+          {/* Status Summary */}
+
+          <div>
+            <SectionCard
+              title="Student Status"
+              icon={GraduationCap}
+            >
+
+              <div className="space-y-4">
+
+                <div className="p-4 rounded-xl bg-purple-100 border border-purple-200">
+                  <p className="text-xs font-medium text-purple-600">
+                    Current Status
+                  </p>
+
+                  <div className="mt-2">
+                    <StatusBadge
+                      status={student.status}
+                    />
+                  </div>
+                </div>
+
+
+                <div className="p-4 rounded-xl bg-gray-100 border border-gray-200">
+                  <p className="text-xs font-medium text-gray-500">
+                    Admission Number
+                  </p>
+
+                  <p className="mt-1 text-lg font-bold text-gray-800">
+                    {student.admission_number ||
+                      "Not provided"}
+                  </p>
+                </div>
+
+              </div>
+
+            </SectionCard>
+          </div>
+
+        </div>
+
+
+        {/* ==================================================
+            ACADEMIC ENROLLMENT
+        ================================================== */}
+
+        <div className="mb-5">
+
+          <SectionCard
+            title="Academic Enrollment"
+            icon={School}
+            action={
+              <button
+                onClick={() =>
+                  navigate("/sms/enrollments", {
+                    state: {
+                      studentId: id,
+                    },
+                  })
+                }
+                className="text-sm font-semibold text-purple-800 hover:text-purple-950"
+              >
+                View Enrollments
+              </button>
+            }
+          >
+
+            {enrollment ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+
+                <InfoItem
+                  icon={CalendarDays}
+                  label="Academic Year"
+                  value={academicYearName}
+                />
+
+                <InfoItem
+                  icon={GraduationCap}
+                  label="Class Level"
+                  value={className}
+                />
+
+                <InfoItem
+                  icon={Users}
+                  label="Stream"
+                  value={streamName}
+                />
+
+                <InfoItem
+                  icon={CheckCircle}
+                  label="Enrollment Status"
+                  value={
+                    <StatusBadge
+                      status={enrollment.status}
+                    />
+                  }
+                />
+
+                <InfoItem
+                  icon={CalendarDays}
+                  label="Enrollment Date"
+                  value={formatDate(
+                    enrollment.enrollment_date
+                  )}
+                />
+
+                <InfoItem
+                  icon={School}
+                  label="Previous School"
+                  value={enrollment.previous_school}
+                />
+
+                {enrollment.exit_date && (
+                  <InfoItem
+                    icon={CalendarDays}
+                    label="Exit Date"
+                    value={formatDate(
+                      enrollment.exit_date
+                    )}
+                  />
+                )}
+
+                {enrollment.exit_reason && (
+                  <InfoItem
+                    icon={AlertCircle}
+                    label="Exit Reason"
+                    value={enrollment.exit_reason}
+                  />
+                )}
+
+              </div>
+            ) : (
+              <div className="p-6 text-center bg-gray-100 rounded-xl border border-gray-200">
+
+                <School
+                  size={34}
+                  className="mx-auto text-gray-400 mb-3"
+                />
+
+                <h3 className="font-semibold text-gray-700">
+                  No Enrollment Found
+                </h3>
+
+                <p className="text-sm text-gray-500 mt-1">
+                  This student does not currently have
+                  an enrollment record.
+                </p>
+
+                <button
+                  onClick={() =>
+                    navigate("/sms/enrollments", {
+                      state: {
+                        studentId: id,
+                      },
+                    })
+                  }
+                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-purple-800 text-white rounded-lg hover:bg-purple-900 transition"
+                >
+                  <School size={16} />
+                  Manage Enrollment
+                </button>
+
+              </div>
+            )}
+
+          </SectionCard>
+
+        </div>
+
+
+        {/* ==================================================
+            FAMILY INFORMATION
+        ================================================== */}
+
+        <div className="mb-5">
+
+          <SectionCard
+            title="Family / Household"
+            icon={Home}
+            action={
+              familyId && (
+                <button
+                  onClick={() =>
+                    navigate(
+                      `/sms/families/${familyId}`
+                    )
+                  }
+                  className="text-sm font-semibold text-purple-800 hover:text-purple-950"
+                >
+                  View Family
+                </button>
+              )
+            }
+          >
+
+            {family ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+
+                <InfoItem
+                  icon={Home}
+                  label="Family Name"
+                  value={familyName}
+                />
+
+                <InfoItem
+                  icon={MapPin}
+                  label="Address"
+                  value={family.address}
+                />
+
+                <InfoItem
+                  icon={MapPin}
+                  label="Town"
+                  value={family.town}
+                />
+
+                <InfoItem
+                  icon={MapPin}
+                  label="County"
+                  value={family.county}
+                />
+
+                <InfoItem
+                  icon={MapPin}
+                  label="Sub County"
+                  value={family.sub_county}
+                />
+
+                <InfoItem
+                  icon={FileText}
+                  label="Postal Address"
+                  value={family.postal_address}
+                />
+
+                <InfoItem
+                  icon={Home}
+                  label="Family ID"
+                  value={family.family_id}
+                />
+
+                <InfoItem
+                  icon={CheckCircle}
+                  label="Family Status"
+                  value={
+                    family.is_active
+                      ? "Active"
+                      : "Inactive"
+                  }
+                />
+
+              </div>
+            ) : (
+              <div className="p-6 text-center bg-gray-100 rounded-xl border border-gray-200">
+
+                <Home
+                  size={34}
+                  className="mx-auto text-gray-400 mb-3"
+                />
+
+                <h3 className="font-semibold text-gray-700">
+                  No Family Assigned
+                </h3>
+
+                <p className="text-sm text-gray-500 mt-1">
+                  This student has not been assigned
+                  to a family household.
+                </p>
+
+              </div>
+            )}
+
+          </SectionCard>
+
+        </div>
+
+
+        {/* ==================================================
+            IDENTIFICATION
+        ================================================== */}
+
+        <div className="mb-5">
+
+          <SectionCard
+            title="Identification & Registration"
+            icon={FileText}
+          >
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+
+              <InfoItem
+                icon={FileText}
+                label="Birth Certificate Number"
+                value={
+                  student.birth_certificate_number
+                }
+              />
+
+              <InfoItem
+                icon={FileText}
+                label="Birth Certificate Entry Number"
+                value={
+                  student.birth_certificate_entry_number
+                }
+              />
+
+              <InfoItem
+                icon={CheckCircle}
+                label="Birth Certificate Submitted"
+                value={
+                  student.birth_certificate_submitted
+                    ? "Yes"
+                    : "No"
+                }
+              />
+
+              <InfoItem
+                icon={FileText}
+                label="NEMIS / KEMIS Number"
+                value={
+                  student.nemis_kemis_number
+                }
+              />
+
+              <InfoItem
+                icon={FileText}
+                label="Child Assessment Number"
+                value={
+                  student.child_assessment_number
+                }
+              />
+
+            </div>
+
+          </SectionCard>
+
+        </div>
+
+
+        {/* ==================================================
+            HOME / LOCATION
+        ================================================== */}
+
+        <div className="mb-5">
+
+          <SectionCard
+            title="Home & Location"
+            icon={MapPin}
+          >
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+              <InfoItem
+                icon={MapPin}
+                label="Home County"
+                value={student.home_county}
+              />
+
+              <InfoItem
+                icon={MapPin}
+                label="Home Sub County"
+                value={student.home_subcounty}
+              />
+
+              <InfoItem
+                icon={Home}
+                label="Family Residence"
+                value={family?.address}
+              />
+
+            </div>
+
+          </SectionCard>
+
+        </div>
+
+
+        {/* ==================================================
+            MEDICAL INFORMATION
+        ================================================== */}
+
+        <div className="mb-5">
+
+          <SectionCard
+            title="Medical Information"
+            icon={HeartPulse}
+          >
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <div className="p-4 rounded-xl bg-gray-100 border border-gray-200">
+
+                <div className="flex items-center gap-3 mb-3">
+
+                  <div className="p-2 rounded-lg bg-red-100 text-red-600">
+                    <HeartPulse size={18} />
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-gray-500">
+                      Allergies / Illness
+                    </p>
+
+                    <p className="font-semibold text-gray-800">
+                      {student.has_allergies_or_illness
+                        ? "Yes"
+                        : "No"}
+                    </p>
+                  </div>
+
+                </div>
+
+                {student.has_allergies_or_illness && (
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    {student.medical_conditions ||
+                      "No details provided."}
+                  </p>
+                )}
+
+              </div>
+
+
+              <div className="p-4 rounded-xl bg-gray-100 border border-gray-200">
+
+                <div className="flex items-center gap-3 mb-3">
+
+                  <div className="p-2 rounded-lg bg-purple-100 text-purple-700">
+                    <Award size={18} />
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-gray-500">
+                      Special Abilities
+                    </p>
+
+                    <p className="font-semibold text-gray-800">
+                      {student.has_special_abilities
+                        ? "Yes"
+                        : "No"}
+                    </p>
+                  </div>
+
+                </div>
+
+                {student.has_special_abilities && (
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    {student.special_abilities ||
+                      "No details provided."}
+                  </p>
+                )}
+
+              </div>
+
+            </div>
+
+          </SectionCard>
+
+        </div>
+
+
+        {/* ==================================================
+            QUICK ACTIONS
+        ================================================== */}
+
+        <div className="mb-5">
+
+          <SectionCard
+            title="Student Management"
+            icon={Users}
+          >
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+
+              <button
+                onClick={() =>
+                  navigate("/sms/enrollments", {
+                    state: {
+                      studentId: id,
+                    },
+                  })
+                }
+                className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200 transition"
+              >
+                <School size={22} />
+                <span className="text-xs font-semibold text-center">
+                  Enrollment
+                </span>
+              </button>
+
+
+              <button
+                onClick={() =>
+                  navigate("/sms/parents", {
+                    state: {
+                      studentId: id,
+                    },
+                  })
+                }
+                className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-gray-100 text-gray-800 border border-gray-200 hover:bg-gray-200 transition"
+              >
+                <Users size={22} />
+                <span className="text-xs font-semibold text-center">
+                  Parents
+                </span>
+              </button>
+
+
+              <button
+                onClick={() =>
+                  navigate(
+                    "/sms/emergency-contacts",
+                    {
+                      state: {
+                        studentId: id,
+                      },
+                    }
+                  )
+                }
+                className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-gray-100 text-gray-800 border border-gray-200 hover:bg-gray-200 transition"
+              >
+                <ShieldAlert size={22} />
+                <span className="text-xs font-semibold text-center">
+                  Emergency
+                </span>
+              </button>
+
+
+              <button
+                onClick={() =>
+                  navigate("/sms/documents", {
+                    state: {
+                      studentId: id,
+                    },
+                  })
+                }
+                className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-gray-100 text-gray-800 border border-gray-200 hover:bg-gray-200 transition"
+              >
+                <FileText size={22} />
+                <span className="text-xs font-semibold text-center">
+                  Documents
+                </span>
+              </button>
+
+
+              <button
+                onClick={() =>
+                  navigate("/sms/progression", {
+                    state: {
+                      studentId: id,
+                    },
+                  })
+                }
+                className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-gray-100 text-gray-800 border border-gray-200 hover:bg-gray-200 transition"
+              >
+                <GitBranch size={22} />
+                <span className="text-xs font-semibold text-center">
+                  Progression
+                </span>
+              </button>
+
+
+              <button
+                onClick={() =>
+                  navigate(
+                    `/sms/students/${id}/edit`
+                  )
+                }
+                className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-200 transition"
+              >
+                <Edit size={22} />
+                <span className="text-xs font-semibold text-center">
+                  Edit Student
+                </span>
+              </button>
+
+            </div>
+
+          </SectionCard>
+
+        </div>
+
+
+        {/* ==================================================
+            RECORD INFORMATION
+        ================================================== */}
+
+        <div className="mb-5">
+
+          <SectionCard
+            title="Record Information"
+            icon={FileText}
+          >
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+              <InfoItem
+                icon={FileText}
+                label="Student ID"
+                value={student.student_id}
+              />
+
+              <InfoItem
+                icon={CalendarDays}
+                label="Created"
+                value={formatShortDate(
+                  student.created_at
+                )}
+              />
+
+              <InfoItem
+                icon={CalendarDays}
+                label="Last Updated"
+                value={formatShortDate(
+                  student.updated_at
+                )}
+              />
+
+            </div>
+
+          </SectionCard>
+
+        </div>
+
+
+        {/* ==================================================
+            DANGER ZONE
+        ================================================== */}
+
+        {String(student.status).toLowerCase() !==
+          "inactive" && (
+          <div className="bg-gray-50 border border-red-200 rounded-2xl shadow-sm overflow-hidden">
+
+            <div className="px-5 py-4 bg-red-50 border-b border-red-200">
+
+              <h2 className="font-bold text-red-800">
+                Student Record Actions
+              </h2>
+
+              <p className="text-sm text-red-600 mt-1">
+                Deactivating a student should only be
+                done when the student is no longer active
+                in the school.
+              </p>
+
+            </div>
+
+            <div className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
+              <div>
+                <p className="font-semibold text-gray-800">
+                  Deactivate Student
+                </p>
+
+                <p className="text-sm text-gray-500 mt-1">
+                  The student record will remain in the
+                  system but will no longer be active.
+                </p>
+              </div>
+
+              <button
+                onClick={handleDeactivate}
+                disabled={deactivating}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                <XCircle size={17} />
+
+                {deactivating
+                  ? "Deactivating..."
+                  : "Deactivate Student"}
+              </button>
+
+            </div>
+
+          </div>
+        )}
+
+
+        {/* ==================================================
+            BOTTOM NAVIGATION
+        ================================================== */}
+
+        <div className="flex flex-wrap items-center justify-between gap-3 mt-6 pt-5 border-t border-gray-300">
+
+          <button
+            onClick={() =>
+              navigate("/sms/students")
+            }
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition"
+          >
+            <ArrowLeft size={18} />
+            Back to Students
+          </button>
+
+
+          <button
+            onClick={() =>
+              navigate(
+                `/sms/students/${id}/edit`
+              )
+            }
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-purple-800 text-white rounded-lg hover:bg-purple-900 transition"
+          >
+            <Edit size={18} />
+            Edit Student
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+  );
+};
 
 export default StudentDetailsPage;
 

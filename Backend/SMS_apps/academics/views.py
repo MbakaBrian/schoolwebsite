@@ -1,3 +1,7 @@
+# ============================================================
+# ACADEMICS VIEWS
+# ============================================================
+
 from django.shortcuts import get_object_or_404
 
 from rest_framework import status
@@ -51,7 +55,11 @@ class AcademicYearListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        years = AcademicYear.objects.all()
+        years = (
+            AcademicYear.objects
+            .prefetch_related("terms")
+            .all()
+        )
 
         serializer = AcademicYearSerializer(
             years,
@@ -185,8 +193,9 @@ class AcademicTermListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        queryset = AcademicTerm.objects.select_related(
-            "academic_year"
+        queryset = (
+            AcademicTerm.objects
+            .select_related("academic_year")
         )
 
         academic_year_id = request.query_params.get(
@@ -324,9 +333,12 @@ class AcademicCalendarEventListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        queryset = AcademicCalendarEvent.objects.select_related(
-            "academic_year",
-            "term",
+        queryset = (
+            AcademicCalendarEvent.objects
+            .select_related(
+                "academic_year",
+                "term",
+            )
         )
 
         academic_year_id = request.query_params.get(
@@ -444,7 +456,9 @@ class AcademicCalendarEventDetailView(APIView):
             **serializer.validated_data
         )
 
-        response_serializer = AcademicCalendarEventSerializer(event)
+        response_serializer = AcademicCalendarEventSerializer(
+            event
+        )
 
         return Response(response_serializer.data)
 
@@ -467,18 +481,42 @@ class ClassLevelListCreateView(APIView):
     GET:
         Return all class levels.
 
+    Optional filters:
+
+        ?is_active=true
+        ?is_active=false
+
     POST:
         Create a new class level.
+
+    The next_class_level field can be supplied when creating
+    a class level.
+
+    Example request:
+
+        {
+            "name": "Grade 5",
+            "code": "G5",
+            "description": "",
+            "display_order": 5,
+            "next_class_level": 6,
+            "is_active": true
+        }
     """
 
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        queryset = ClassLevel.objects.all()
+        queryset = (
+            ClassLevel.objects
+            .select_related("next_class_level")
+            .all()
+        )
 
         is_active = request.query_params.get("is_active")
 
         if is_active is not None:
+
             queryset = queryset.filter(
                 is_active=is_active.lower() == "true"
             )
@@ -521,13 +559,30 @@ class ClassLevelDetailView(APIView):
 
     DELETE:
         Delete a class level.
+
+    The next_class_level relationship can be changed
+    through PUT/PATCH.
+
+    Example:
+
+        {
+            "next_class_level": 7
+        }
+
+    To remove the progression target:
+
+        {
+            "next_class_level": null
+        }
     """
 
     permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
         return get_object_or_404(
-            ClassLevel,
+            ClassLevel.objects.select_related(
+                "next_class_level"
+            ),
             pk=pk,
         )
 
@@ -600,8 +655,11 @@ class StreamListCreateView(APIView):
     GET:
         Return streams.
 
-    Optional filter:
+    Optional filters:
+
         ?class_level=1
+        ?is_active=true
+        ?is_active=false
 
     POST:
         Create a new stream.
@@ -610,8 +668,9 @@ class StreamListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        queryset = Stream.objects.select_related(
-            "class_level"
+        queryset = (
+            Stream.objects
+            .select_related("class_level")
         )
 
         class_level_id = request.query_params.get(
@@ -626,6 +685,7 @@ class StreamListCreateView(APIView):
             )
 
         if is_active is not None:
+
             queryset = queryset.filter(
                 is_active=is_active.lower() == "true"
             )
@@ -672,7 +732,9 @@ class StreamDetailView(APIView):
 
     def get_object(self, pk):
         return get_object_or_404(
-            Stream,
+            Stream.objects.select_related(
+                "class_level"
+            ),
             pk=pk,
         )
 
@@ -730,3 +792,4 @@ class StreamDetailView(APIView):
         return Response(
             status=status.HTTP_204_NO_CONTENT
         )
+

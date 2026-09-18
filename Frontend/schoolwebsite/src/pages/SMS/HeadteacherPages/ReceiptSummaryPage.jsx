@@ -789,42 +789,6 @@ export default function ReceiptSummaryPage() {
 
                   {/* Receipt Summary Export */}
 
-                  <button
-                    type="button"
-                    onClick={() => handleExport("receipts")}
-                    disabled={exporting !== null}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-
-                    {exporting === "receipts" ? (
-                      <>
-                        <span className="w-4 h-4 border-2 border-gray-300 border-t-purple-600 rounded-full animate-spin"></span>
-
-                        Exporting...
-                      </>
-                    ) : (
-                      <>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="w-4 h-4 text-purple-600"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M12 3v12m0 0l4-4m-4 4l-4-4M5 21h14a2 2 0 002-2v-3a2 2 0 00-2-2h-1"
-                          />
-                        </svg>
-
-                        Export Receipt Summary (.xlsx)
-                      </>
-                    )}
-
-                  </button>
-
                   {/* Filtered Export */}
 
                   <button

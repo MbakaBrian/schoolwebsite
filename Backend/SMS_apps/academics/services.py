@@ -1,4 +1,6 @@
-# academics/services.py
+# ============================================================
+# ACADEMICS SERVICES
+# ============================================================
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -519,6 +521,7 @@ def create_class_level(
     code,
     description="",
     display_order=0,
+    next_class_level=None,
     is_active=True,
 ):
     """
@@ -532,6 +535,20 @@ def create_class_level(
         Grade 7
         Grade 8
         Grade 9
+
+    next_class_level:
+        The class level students normally progress to
+        after completing this class.
+
+        Example:
+
+            PP1      -> PP2
+            PP2      -> Grade 1
+            Grade 1  -> Grade 2
+            Grade 8  -> Grade 9
+            Grade 9  -> None
+
+        The final class should have next_class_level=None.
     """
 
     # --------------------------------------------------------
@@ -564,6 +581,20 @@ def create_class_level(
         })
 
     # --------------------------------------------------------
+    # Validate next class level
+    # --------------------------------------------------------
+
+    if next_class_level:
+
+        if not next_class_level.is_active:
+
+            raise ValidationError({
+                "next_class_level": (
+                    "The next class level must be active."
+                )
+            })
+
+    # --------------------------------------------------------
     # Create class level
     # --------------------------------------------------------
 
@@ -572,9 +603,12 @@ def create_class_level(
         code=code,
         description=description,
         display_order=display_order,
+        next_class_level=next_class_level,
         is_active=is_active,
     )
 
+    # The model's clean() method handles the final validation,
+    # including preventing invalid self-references.
     class_level.full_clean()
     class_level.save()
 
@@ -588,6 +622,14 @@ def update_class_level(
 ):
     """
     Update an existing class level.
+
+    Supports:
+        - Name changes
+        - Code changes
+        - Description changes
+        - Display order changes
+        - Active/inactive changes
+        - Next class level configuration
     """
 
     name = validated_data.get(
@@ -598,6 +640,11 @@ def update_class_level(
     code = validated_data.get(
         "code",
         class_level.code,
+    )
+
+    next_class_level = validated_data.get(
+        "next_class_level",
+        class_level.next_class_level,
     )
 
     # --------------------------------------------------------
@@ -635,6 +682,29 @@ def update_class_level(
                 "already exists."
             )
         })
+
+    # --------------------------------------------------------
+    # Validate next class level
+    # --------------------------------------------------------
+
+    if next_class_level:
+
+        if not next_class_level.is_active:
+
+            raise ValidationError({
+                "next_class_level": (
+                    "The next class level must be active."
+                )
+            })
+
+        if next_class_level.pk == class_level.pk:
+
+            raise ValidationError({
+                "next_class_level": (
+                    "A class level cannot be its own "
+                    "next class."
+                )
+            })
 
     # --------------------------------------------------------
     # Apply changes

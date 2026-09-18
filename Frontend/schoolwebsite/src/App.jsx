@@ -85,6 +85,12 @@ import EnrollmentFormPage
     from "./pages/SMS/HeadteacherPages/StudentManagement/Enrollments/EnrollmentFormPage";
 import EnrollmentDetailsPage
     from "./pages/SMS/HeadteacherPages/StudentManagement/Enrollments/EnrollmentDetailsPage";
+// Progression
+import StudentProgressionPage from "./pages/SMS/HeadteacherPages/StudentManagement/Progression/StudentProgressionPage";
+import BatchProgressionPage
+  from "./pages/SMS/HeadteacherPages/StudentManagement/Progression/BatchProgressionPage";
+import ProgressionFormPage from "./pages/SMS/HeadteacherPages/StudentManagement/Progression/ProgressionFormPage";
+import ProgressionDetailsPage from "./pages/SMS/HeadteacherPages/StudentManagement/Progression/ProgressionDetailsPage";
 
   // Emergency Contacts
   import EmergencyContactsPage
@@ -612,6 +618,35 @@ function AppContent() {
     }
 />
 
+        {/* --------------------------------------------------
+            Progression
+        -------------------------------------------------- */}
+
+    {/* ================================================== STUDENT PROGRESSION ================================================== */}
+     {/* Progression Dashboard / History */}
+      <Route path="/sms/progression" element={
+         <ProtectedRoute allowedRoles={["Head Teacher"]}> 
+         <StudentProgressionPage /> </ProtectedRoute> } /> 
+         {/* Batch Progression */}
+          <Route path="/sms/progression/batch" element={ 
+            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+               <BatchProgressionPage /> </ProtectedRoute> } /> 
+               {/* Create Individual Progression */} 
+               <Route path="/sms/progression/new" element={ 
+                <ProtectedRoute allowedRoles={["Head Teacher"]}> 
+                <ProgressionFormPage /> 
+
+                </ProtectedRoute> } /> 
+
+                {/* Progression Details */}
+                 <Route path="/sms/progression/:id" element={ <ProtectedRoute allowedRoles={["Head Teacher"]}>
+                   <ProgressionDetailsPage />
+                    </ProtectedRoute> } />
+
+                    {/* Progression Edit */}
+                    <Route path="/sms/progression/:id/edit" element={
+                       <ProtectedRoute allowedRoles={["Head Teacher"]}> 
+                       <ProgressionFormPage /> </ProtectedRoute> } />
 
         {/* --------------------------------------------------
             Emergency Contacts
