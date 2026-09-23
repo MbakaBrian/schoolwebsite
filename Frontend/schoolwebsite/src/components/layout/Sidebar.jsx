@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 
@@ -12,7 +13,12 @@ import {
   Package,
   Building2,
   Layers,
+  UserCog,
 } from "lucide-react";
+
+// ============================================================
+// TRANSPORT MANAGEMENT
+// ============================================================
 
 
 const menuItems = {
@@ -22,6 +28,7 @@ const menuItems = {
   // ============================================================
 
   headteacher: [
+
     // ========================================================
     // STUDENT MANAGEMENT
     // ========================================================
@@ -32,15 +39,21 @@ const menuItems = {
       icon: <Users className="w-5 h-5" />,
     },
 
+
     // ========================================================
-    // TEACHERS
+    // STAFF MANAGEMENT
     // ========================================================
 
     {
-      label: "Add Teachers",
-      path: "/teachers/create",
-      icon: <UserPlus className="w-5 h-5" />,
+      label: "Staff Management",
+      path: "/staff",
+      icon: <UserCog className="w-5 h-5" />,
     },
+
+
+    // ========================================================
+    // TEACHERS
+    // ========================================================
 
     {
       label: "Manage Teachers",
@@ -48,15 +61,17 @@ const menuItems = {
       icon: <UserPlus className="w-5 h-5" />,
     },
 
+
     // ========================================================
-    // TRANSPORT
+    // TRANSPORT MANAGEMENT
     // ========================================================
 
     {
-      label: "Transport Routes",
-      path: "/fees/transport/routes",
+      label: "Transport Management",
+      path: "/transport",
       icon: <Bus className="w-5 h-5" />,
     },
+
 
     // ========================================================
     // FEES
@@ -68,6 +83,7 @@ const menuItems = {
       icon: <Wallet className="w-5 h-5" />,
     },
 
+
     // ========================================================
     // ACADEMIC MANAGEMENT
     // ========================================================
@@ -77,6 +93,7 @@ const menuItems = {
       path: "/academics",
       icon: <Layers className="w-5 h-5" />,
     },
+
 
     // ========================================================
     // DEPARTMENTS
@@ -88,6 +105,7 @@ const menuItems = {
       icon: <Building2 className="w-5 h-5" />,
     },
 
+
     // ========================================================
     // EXPENSE MANAGEMENT
     // ========================================================
@@ -97,6 +115,7 @@ const menuItems = {
       path: "/receipts",
       icon: <Receipt className="w-5 h-5" />,
     },
+
 
     // ========================================================
     // INVENTORY
@@ -215,9 +234,14 @@ const menuItems = {
 };
 
 
-export default function Sidebar({ role = "headteacher" }) {
+export default function Sidebar({
+  role = "headteacher",
+}) {
 
-  const items = menuItems[role] || menuItems.headteacher;
+  const items =
+    menuItems[role] ||
+    menuItems.headteacher;
+
 
   return (
     <aside className="flex h-screen w-64 flex-shrink-0 flex-col bg-gray-900 text-white">
@@ -245,7 +269,9 @@ export default function Sidebar({ role = "headteacher" }) {
 
           {items.map((item, index) => (
 
-            <li key={`${item.path}-${index}`}>
+            <li
+              key={`${item.path}-${index}`}
+            >
 
               <Link
                 to={item.path}
@@ -273,4 +299,3 @@ export default function Sidebar({ role = "headteacher" }) {
     </aside>
   );
 }
-

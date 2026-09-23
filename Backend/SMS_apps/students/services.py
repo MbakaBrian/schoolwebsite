@@ -282,7 +282,7 @@ def create_student_parent_relationship(**data):
 
 @transaction.atomic
 def update_student_parent_relationship(
-    relationship,
+    student_parent,
     **data
 ):
     """
@@ -290,6 +290,9 @@ def update_student_parent_relationship(
 
     Maintains the rule that a student can have only one
     primary parent/guardian relationship.
+
+    The same parent/guardian may be primary for multiple
+    different students.
     """
 
     # --------------------------------------------------------
@@ -298,30 +301,33 @@ def update_student_parent_relationship(
 
     for field, value in data.items():
         setattr(
-            relationship,
+            student_parent,
             field,
             value
         )
-
-    relationship.full_clean()
-    relationship.save()
 
     # --------------------------------------------------------
     # PRIMARY PARENT/GUARDIAN
     # --------------------------------------------------------
 
-    if relationship.is_primary:
+    if student_parent.is_primary:
 
         StudentParent.objects.filter(
-            student=relationship.student
+            student=student_parent.student
         ).exclude(
-            pk=relationship.pk
+            pk=student_parent.pk
         ).update(
             is_primary=False
         )
 
-    return relationship
+    # --------------------------------------------------------
+    # VALIDATE AND SAVE
+    # --------------------------------------------------------
 
+    student_parent.full_clean()
+    student_parent.save()
+
+    return student_parent
 
 @transaction.atomic
 def delete_student_parent_relationship(

@@ -89,6 +89,20 @@ urlpatterns = [
         "api/receipts/",
         include("SMS_apps.Receipts.urls"),
     ),
+    # Staff
+    path(
+    "api/staff/",
+    include("SMS_apps.Staff.urls"),
+    ),
+
+     #Transport
+
+     path(
+          "api/transport/",
+          include("SMS_apps.Transport.urls"),
+     ),
+
+
 ]
 
 

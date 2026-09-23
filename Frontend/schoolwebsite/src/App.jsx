@@ -56,54 +56,73 @@ import FamilyDetailsPage
   from "./pages/SMS/HeadteacherPages/StudentManagement/Families/FamilyDetailsPage";
 
 import FamilyFormPage
-    from "./pages/SMS/HeadteacherPages/StudentManagement/Families/FamilyFormPage";
+  from "./pages/SMS/HeadteacherPages/StudentManagement/Families/FamilyFormPage";
 
 
 // Existing parent page - kept temporarily
 import ParentsPage
-    from "./pages/SMS/HeadteacherPages/StudentManagement/Parents/ParentsPage";
+  from "./pages/SMS/HeadteacherPages/StudentManagement/Parents/ParentsPage";
+
 import ParentFormPage
-    from "./pages/SMS/HeadteacherPages/StudentManagement/Parents/ParentFormPage";
+  from "./pages/SMS/HeadteacherPages/StudentManagement/Parents/ParentFormPage";
 
 import ParentDetailsPage
-    from "./pages/SMS/HeadteacherPages/StudentManagement/Parents/ParentDetailsPage";
+  from "./pages/SMS/HeadteacherPages/StudentManagement/Parents/ParentDetailsPage";
+
 
 // StudentParent
 import StudentParentRelationshipsPage
-    from "./pages/SMS/HeadteacherPages/StudentManagement/StudentParents/StudentParentRelationshipsPage";
+  from "./pages/SMS/HeadteacherPages/StudentManagement/StudentParents/StudentParentRelationshipsPage";
+
 import StudentParentFormPage
-    from "./pages/SMS/HeadteacherPages/StudentManagement/StudentParents/StudentParentFormPage";
+  from "./pages/SMS/HeadteacherPages/StudentManagement/StudentParents/StudentParentFormPage";
 
 import StudentParentDetailsPage
-    from "./pages/SMS/HeadteacherPages/StudentManagement/StudentParents/StudentParentDetailsPage";
+  from "./pages/SMS/HeadteacherPages/StudentManagement/StudentParents/StudentParentDetailsPage";
 
-    
-    // Enrollments
+
+// Enrollments
 import EnrollmentsPage
-    from "./pages/SMS/HeadteacherPages/StudentManagement/Enrollments/EnrollmentsPage";
+  from "./pages/SMS/HeadteacherPages/StudentManagement/Enrollments/EnrollmentsPage";
+
 import EnrollmentFormPage
-    from "./pages/SMS/HeadteacherPages/StudentManagement/Enrollments/EnrollmentFormPage";
+  from "./pages/SMS/HeadteacherPages/StudentManagement/Enrollments/EnrollmentFormPage";
+
 import EnrollmentDetailsPage
-    from "./pages/SMS/HeadteacherPages/StudentManagement/Enrollments/EnrollmentDetailsPage";
+  from "./pages/SMS/HeadteacherPages/StudentManagement/Enrollments/EnrollmentDetailsPage";
+
+
 // Progression
-import StudentProgressionPage from "./pages/SMS/HeadteacherPages/StudentManagement/Progression/StudentProgressionPage";
+import StudentProgressionPage
+  from "./pages/SMS/HeadteacherPages/StudentManagement/Progression/StudentProgressionPage";
+
 import BatchProgressionPage
   from "./pages/SMS/HeadteacherPages/StudentManagement/Progression/BatchProgressionPage";
-import ProgressionFormPage from "./pages/SMS/HeadteacherPages/StudentManagement/Progression/ProgressionFormPage";
-import ProgressionDetailsPage from "./pages/SMS/HeadteacherPages/StudentManagement/Progression/ProgressionDetailsPage";
 
-  // Emergency Contacts
-  import EmergencyContactsPage
-    from "./pages/SMS/HeadteacherPages/StudentManagement/EmergencyContacts/EmergencyContactsPage";
+import ProgressionFormPage
+  from "./pages/SMS/HeadteacherPages/StudentManagement/Progression/ProgressionFormPage";
+
+import ProgressionDetailsPage
+  from "./pages/SMS/HeadteacherPages/StudentManagement/Progression/ProgressionDetailsPage";
+
+
+// Emergency Contacts
+import EmergencyContactsPage
+  from "./pages/SMS/HeadteacherPages/StudentManagement/EmergencyContacts/EmergencyContactsPage";
+
 import EmergencyContactFormPage
-    from "./pages/SMS/HeadteacherPages/StudentManagement/EmergencyContacts/EmergencyContactFormPage";
+  from "./pages/SMS/HeadteacherPages/StudentManagement/EmergencyContacts/EmergencyContactFormPage";
+
 import EmergencyContactDetailsPage
-    from "./pages/SMS/HeadteacherPages/StudentManagement/EmergencyContacts/EmergencyContactDetailsPage";
+  from "./pages/SMS/HeadteacherPages/StudentManagement/EmergencyContacts/EmergencyContactDetailsPage";
+
+
 // Student Documents
 import StudentDocumentsPage
-    from "./pages/SMS/HeadteacherPages/StudentManagement/StudentDocuments/StudentDocumentsPage";
+  from "./pages/SMS/HeadteacherPages/StudentManagement/StudentDocuments/StudentDocumentsPage";
+
 import StudentDocumentFormPage
-    from "./pages/SMS/HeadteacherPages/StudentManagement/StudentDocuments/StudentDocumentFormPage";
+  from "./pages/SMS/HeadteacherPages/StudentManagement/StudentDocuments/StudentDocumentFormPage";
 
 
 // ============================================================
@@ -115,9 +134,6 @@ import CreateTeacher
 
 import GradeFeeStructurePage
   from "./pages/SMS/HeadteacherPages/GradeFeeStructurePage";
-
-import TransportRoutesPage
-  from "./pages/SMS/HeadteacherPages/TransportRoutes";
 
 import ManageTeachers
   from "./pages/SMS/HeadteacherPages/ManageTeachers";
@@ -278,6 +294,139 @@ import AcademicStreamDetailsPage
   from "./pages/SMS/HeadteacherPages/AcademicsManagement/streams/StreamDetailsPage";
 
 
+// ============================================================
+// STAFF MANAGEMENT
+// ============================================================
+
+import StaffDashboard
+  from "./pages/SMS/HeadteacherPages/StaffManagement/StaffDashboard";
+
+import StaffListPage
+  from "./pages/SMS/HeadteacherPages/StaffManagement/Staff/StaffListPage";
+
+import StaffFormPage
+  from "./pages/SMS/HeadteacherPages/StaffManagement/Staff/StaffFormPage";
+
+import StaffDetailsPage
+  from "./pages/SMS/HeadteacherPages/StaffManagement/Staff/StaffDetailsPage";
+
+
+import StaffRolesPage
+  from "./pages/SMS/HeadteacherPages/StaffManagement/Roles/StaffRolesPage";
+
+import StaffRoleFormPage
+  from "./pages/SMS/HeadteacherPages/StaffManagement/Roles/StaffRoleFormPage";
+
+import StaffRoleDetailsPage
+  from "./pages/SMS/HeadteacherPages/StaffManagement/Roles/StaffRoleDetailsPage";
+
+
+import StaffRoleAssignmentsPage
+  from "./pages/SMS/HeadteacherPages/StaffManagement/Assignments/StaffRoleAssignmentsPage";
+
+import StaffRoleAssignmentFormPage
+  from "./pages/SMS/HeadteacherPages/StaffManagement/Assignments/StaffRoleAssignmentFormPage";
+
+import StaffRoleAssignmentDetailsPage
+  from "./pages/SMS/HeadteacherPages/StaffManagement/Assignments/StaffRoleAssignmentDetailsPage";
+
+
+// ============================================================
+// TRANSPORT MANAGEMENT
+// ============================================================
+
+import TransportDashboard
+  from "./pages/SMS/HeadteacherPages/TransportManagement/TransportDashboard";
+
+
+// --------------------------------------------------
+// DRIVERS
+// --------------------------------------------------
+
+import DriversListPage
+  from "./pages/SMS/HeadteacherPages/TransportManagement/Drivers/DriverListPage";
+
+import DriverFormPage
+  from "./pages/SMS/HeadteacherPages/TransportManagement/Drivers/DriverFormPage";
+
+import DriverDetailsPage
+  from "./pages/SMS/HeadteacherPages/TransportManagement/Drivers/DriverDetailsPage";
+
+
+// --------------------------------------------------
+// VEHICLES
+// --------------------------------------------------
+
+import VehiclesPage
+  from "./pages/SMS/HeadteacherPages/TransportManagement/Vehicles/VehiclesPage";
+
+import VehicleFormPage
+  from "./pages/SMS/HeadteacherPages/TransportManagement/Vehicles/VehicleFormPage";
+
+import VehicleDetailsPage
+  from "./pages/SMS/HeadteacherPages/TransportManagement/Vehicles/VehicleDetailsPage";
+
+
+// --------------------------------------------------
+// ROUTES & STAGES
+// --------------------------------------------------
+
+import RoutesPage
+  from "./pages/SMS/HeadteacherPages/TransportManagement/Routes/RoutesPage";
+
+import RouteFormPage
+  from "./pages/SMS/HeadteacherPages/TransportManagement/Routes/RouteFormPage";
+
+import RouteDetailsPage
+  from "./pages/SMS/HeadteacherPages/TransportManagement/Routes/RouteDetailsPage";
+
+import StageFormPage
+  from "./pages/SMS/HeadteacherPages/TransportManagement/Routes/StageFormPage";
+
+
+// --------------------------------------------------
+// STUDENT TRANSPORT ASSIGNMENTS
+// --------------------------------------------------
+
+import TransportAssignmentsPage
+  from "./pages/SMS/HeadteacherPages/TransportManagement/Assignments/TransportAssignmentsPage";
+
+import TransportAssignmentFormPage
+  from "./pages/SMS/HeadteacherPages/TransportManagement/Assignments/TransportAssignmentFormPage";
+
+import TransportAssignmentDetailsPage
+  from "./pages/SMS/HeadteacherPages/TransportManagement/Assignments/TransportAssignmentDetailsPage";
+
+
+// --------------------------------------------------
+// VEHICLE EXPENSES
+// --------------------------------------------------
+
+import VehicleExpensesPage
+  from "./pages/SMS/HeadteacherPages/TransportManagement/Expenses/VehicleExpensesPage";
+
+import FuelingFormPage
+  from "./pages/SMS/HeadteacherPages/TransportManagement/Expenses/FuelingFormPage";
+
+import MaintenanceFormPage
+  from "./pages/SMS/HeadteacherPages/TransportManagement/Expenses/MaintenanceFormPage";
+
+import InsuranceFormPage
+  from "./pages/SMS/HeadteacherPages/TransportManagement/Expenses/InsuranceFormPage";
+
+
+// --------------------------------------------------
+// DRIVER REPORTS
+// --------------------------------------------------
+
+import DriverReportsPage
+  from "./pages/SMS/HeadteacherPages/TransportManagement/Reports/DriverReportsPage";
+
+import DriverReportFormPage
+  from "./pages/SMS/HeadteacherPages/TransportManagement/Reports/DriverReportFormPage";
+
+import DriverReportDetailsPage
+  from "./pages/SMS/HeadteacherPages/TransportManagement/Reports/DriverReportDetailsPage";
 
 
 // ============================================================
@@ -285,33 +434,56 @@ import AcademicStreamDetailsPage
 // ============================================================
 
 function AppContent() {
+
   const location = useLocation();
 
   // Portfolio has its own standalone layout.
-  const hideLayout = location.pathname === "/portfolio";
+  const hideLayout =
+    location.pathname === "/portfolio";
+
 
   return (
     <div className="font-sans">
 
       {!hideLayout && <Navbar />}
 
+
       <Routes>
+
 
         {/* ==================================================
             PUBLIC WEBSITE
         ================================================== */}
 
-        <Route path="/" element={<Home />} />
+        <Route
+          path="/"
+          element={<Home />}
+        />
 
-        <Route path="/about" element={<About />} />
+        <Route
+          path="/about"
+          element={<About />}
+        />
 
-        <Route path="/gallery" element={<Gallery />} />
+        <Route
+          path="/gallery"
+          element={<Gallery />}
+        />
 
-        <Route path="/events" element={<Events />} />
+        <Route
+          path="/events"
+          element={<Events />}
+        />
 
-        <Route path="/enroll" element={<Enroll />} />
+        <Route
+          path="/enroll"
+          element={<Enroll />}
+        />
 
-        <Route path="/contact" element={<Contact />} />
+        <Route
+          path="/contact"
+          element={<Contact />}
+        />
 
         <Route
           path="/facilities/:slug"
@@ -336,7 +508,9 @@ function AppContent() {
         <Route
           path="/WebsiteAdminPanel"
           element={
-            <ProtectedRoute allowedRoles={["Website Admin"]}>
+            <ProtectedRoute
+              allowedRoles={["Website Admin"]}
+            >
               <AdminDashboard />
             </ProtectedRoute>
           }
@@ -345,7 +519,9 @@ function AppContent() {
         <Route
           path="/admin/events"
           element={
-            <ProtectedRoute allowedRoles={["Website Admin"]}>
+            <ProtectedRoute
+              allowedRoles={["Website Admin"]}
+            >
               <EventsPanel />
             </ProtectedRoute>
           }
@@ -354,7 +530,9 @@ function AppContent() {
         <Route
           path="/admin/gallery"
           element={
-            <ProtectedRoute allowedRoles={["Website Admin"]}>
+            <ProtectedRoute
+              allowedRoles={["Website Admin"]}
+            >
               <GalleryPanel />
             </ProtectedRoute>
           }
@@ -363,7 +541,9 @@ function AppContent() {
         <Route
           path="/admin/facilities"
           element={
-            <ProtectedRoute allowedRoles={["Website Admin"]}>
+            <ProtectedRoute
+              allowedRoles={["Website Admin"]}
+            >
               <FacilitiesPanel />
             </ProtectedRoute>
           }
@@ -372,7 +552,9 @@ function AppContent() {
         <Route
           path="/admin/team"
           element={
-            <ProtectedRoute allowedRoles={["Website Admin"]}>
+            <ProtectedRoute
+              allowedRoles={["Website Admin"]}
+            >
               <AdminTeamManagement />
             </ProtectedRoute>
           }
@@ -381,7 +563,9 @@ function AppContent() {
         <Route
           path="/admin/aboutUs"
           element={
-            <ProtectedRoute allowedRoles={["Website Admin"]}>
+            <ProtectedRoute
+              allowedRoles={["Website Admin"]}
+            >
               <AdminAboutUs />
             </ProtectedRoute>
           }
@@ -395,7 +579,9 @@ function AppContent() {
         <Route
           path="/headteacher/dashboard"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <DashboardLayout />
             </ProtectedRoute>
           }
@@ -413,7 +599,9 @@ function AppContent() {
         <Route
           path="/student-management"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <StudentsDashboard />
             </ProtectedRoute>
           }
@@ -427,7 +615,9 @@ function AppContent() {
         <Route
           path="/sms/students"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <StudentsPage />
             </ProtectedRoute>
           }
@@ -436,7 +626,9 @@ function AppContent() {
         <Route
           path="/sms/students/add"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <StudentFormPage />
             </ProtectedRoute>
           }
@@ -445,7 +637,9 @@ function AppContent() {
         <Route
           path="/sms/students/:id/edit"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <EditStudentPage />
             </ProtectedRoute>
           }
@@ -454,7 +648,9 @@ function AppContent() {
         <Route
           path="/sms/students/:id"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <StudentDetailsPage />
             </ProtectedRoute>
           }
@@ -468,7 +664,9 @@ function AppContent() {
         <Route
           path="/sms/families"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <FamiliesPage />
             </ProtectedRoute>
           }
@@ -477,257 +675,326 @@ function AppContent() {
         <Route
           path="/sms/families/:id"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <FamilyDetailsPage />
             </ProtectedRoute>
           }
         />
 
-    <Route
-        path="/sms/families/add"
-        element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
-                <FamilyFormPage />
+        <Route
+          path="/sms/families/add"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <FamilyFormPage />
             </ProtectedRoute>
-        }
-    />
+          }
+        />
 
-      <Route
+        <Route
           path="/sms/families/:id/edit"
           element={
-              <ProtectedRoute allowedRoles={["Head Teacher"]}>
-                  <FamilyFormPage />
-              </ProtectedRoute>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <FamilyFormPage />
+            </ProtectedRoute>
           }
-      />
+        />
 
 
         {/* --------------------------------------------------
             Parents & Guardians
         -------------------------------------------------- */}
- 
-      <Route
+
+        <Route
           path="/sms/parents"
           element={
-              <ProtectedRoute allowedRoles={["Head Teacher"]}>
-                  <ParentsPage />
-              </ProtectedRoute>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <ParentsPage />
+            </ProtectedRoute>
           }
-      />
-      <Route
+        />
+
+        <Route
           path="/sms/parents/add"
           element={
-              <ProtectedRoute allowedRoles={["Head Teacher"]}>
-                  <ParentFormPage />
-              </ProtectedRoute>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <ParentFormPage />
+            </ProtectedRoute>
           }
-      />
+        />
 
-      <Route
+        <Route
           path="/sms/parents/:id/edit"
           element={
-              <ProtectedRoute allowedRoles={["Head Teacher"]}>
-                  <ParentFormPage />
-              </ProtectedRoute>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <ParentFormPage />
+            </ProtectedRoute>
           }
-      />
+        />
 
-      <Route
-    path="/sms/parents/:id"
-    element={
-        <ProtectedRoute allowedRoles={["Head Teacher"]}>
-            <ParentDetailsPage />
-        </ProtectedRoute>
-    }
-/>
+        <Route
+          path="/sms/parents/:id"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <ParentDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
+
         {/* --------------------------------------------------
             StudentParent Relationships
         -------------------------------------------------- */}
-<Route
-    path="/sms/student-parents"
-    element={
-        <ProtectedRoute allowedRoles={["Head Teacher"]}>
-            <StudentParentRelationshipsPage />
-        </ProtectedRoute>
-    }
-/><Route
-    path="/sms/student-parents/add"
-    element={
-        <ProtectedRoute allowedRoles={["Head Teacher"]}>
-            <StudentParentFormPage />
-        </ProtectedRoute>
-    }
-/>
 
-<Route
-    path="/sms/student-parents/:id/edit"
-    element={
-        <ProtectedRoute allowedRoles={["Head Teacher"]}>
-            <StudentParentFormPage />
-        </ProtectedRoute>
-    }
-/>
-<Route
-    path="/sms/student-parents/:id"
-    element={
-        <ProtectedRoute allowedRoles={["Head Teacher"]}>
-            <StudentParentDetailsPage />
-        </ProtectedRoute>
-    }
-/>
+        <Route
+          path="/sms/student-parents"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <StudentParentRelationshipsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/sms/student-parents/add"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <StudentParentFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/sms/student-parents/:id/edit"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <StudentParentFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/sms/student-parents/:id"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <StudentParentDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
 
         {/* --------------------------------------------------
             Enrollments
         -------------------------------------------------- */}
 
-        {/* Temporary routes until Enrollment pages are created */}
-
-    <Route
-        path="/sms/enrollments"
-        element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
-                <EnrollmentsPage />
+        <Route
+          path="/sms/enrollments"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <EnrollmentsPage />
             </ProtectedRoute>
-        }
-    />
+          }
+        />
 
-<Route
-    path="/sms/enrollments/add"
-    element={
-        <ProtectedRoute allowedRoles={["Head Teacher"]}>
-            <EnrollmentFormPage />
-        </ProtectedRoute>
-    }
-/>
+        <Route
+          path="/sms/enrollments/add"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <EnrollmentFormPage />
+            </ProtectedRoute>
+          }
+        />
 
-<Route
-    path="/sms/enrollments/:id/edit"
-    element={
-        <ProtectedRoute allowedRoles={["Head Teacher"]}>
-            <EnrollmentFormPage />
-        </ProtectedRoute>
-    }
-/>
+        <Route
+          path="/sms/enrollments/:id/edit"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <EnrollmentFormPage />
+            </ProtectedRoute>
+          }
+        />
 
-<Route
-    path="/sms/enrollments/:id"
-    element={
-        <ProtectedRoute allowedRoles={["Head Teacher"]}>
-            <EnrollmentDetailsPage />
-        </ProtectedRoute>
-    }
-/>
+        <Route
+          path="/sms/enrollments/:id"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <EnrollmentDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
 
         {/* --------------------------------------------------
             Progression
         -------------------------------------------------- */}
 
-    {/* ================================================== STUDENT PROGRESSION ================================================== */}
-     {/* Progression Dashboard / History */}
-      <Route path="/sms/progression" element={
-         <ProtectedRoute allowedRoles={["Head Teacher"]}> 
-         <StudentProgressionPage /> </ProtectedRoute> } /> 
-         {/* Batch Progression */}
-          <Route path="/sms/progression/batch" element={ 
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
-               <BatchProgressionPage /> </ProtectedRoute> } /> 
-               {/* Create Individual Progression */} 
-               <Route path="/sms/progression/new" element={ 
-                <ProtectedRoute allowedRoles={["Head Teacher"]}> 
-                <ProgressionFormPage /> 
+        <Route
+          path="/sms/progression"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <StudentProgressionPage />
+            </ProtectedRoute>
+          }
+        />
 
-                </ProtectedRoute> } /> 
+        <Route
+          path="/sms/progression/batch"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <BatchProgressionPage />
+            </ProtectedRoute>
+          }
+        />
 
-                {/* Progression Details */}
-                 <Route path="/sms/progression/:id" element={ <ProtectedRoute allowedRoles={["Head Teacher"]}>
-                   <ProgressionDetailsPage />
-                    </ProtectedRoute> } />
+        <Route
+          path="/sms/progression/new"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <ProgressionFormPage />
+            </ProtectedRoute>
+          }
+        />
 
-                    {/* Progression Edit */}
-                    <Route path="/sms/progression/:id/edit" element={
-                       <ProtectedRoute allowedRoles={["Head Teacher"]}> 
-                       <ProgressionFormPage /> </ProtectedRoute> } />
+        <Route
+          path="/sms/progression/:id"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <ProgressionDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/sms/progression/:id/edit"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <ProgressionFormPage />
+            </ProtectedRoute>
+          }
+        />
+
 
         {/* --------------------------------------------------
             Emergency Contacts
         -------------------------------------------------- */}
 
-        {/* Temporary routes until Emergency Contact pages
-            are created */}
-
-    <Route
-        path="/sms/emergency-contacts"
-        element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
-                <EmergencyContactsPage />
+        <Route
+          path="/sms/emergency-contacts"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <EmergencyContactsPage />
             </ProtectedRoute>
-        }
-    />
+          }
+        />
 
-    <Route
-        path="/sms/emergency-contacts/add"
-        element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
-                <EmergencyContactFormPage />
+        <Route
+          path="/sms/emergency-contacts/add"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <EmergencyContactFormPage />
             </ProtectedRoute>
-        }
-    />
+          }
+        />
 
-    <Route
-        path="/sms/emergency-contacts/:id/edit"
-        element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
-                <EmergencyContactFormPage />
+        <Route
+          path="/sms/emergency-contacts/:id/edit"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <EmergencyContactFormPage />
             </ProtectedRoute>
-        }
-    />
+          }
+        />
 
-<Route
-    path="/sms/emergency-contacts/:id"
-    element={
-        <ProtectedRoute allowedRoles={["Head Teacher"]}>
-            <EmergencyContactDetailsPage />
-        </ProtectedRoute>
-    }
-/>
+        <Route
+          path="/sms/emergency-contacts/:id"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <EmergencyContactDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
+
         {/* --------------------------------------------------
             Student Documents
         -------------------------------------------------- */}
 
-        {/* Temporary routes until Document pages are created */}
-
-<Route
-    path="/sms/documents"
-    element={
-        <ProtectedRoute allowedRoles={["Head Teacher"]}>
-            <StudentDocumentsPage />
-        </ProtectedRoute>
-    }
-/>
-
-<Route
-    path="/sms/documents/upload"
-    element={
-        <ProtectedRoute allowedRoles={["Head Teacher"]}>
-            <StudentDocumentFormPage />
-        </ProtectedRoute>
-    }
-/>
-
-<Route
-    path="/sms/documents/:id/edit"
-    element={
-        <ProtectedRoute allowedRoles={["Head Teacher"]}>
-            <StudentDocumentFormPage />
-        </ProtectedRoute>
-    }
-/>
+        <Route
+          path="/sms/documents"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <StudentDocumentsPage />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/sms/documents/upload"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
-              <StudentFormPage />
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <StudentDocumentFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/sms/documents/:id/edit"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <StudentDocumentFormPage />
             </ProtectedRoute>
           }
         />
@@ -740,7 +1007,9 @@ function AppContent() {
         <Route
           path="/academics"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <AcademicsDashboard />
             </ProtectedRoute>
           }
@@ -754,7 +1023,9 @@ function AppContent() {
         <Route
           path="/academics/years"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <AcademicYearsPage />
             </ProtectedRoute>
           }
@@ -763,7 +1034,9 @@ function AppContent() {
         <Route
           path="/academics/years/new"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <AcademicYearFormPage />
             </ProtectedRoute>
           }
@@ -772,7 +1045,9 @@ function AppContent() {
         <Route
           path="/academics/years/:id"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <AcademicYearDetailsPage />
             </ProtectedRoute>
           }
@@ -781,7 +1056,9 @@ function AppContent() {
         <Route
           path="/academics/years/:id/edit"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <AcademicYearFormPage />
             </ProtectedRoute>
           }
@@ -795,7 +1072,9 @@ function AppContent() {
         <Route
           path="/academics/terms"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <AcademicTermsPage />
             </ProtectedRoute>
           }
@@ -804,7 +1083,9 @@ function AppContent() {
         <Route
           path="/academics/terms/new"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <AcademicTermFormPage />
             </ProtectedRoute>
           }
@@ -813,7 +1094,9 @@ function AppContent() {
         <Route
           path="/academics/terms/:id"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <AcademicTermDetailsPage />
             </ProtectedRoute>
           }
@@ -822,7 +1105,9 @@ function AppContent() {
         <Route
           path="/academics/terms/:id/edit"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <AcademicTermFormPage />
             </ProtectedRoute>
           }
@@ -836,7 +1121,9 @@ function AppContent() {
         <Route
           path="/academics/calendar"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <AcademicCalendarPage />
             </ProtectedRoute>
           }
@@ -845,7 +1132,9 @@ function AppContent() {
         <Route
           path="/academics/calendar/new"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <CalendarEventFormPage />
             </ProtectedRoute>
           }
@@ -854,7 +1143,9 @@ function AppContent() {
         <Route
           path="/academics/calendar/:id"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <CalendarEventDetailsPage />
             </ProtectedRoute>
           }
@@ -863,7 +1154,9 @@ function AppContent() {
         <Route
           path="/academics/calendar/:id/edit"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <CalendarEventFormPage />
             </ProtectedRoute>
           }
@@ -877,7 +1170,9 @@ function AppContent() {
         <Route
           path="/academics/classes"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <ClassLevelsPage />
             </ProtectedRoute>
           }
@@ -886,7 +1181,9 @@ function AppContent() {
         <Route
           path="/academics/classes/new"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <ClassLevelFormPage />
             </ProtectedRoute>
           }
@@ -895,7 +1192,9 @@ function AppContent() {
         <Route
           path="/academics/classes/:id"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <ClassLevelDetailsPage />
             </ProtectedRoute>
           }
@@ -904,7 +1203,9 @@ function AppContent() {
         <Route
           path="/academics/classes/:id/edit"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <ClassLevelFormPage />
             </ProtectedRoute>
           }
@@ -918,7 +1219,9 @@ function AppContent() {
         <Route
           path="/academics/streams"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <AcademicStreamsPage />
             </ProtectedRoute>
           }
@@ -927,7 +1230,9 @@ function AppContent() {
         <Route
           path="/academics/streams/new"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <AcademicStreamFormPage />
             </ProtectedRoute>
           }
@@ -936,7 +1241,9 @@ function AppContent() {
         <Route
           path="/academics/streams/:id"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <AcademicStreamDetailsPage />
             </ProtectedRoute>
           }
@@ -945,7 +1252,9 @@ function AppContent() {
         <Route
           path="/academics/streams/:id/edit"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <AcademicStreamFormPage />
             </ProtectedRoute>
           }
@@ -959,7 +1268,9 @@ function AppContent() {
         <Route
           path="/teachers/create"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <CreateTeacher />
             </ProtectedRoute>
           }
@@ -968,8 +1279,611 @@ function AppContent() {
         <Route
           path="/teachers/management"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <ManageTeachers />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* ==================================================
+            STAFF MANAGEMENT
+        ================================================== */}
+
+        {/* --------------------------------------------------
+            Staff Dashboard
+        -------------------------------------------------- */}
+
+        <Route
+          path="/staff"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <StaffDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* --------------------------------------------------
+            Staff Members
+        -------------------------------------------------- */}
+
+        <Route
+          path="/staff/members"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <StaffListPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/staff/members/new"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <StaffFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/staff/members/:id"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <StaffDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/staff/members/:id/edit"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <StaffFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* --------------------------------------------------
+            Staff Roles
+        -------------------------------------------------- */}
+
+        <Route
+          path="/staff/roles"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <StaffRolesPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/staff/roles/new"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <StaffRoleFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/staff/roles/:id"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <StaffRoleDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/staff/roles/:id/edit"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <StaffRoleFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* --------------------------------------------------
+            Staff Role Assignments
+        -------------------------------------------------- */}
+
+        <Route
+          path="/staff/role-assignments"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <StaffRoleAssignmentsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/staff/role-assignments/new"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <StaffRoleAssignmentFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/staff/role-assignments/:id"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <StaffRoleAssignmentDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/staff/role-assignments/:id/edit"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <StaffRoleAssignmentFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* ==================================================
+            TRANSPORT MANAGEMENT
+        ================================================== */}
+
+        {/* --------------------------------------------------
+            Transport Dashboard
+        -------------------------------------------------- */}
+
+        <Route
+          path="/transport"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <TransportDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* --------------------------------------------------
+            DRIVERS
+        -------------------------------------------------- */}
+
+        {/* Drivers List */}
+
+        <Route
+          path="/transport/drivers"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <DriversListPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Add Driver */}
+
+        <Route
+          path="/transport/drivers/new"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <DriverFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Driver Details */}
+
+        <Route
+          path="/transport/drivers/:id"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <DriverDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Edit Driver */}
+
+        <Route
+          path="/transport/drivers/:id/edit"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <DriverFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* --------------------------------------------------
+            VEHICLES
+        -------------------------------------------------- */}
+
+        {/* Vehicles List */}
+
+        <Route
+          path="/transport/vehicles"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <VehiclesPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Add Vehicle */}
+
+        <Route
+          path="/transport/vehicles/new"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <VehicleFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Vehicle Details */}
+
+        <Route
+          path="/transport/vehicles/:id"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <VehicleDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Edit Vehicle */}
+
+        <Route
+          path="/transport/vehicles/:id/edit"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <VehicleFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* --------------------------------------------------
+            TRANSPORT ROUTES
+        -------------------------------------------------- */}
+
+        {/* Routes List */}
+
+        <Route
+          path="/transport/routes"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <RoutesPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Add Route */}
+
+        <Route
+          path="/transport/routes/new"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <RouteFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Route Details */}
+
+        <Route
+          path="/transport/routes/:id"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <RouteDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Edit Route */}
+
+        <Route
+          path="/transport/routes/:id/edit"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <RouteFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* --------------------------------------------------
+            ROUTE STAGES
+        -------------------------------------------------- */}
+
+        {/* Add Stage */}
+
+        <Route
+          path="/transport/routes/:id/stages/new"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <StageFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Edit Stage */}
+
+        <Route
+          path="/transport/routes/:id/stages/:stageId/edit"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <StageFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* --------------------------------------------------
+            STUDENT TRANSPORT ASSIGNMENTS
+        -------------------------------------------------- */}
+
+        {/* Assignments List */}
+
+        <Route
+          path="/transport/assignments"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <TransportAssignmentsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Add Assignment */}
+
+        <Route
+          path="/transport/assignments/new"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <TransportAssignmentFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Assignment Details */}
+
+        <Route
+          path="/transport/assignments/:id"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <TransportAssignmentDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Edit Assignment */}
+
+        <Route
+          path="/transport/assignments/:id/edit"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <TransportAssignmentFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* --------------------------------------------------
+            VEHICLE EXPENSES
+        -------------------------------------------------- */}
+
+        {/* Expenses Dashboard */}
+
+        <Route
+          path="/transport/expenses"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <VehicleExpensesPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Fueling */}
+
+        <Route
+          path="/transport/expenses/fueling/new"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <FuelingFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Fueling Edit */}
+
+        <Route
+          path="/transport/expenses/fueling/:id/edit"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <FuelingFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* Maintenance */}
+
+        <Route
+          path="/transport/expenses/maintenance/new"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <MaintenanceFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Maintenance Edit */}
+
+        <Route
+          path="/transport/expenses/maintenance/:id/edit"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <MaintenanceFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* Insurance */}
+
+        <Route
+          path="/transport/expenses/insurance/new"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <InsuranceFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Insurance Edit */}
+
+        <Route
+          path="/transport/expenses/insurance/:id/edit"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <InsuranceFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* --------------------------------------------------
+            DRIVER REPORTS
+        -------------------------------------------------- */}
+
+        {/* Reports List */}
+
+        <Route
+          path="/transport/reports"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <DriverReportsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Add Report */}
+
+        <Route
+          path="/transport/reports/new"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <DriverReportFormPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Report Details */}
+
+        <Route
+          path="/transport/reports/:id"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <DriverReportDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Edit Report */}
+
+        <Route
+          path="/transport/reports/:id/edit"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
+              <DriverReportFormPage />
             </ProtectedRoute>
           }
         />
@@ -982,17 +1896,10 @@ function AppContent() {
         <Route
           path="/fees/GradeFeeStructure"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <GradeFeeStructurePage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/fees/transport/routes"
-          element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
-              <TransportRoutesPage />
             </ProtectedRoute>
           }
         />
@@ -1005,7 +1912,9 @@ function AppContent() {
         <Route
           path="/streams"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <StreamsPage />
             </ProtectedRoute>
           }
@@ -1019,7 +1928,9 @@ function AppContent() {
         <Route
           path="/departments"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <DepartmentsPage />
             </ProtectedRoute>
           }
@@ -1028,7 +1939,9 @@ function AppContent() {
         <Route
           path="/departments/create"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <DepartmentFormPage />
             </ProtectedRoute>
           }
@@ -1037,7 +1950,9 @@ function AppContent() {
         <Route
           path="/departments/:id/edit"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <DepartmentFormPage />
             </ProtectedRoute>
           }
@@ -1051,7 +1966,9 @@ function AppContent() {
         <Route
           path="/receipts"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <ReceiptsPage />
             </ProtectedRoute>
           }
@@ -1060,7 +1977,9 @@ function AppContent() {
         <Route
           path="/receipts/add"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <ReceiptFormPage />
             </ProtectedRoute>
           }
@@ -1069,7 +1988,9 @@ function AppContent() {
         <Route
           path="/receipts/summary"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <ReceiptSummaryPage />
             </ProtectedRoute>
           }
@@ -1078,7 +1999,9 @@ function AppContent() {
         <Route
           path="/receipts/:receiptId"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <ReceiptDetailPage />
             </ProtectedRoute>
           }
@@ -1087,7 +2010,9 @@ function AppContent() {
         <Route
           path="/receipts/:receiptId/edit"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <ReceiptFormPage />
             </ProtectedRoute>
           }
@@ -1096,7 +2021,9 @@ function AppContent() {
         <Route
           path="/receipts/:receiptId/items"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <ReceiptItemsPage />
             </ProtectedRoute>
           }
@@ -1110,7 +2037,9 @@ function AppContent() {
         <Route
           path="/inventory"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <InventoryDashboard />
             </ProtectedRoute>
           }
@@ -1119,7 +2048,9 @@ function AppContent() {
         <Route
           path="/inventory/stores"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <StoresPage />
             </ProtectedRoute>
           }
@@ -1128,7 +2059,9 @@ function AppContent() {
         <Route
           path="/inventory/locations"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <InventoryLocationsPage />
             </ProtectedRoute>
           }
@@ -1137,7 +2070,9 @@ function AppContent() {
         <Route
           path="/inventory/items"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <InventoryItemsPage />
             </ProtectedRoute>
           }
@@ -1146,7 +2081,9 @@ function AppContent() {
         <Route
           path="/inventory/stock"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <InventoryStockPage />
             </ProtectedRoute>
           }
@@ -1155,7 +2092,9 @@ function AppContent() {
         <Route
           path="/inventory/stock/add"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <AddStockPage />
             </ProtectedRoute>
           }
@@ -1164,7 +2103,9 @@ function AppContent() {
         <Route
           path="/inventory/stock/remove"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <RemoveStockPage />
             </ProtectedRoute>
           }
@@ -1173,7 +2114,9 @@ function AppContent() {
         <Route
           path="/inventory/stock/transfer"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <TransferStockPage />
             </ProtectedRoute>
           }
@@ -1182,7 +2125,9 @@ function AppContent() {
         <Route
           path="/inventory/stock/adjust"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <AdjustStockPage />
             </ProtectedRoute>
           }
@@ -1191,7 +2136,9 @@ function AppContent() {
         <Route
           path="/inventory/transactions"
           element={
-            <ProtectedRoute allowedRoles={["Head Teacher"]}>
+            <ProtectedRoute
+              allowedRoles={["Head Teacher"]}
+            >
               <InventoryTransactionsPage />
             </ProtectedRoute>
           }
@@ -1204,10 +2151,16 @@ function AppContent() {
 
         <Route
           path="*"
-          element={<Navigate to="/" replace />}
+          element={
+            <Navigate
+              to="/"
+              replace
+            />
+          }
         />
 
       </Routes>
+
 
       {!hideLayout && <Footer />}
 
@@ -1221,9 +2174,6 @@ function AppContent() {
 // ============================================================
 
 export default function App() {
-
-
-
 
   return (
     <Router>

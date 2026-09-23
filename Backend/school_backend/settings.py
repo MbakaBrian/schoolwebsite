@@ -51,8 +51,10 @@ INSTALLED_APPS = [
     'Portfolio',
     'SMS_apps.Receipts',
     'SMS_apps.Inventory',
-    
-
+    'SMS_apps.Extracurricular',
+    'SMS_apps.Transport',
+    'SMS_apps.Boarding',
+    'SMS_apps.Staff',
 ]
 
 MIDDLEWARE = [
