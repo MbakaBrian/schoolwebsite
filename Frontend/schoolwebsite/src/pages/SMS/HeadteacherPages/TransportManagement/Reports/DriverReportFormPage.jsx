@@ -1,4 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import {
   ArrowLeft,
   Check,
@@ -7,6 +12,7 @@ import {
   User,
   X,
 } from "lucide-react";
+
 import {
   Link,
   useNavigate,
@@ -32,17 +38,29 @@ Purpose:
 - Record weekly driver activity
 - Record vehicle mileage
 - Record fuel usage
+- Record fueling location
+- Record fuel cost per litre
 - Record vehicle condition
 - Record incidents
+- Record maintenance requirements
 - Record driver observations
 - Preserve historical operational information
 
 The report belongs to:
+
     Driver
         +
     Vehicle
         +
     Reporting period
+
+IMPORTANT:
+
+Fuel cost per litre is recorded here as an
+operational reference.
+
+Actual financial fueling transactions
+remain in VehicleFueling.
 ==================================================
 */
 
@@ -52,7 +70,9 @@ The report belongs to:
 // ==================================================
 
 const getId = (item) => {
-  if (!item) return null;
+  if (!item) {
+    return null;
+  }
 
   return item.id ?? item.pk ?? null;
 };
@@ -74,7 +94,9 @@ const extractList = (response) => {
 
 
 const formatDateForInput = (value) => {
-  if (!value) return "";
+  if (!value) {
+    return "";
+  }
 
   return String(value).slice(0, 10);
 };
@@ -195,8 +217,9 @@ const INITIAL_FORM = {
   starting_mileage: "",
   ending_mileage: "",
 
-  fuel_quantity: "",
-  fuel_cost: "",
+  fuel_used_quantity: "",
+  fueling_location: "",
+  fuel_cost_per_liter: "",
 
   vehicle_condition: "good",
 
@@ -364,26 +387,45 @@ const DriverReportFormPage = () => {
                   report.end_mileage ??
                   "",
 
-                fuel_quantity:
+                // ------------------------------------
+                // FUEL
+                // ------------------------------------
+
+                fuel_used_quantity:
+                  report.fuel_used_quantity ??
                   report.fuel_quantity ??
                   report.quantity ??
                   report.litres ??
                   "",
 
-                fuel_cost:
-                  report.fuel_cost ??
-                  report.total_fuel_cost ??
-                  report.cost ??
+                fueling_location:
+                  report.fueling_location ??
                   "",
+
+                fuel_cost_per_liter:
+                  report.fuel_cost_per_liter ??
+                  "",
+
+                // ------------------------------------
+                // CONDITION
+                // ------------------------------------
 
                 vehicle_condition:
                   report.vehicle_condition ||
                   report.condition ||
                   "good",
 
+                // ------------------------------------
+                // INCIDENTS
+                // ------------------------------------
+
                 incidents:
                   report.incidents ||
                   "",
+
+                // ------------------------------------
+                // MAINTENANCE
+                // ------------------------------------
 
                 maintenance_required:
                   Boolean(
@@ -394,11 +436,14 @@ const DriverReportFormPage = () => {
                   report.maintenance_notes ||
                   "",
 
+                // ------------------------------------
+                // COMMENTS
+                // ------------------------------------
+
                 comments:
                   report.comments ||
                   report.notes ||
                   "",
-
               });
             }
           }
@@ -505,6 +550,47 @@ const DriverReportFormPage = () => {
     }, [
       formData.starting_mileage,
       formData.ending_mileage,
+    ]);
+
+
+  // ==================================================
+  // CALCULATED FUEL VALUE
+  // ==================================================
+
+  const calculatedFuelValue =
+    useMemo(() => {
+
+      if (
+        formData.fuel_used_quantity === "" ||
+        formData.fuel_cost_per_liter === ""
+      ) {
+        return null;
+      }
+
+      const quantity =
+        Number(
+          formData.fuel_used_quantity
+        );
+
+      const costPerLiter =
+        Number(
+          formData.fuel_cost_per_liter
+        );
+
+      if (
+        !Number.isFinite(quantity) ||
+        !Number.isFinite(costPerLiter) ||
+        quantity < 0 ||
+        costPerLiter < 0
+      ) {
+        return null;
+      }
+
+      return quantity * costPerLiter;
+
+    }, [
+      formData.fuel_used_quantity,
+      formData.fuel_cost_per_liter,
     ]);
 
 
@@ -633,47 +719,65 @@ const DriverReportFormPage = () => {
     }
 
 
+    // ----------------------------------------------
+    // FUEL USED QUANTITY
+    // ----------------------------------------------
+
     if (
-      formData.fuel_quantity !== ""
+      formData.fuel_used_quantity !== ""
     ) {
 
       const quantity =
         Number(
-          formData.fuel_quantity
+          formData.fuel_used_quantity
         );
 
       if (
-        !Number.isFinite(
-          quantity
-        ) ||
+        !Number.isFinite(quantity) ||
         quantity < 0
       ) {
         return (
-          "Fuel quantity must be a valid non-negative number."
+          "Fuel used quantity must be a valid non-negative number."
         );
       }
     }
 
 
+    // ----------------------------------------------
+    // FUEL COST PER LITRE
+    // ----------------------------------------------
+
     if (
-      formData.fuel_cost !== ""
+      formData.fuel_cost_per_liter !== ""
     ) {
 
-      const fuelCost =
+      const costPerLiter =
         Number(
-          formData.fuel_cost
+          formData.fuel_cost_per_liter
         );
 
       if (
-        !Number.isFinite(
-          fuelCost
-        ) ||
-        fuelCost < 0
+        !Number.isFinite(costPerLiter) ||
+        costPerLiter < 0
       ) {
         return (
-          "Fuel cost must be a valid non-negative amount."
+          "Fuel cost per litre must be a valid non-negative amount."
         );
       }
+    }
+
+
+    // ----------------------------------------------
+    // MAINTENANCE NOTES
+    // ----------------------------------------------
+
+    if (
+      !formData.maintenance_required &&
+      formData.maintenance_notes.trim()
+    ) {
+      return (
+        "Maintenance notes should only be provided when maintenance is required."
+      );
     }
 
 
@@ -713,6 +817,10 @@ const DriverReportFormPage = () => {
       setSuccess("");
 
 
+      // ----------------------------------------------
+      // PAYLOAD
+      // ----------------------------------------------
+
       const payload = {
 
         driver:
@@ -741,19 +849,22 @@ const DriverReportFormPage = () => {
             formData.ending_mileage
           ),
 
-        fuel_quantity:
-          formData.fuel_quantity !== ""
+        fuel_used_quantity:
+          formData.fuel_used_quantity !== ""
             ? Number(
-                formData.fuel_quantity
+                formData.fuel_used_quantity
               )
-            : 0,
+            : null,
 
-        fuel_cost:
-          formData.fuel_cost !== ""
+        fueling_location:
+          formData.fueling_location.trim(),
+
+        fuel_cost_per_liter:
+          formData.fuel_cost_per_liter !== ""
             ? Number(
-                formData.fuel_cost
+                formData.fuel_cost_per_liter
               )
-            : 0,
+            : null,
 
         vehicle_condition:
           formData.vehicle_condition,
@@ -772,6 +883,10 @@ const DriverReportFormPage = () => {
       };
 
 
+      // ----------------------------------------------
+      // EDIT
+      // ----------------------------------------------
+
       if (isEditMode) {
 
         await axiosInstance.patch(
@@ -783,7 +898,13 @@ const DriverReportFormPage = () => {
           "Driver report updated successfully."
         );
 
-      } else {
+      }
+
+      // ----------------------------------------------
+      // CREATE
+      // ----------------------------------------------
+
+      else {
 
         await axiosInstance.post(
           "/transport/driver-reports/",
@@ -799,6 +920,10 @@ const DriverReportFormPage = () => {
         );
       }
 
+
+      // ----------------------------------------------
+      // RETURN TO REPORT LIST
+      // ----------------------------------------------
 
       setTimeout(() => {
 
@@ -1024,7 +1149,8 @@ const DriverReportFormPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
 
-              {/* Driver */}
+              {/* DRIVER */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -1079,7 +1205,8 @@ const DriverReportFormPage = () => {
               </div>
 
 
-              {/* Vehicle */}
+              {/* VEHICLE */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -1136,7 +1263,8 @@ const DriverReportFormPage = () => {
             </div>
 
 
-            {/* Selected information */}
+            {/* SELECTED INFORMATION */}
+
             {(selectedDriver ||
               selectedVehicle) && (
 
@@ -1197,7 +1325,7 @@ const DriverReportFormPage = () => {
 
 
           {/* ==================================================
-              REPORT PERIOD
+              REPORTING PERIOD
           ================================================== */}
 
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
@@ -1218,7 +1346,8 @@ const DriverReportFormPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
 
-              {/* Week Start */}
+              {/* WEEK START */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -1245,7 +1374,8 @@ const DriverReportFormPage = () => {
               </div>
 
 
-              {/* Week End */}
+              {/* WEEK END */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -1302,7 +1432,8 @@ const DriverReportFormPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
 
-              {/* Starting Mileage */}
+              {/* STARTING MILEAGE */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -1332,7 +1463,8 @@ const DriverReportFormPage = () => {
               </div>
 
 
-              {/* Ending Mileage */}
+              {/* ENDING MILEAGE */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -1373,13 +1505,16 @@ const DriverReportFormPage = () => {
                 </p>
 
                 <p className="text-2xl font-bold text-purple-900 mt-1">
+
                   {calculatedMileage.toLocaleString(
                     "en-KE",
                     {
                       maximumFractionDigits: 1,
                     }
                   )}
+
                   {" km"}
+
                 </p>
 
               </div>
@@ -1390,7 +1525,7 @@ const DriverReportFormPage = () => {
 
 
           {/* ==================================================
-              FUEL
+              FUEL USAGE
           ================================================== */}
 
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
@@ -1402,7 +1537,8 @@ const DriverReportFormPage = () => {
               </h2>
 
               <p className="text-sm text-gray-500 mt-1">
-                Record fuel consumed and the associated expenditure.
+                Record the fuel consumed during the reporting period,
+                where it was obtained, and the price paid per litre.
               </p>
 
             </div>
@@ -1411,18 +1547,21 @@ const DriverReportFormPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
 
-              {/* Fuel Quantity */}
+              {/* FUEL USED */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Fuel Quantity (Litres)
+
+                  Fuel Used (Litres)
+
                 </label>
 
                 <input
                   type="number"
-                  name="fuel_quantity"
+                  name="fuel_used_quantity"
                   value={
-                    formData.fuel_quantity
+                    formData.fuel_used_quantity
                   }
                   onChange={handleChange}
                   min="0"
@@ -1434,11 +1573,39 @@ const DriverReportFormPage = () => {
               </div>
 
 
-              {/* Fuel Cost */}
+              {/* FUELING LOCATION */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Fuel Cost
+
+                  Fueling Location
+
+                </label>
+
+                <input
+                  type="text"
+                  name="fueling_location"
+                  value={
+                    formData.fueling_location
+                  }
+                  onChange={handleChange}
+                  maxLength={255}
+                  placeholder="e.g. Shell Naivasha"
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+
+              </div>
+
+
+              {/* FUEL COST PER LITRE */}
+
+              <div>
+
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+
+                  Fuel Cost per Litre
+
                 </label>
 
                 <div className="relative">
@@ -1449,14 +1616,14 @@ const DriverReportFormPage = () => {
 
                   <input
                     type="number"
-                    name="fuel_cost"
+                    name="fuel_cost_per_liter"
                     value={
-                      formData.fuel_cost
+                      formData.fuel_cost_per_liter
                     }
                     onChange={handleChange}
                     min="0"
                     step="0.01"
-                    placeholder="0.00"
+                    placeholder="e.g. 189.50"
                     className="w-full pl-12 pr-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
 
@@ -1465,6 +1632,43 @@ const DriverReportFormPage = () => {
               </div>
 
             </div>
+
+
+            {/* REFERENCE FUEL VALUE */}
+
+            {calculatedFuelValue !== null && (
+
+              <div className="mt-5 p-4 rounded-lg bg-purple-50 border border-purple-200">
+
+                <p className="text-xs uppercase font-semibold text-purple-600">
+                  Reference Fuel Value
+                </p>
+
+                <p className="text-2xl font-bold text-purple-900 mt-1">
+
+                  KSh{" "}
+
+                  {calculatedFuelValue.toLocaleString(
+                    "en-KE",
+                    {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }
+                  )}
+
+                </p>
+
+                <p className="text-xs text-purple-700 mt-1">
+
+                  Calculated from fuel used × cost per litre.
+                  This amount is not stored as a financial
+                  transaction in the weekly report.
+
+                </p>
+
+              </div>
+
+            )}
 
           </div>
 
@@ -1491,7 +1695,8 @@ const DriverReportFormPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
 
-              {/* Condition */}
+              {/* CONDITION */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -1532,7 +1737,8 @@ const DriverReportFormPage = () => {
               </div>
 
 
-              {/* Maintenance */}
+              {/* MAINTENANCE */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -1677,10 +1883,13 @@ const DriverReportFormPage = () => {
                 </h3>
 
                 <p className="text-sm text-purple-700 mt-1">
-                  This report is retained as part of the vehicle's
-                  operational history. Mileage and fuel information can
-                  later be compared with fueling, maintenance and other
+
+                  This report is retained as part of the
+                  vehicle's operational history. Mileage
+                  and fuel information can later be compared
+                  with fueling, maintenance and other
                   transport records.
+
                 </p>
 
               </div>
@@ -1695,6 +1904,9 @@ const DriverReportFormPage = () => {
           ================================================== */}
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-8">
+
+
+            {/* CANCEL */}
 
             <button
               type="button"
@@ -1713,6 +1925,8 @@ const DriverReportFormPage = () => {
 
             </button>
 
+
+            {/* SAVE */}
 
             <button
               type="submit"

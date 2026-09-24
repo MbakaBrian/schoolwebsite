@@ -5,11 +5,13 @@ import {
   Check,
   ChevronRight,
   FileCheck2,
-  Gauge,
   Save,
   ShieldCheck,
   Wrench,
   X,
+  Gauge,
+  User,
+  ClipboardCheck,
 } from "lucide-react";
 import {
   Link,
@@ -29,14 +31,19 @@ import axiosInstance from "../../../../../utils/axiosInstance";
 // - Editing an existing vehicle
 //
 // Sections:
-// 1. Basic Vehicle Information
-// 2. Identification Information
-// 3. Mileage & Service
+// 1. Vehicle Identity
+// 2. Vehicle Information
+// 3. Ownership
 // 4. Insurance
-// 5. Inspection & Road Compliance
-// 6. Additional Information
+// 5. Inspection
+// 6. Speed Governor
+// 7. Road Service Licence
+// 8. Logbook
+// 9. Service
+// 10. Status & Notes
 //
-// Historical records such as fueling, maintenance and
+// vehicle_id is generated automatically by Django.
+// Historical records such as maintenance, fueling and
 // insurance renewals are managed separately.
 //
 // ============================================================
@@ -91,38 +98,135 @@ const getErrorMessage = (error) => {
 // ============================================================
 
 const initialForm = {
+  // ----------------------------------------------------------
+  // VEHICLE IDENTITY
+  // ----------------------------------------------------------
+
   registration_number: "",
-  vehicle_number: "",
   make: "",
   model: "",
-  year_of_manufacture: "",
+  vehicle_type: "",
 
-  chassis_number: "",
-  engine_number: "",
-  logbook_number: "",
+  // ----------------------------------------------------------
+  // VEHICLE INFORMATION
+  // ----------------------------------------------------------
 
-  current_mileage: "",
+  date_of_manufacture: "",
+  date_of_registration: "",
+  capacity: "",
+  fuel_type: "",
+  color: "",
 
-  last_service_date: "",
-  last_service_mileage: "",
-  next_service_date: "",
-  next_service_mileage: "",
+  // ----------------------------------------------------------
+  // OWNERSHIP
+  // ----------------------------------------------------------
+
+  ownership_type: "school_owned",
+  owner_name: "",
+  owner_phone: "",
+
+  // ----------------------------------------------------------
+  // INSURANCE
+  // ----------------------------------------------------------
 
   insurance_company: "",
-  insurance_policy_number: "",
+  insurance_number: "",
   insurance_expiry_date: "",
 
-  inspection_date: "",
+  // ----------------------------------------------------------
+  // INSPECTION
+  // ----------------------------------------------------------
+
+  inspection_certificate_number: "",
   inspection_expiry_date: "",
 
-  speed_governor_date: "",
+  // ----------------------------------------------------------
+  // SPEED GOVERNOR
+  // ----------------------------------------------------------
+
+  speed_governor_present: false,
+  speed_governor_company: "",
   speed_governor_expiry_date: "",
 
-  road_service_date: "",
-  road_service_expiry_date: "",
+  // ----------------------------------------------------------
+  // ROAD SERVICE LICENCE
+  // ----------------------------------------------------------
+
+  road_service_licence_number: "",
+  road_service_licence_expiry_date: "",
+
+  // ----------------------------------------------------------
+  // LOGBOOK
+  // ----------------------------------------------------------
+
+  logbook_number: "",
+  logbook_expiry_date: "",
+
+  // ----------------------------------------------------------
+  // SERVICE
+  // ----------------------------------------------------------
+
+  date_of_service: "",
+  date_of_next_service: "",
+
+  // ----------------------------------------------------------
+  // STATUS
+  // ----------------------------------------------------------
+
+  status: "active",
+
+  // ----------------------------------------------------------
+  // NOTES
+  // ----------------------------------------------------------
 
   notes: "",
 };
+
+
+// ============================================================
+// CHOICES
+// ============================================================
+
+const vehicleTypeChoices = [
+  { value: "bus", label: "Bus" },
+  { value: "van", label: "Van" },
+  { value: "minibus", label: "Minibus" },
+  { value: "car", label: "Car" },
+  { value: "pickup", label: "Pickup" },
+  { value: "truck", label: "Truck" },
+  { value: "motorcycle", label: "Motorcycle" },
+  { value: "other", label: "Other" },
+];
+
+
+const fuelTypeChoices = [
+  { value: "petrol", label: "Petrol" },
+  { value: "diesel", label: "Diesel" },
+  { value: "electric", label: "Electric" },
+  { value: "hybrid", label: "Hybrid" },
+  { value: "other", label: "Other" },
+];
+
+
+const ownershipTypeChoices = [
+  { value: "school_owned", label: "School Owned" },
+  { value: "leased", label: "Leased" },
+  { value: "hired", label: "Hired" },
+  { value: "private", label: "Private" },
+  { value: "other", label: "Other" },
+];
+
+
+const statusChoices = [
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
+  {
+    value: "under_maintenance",
+    label: "Under Maintenance",
+  },
+  { value: "retired", label: "Retired" },
+  { value: "sold", label: "Sold" },
+];
 
 
 // ============================================================
@@ -142,6 +246,9 @@ const VehicleFormPage = () => {
 
   const [formData, setFormData] =
     useState(initialForm);
+
+  const [vehicleId, setVehicleId] =
+    useState("");
 
   const [loading, setLoading] =
     useState(isEditMode);
@@ -178,110 +285,127 @@ const VehicleFormPage = () => {
         const vehicle =
           response.data;
 
+        // ----------------------------------------------------
+        // SYSTEM GENERATED VEHICLE ID
+        // ----------------------------------------------------
+
+        setVehicleId(
+          vehicle.vehicle_id || ""
+        );
+
+
+        // ----------------------------------------------------
+        // POPULATE FORM
+        // ----------------------------------------------------
+
         setFormData({
           registration_number:
-            vehicle.registration_number ||
-            "",
-
-          vehicle_number:
-            vehicle.vehicle_number ||
-            "",
+            vehicle.registration_number || "",
 
           make:
-            vehicle.make ||
-            "",
+            vehicle.make || "",
 
           model:
-            vehicle.model ||
-            "",
+            vehicle.model || "",
 
-          year_of_manufacture:
-            vehicle.year_of_manufacture ??
-            vehicle.manufacture_year ??
-            "",
+          vehicle_type:
+            vehicle.vehicle_type || "",
 
-          chassis_number:
-            vehicle.chassis_number ||
-            "",
-
-          engine_number:
-            vehicle.engine_number ||
-            "",
-
-          logbook_number:
-            vehicle.logbook_number ||
-            "",
-
-          current_mileage:
-            vehicle.current_mileage ??
-            vehicle.odometer_reading ??
-            vehicle.mileage ??
-            "",
-
-          last_service_date:
+          date_of_manufacture:
             formatDateForInput(
-              vehicle.last_service_date
+              vehicle.date_of_manufacture
             ),
 
-          last_service_mileage:
-            vehicle.last_service_mileage ??
-            "",
-
-          next_service_date:
+          date_of_registration:
             formatDateForInput(
-              vehicle.next_service_date
+              vehicle.date_of_registration
             ),
 
-          next_service_mileage:
-            vehicle.next_service_mileage ??
+          capacity:
+            vehicle.capacity ??
             "",
+
+          fuel_type:
+            vehicle.fuel_type || "",
+
+          color:
+            vehicle.color || "",
+
+          ownership_type:
+            vehicle.ownership_type ||
+            "school_owned",
+
+          owner_name:
+            vehicle.owner_name || "",
+
+          owner_phone:
+            vehicle.owner_phone || "",
 
           insurance_company:
-            vehicle.insurance_company ||
-            "",
+            vehicle.insurance_company || "",
 
-          insurance_policy_number:
-            vehicle.insurance_policy_number ||
-            "",
+          insurance_number:
+            vehicle.insurance_number || "",
 
           insurance_expiry_date:
             formatDateForInput(
               vehicle.insurance_expiry_date
             ),
 
-          inspection_date:
-            formatDateForInput(
-              vehicle.inspection_date
-            ),
+          inspection_certificate_number:
+            vehicle.inspection_certificate_number ||
+            "",
 
           inspection_expiry_date:
             formatDateForInput(
               vehicle.inspection_expiry_date
             ),
 
-          speed_governor_date:
-            formatDateForInput(
-              vehicle.speed_governor_date
+          speed_governor_present:
+            Boolean(
+              vehicle.speed_governor_present
             ),
+
+          speed_governor_company:
+            vehicle.speed_governor_company || "",
 
           speed_governor_expiry_date:
             formatDateForInput(
               vehicle.speed_governor_expiry_date
             ),
 
-          road_service_date:
+          road_service_licence_number:
+            vehicle.road_service_licence_number ||
+            "",
+
+          road_service_licence_expiry_date:
             formatDateForInput(
-              vehicle.road_service_date
+              vehicle.road_service_licence_expiry_date
             ),
 
-          road_service_expiry_date:
+          logbook_number:
+            vehicle.logbook_number || "",
+
+          logbook_expiry_date:
             formatDateForInput(
-              vehicle.road_service_expiry_date
+              vehicle.logbook_expiry_date
             ),
+
+          date_of_service:
+            formatDateForInput(
+              vehicle.date_of_service
+            ),
+
+          date_of_next_service:
+            formatDateForInput(
+              vehicle.date_of_next_service
+            ),
+
+          status:
+            vehicle.status || "active",
 
           notes:
-            vehicle.notes ||
-            "",
+            vehicle.notes || "",
         });
 
       } catch (err) {
@@ -310,11 +434,16 @@ const VehicleFormPage = () => {
     const {
       name,
       value,
+      type,
+      checked,
     } = event.target;
 
     setFormData((current) => ({
       ...current,
-      [name]: value,
+      [name]:
+        type === "checkbox"
+          ? checked
+          : value,
     }));
 
     setError("");
@@ -327,6 +456,10 @@ const VehicleFormPage = () => {
   // ==========================================================
 
   const validateForm = () => {
+
+    // --------------------------------------------------------
+    // REQUIRED BASIC FIELDS
+    // --------------------------------------------------------
 
     if (
       !formData.registration_number.trim()
@@ -345,91 +478,85 @@ const VehicleFormPage = () => {
     }
 
 
-    if (
-      formData.year_of_manufacture &&
-      (
-        Number(
-          formData.year_of_manufacture
-        ) < 1900 ||
-        Number(
-          formData.year_of_manufacture
-        ) >
-          new Date().getFullYear()
-      )
-    ) {
-      return "Enter a valid year of manufacture.";
+    if (!formData.vehicle_type) {
+      return "Vehicle type is required.";
     }
 
 
-    if (
-      formData.current_mileage !== "" &&
-      Number(formData.current_mileage) < 0
-    ) {
-      return "Current mileage cannot be negative.";
+    if (!formData.fuel_type) {
+      return "Fuel type is required.";
     }
 
 
+    // --------------------------------------------------------
+    // CAPACITY
+    // --------------------------------------------------------
+
     if (
-      formData.last_service_mileage !== "" &&
-      Number(formData.last_service_mileage) < 0
+      formData.capacity !== "" &&
+      Number(formData.capacity) < 0
     ) {
-      return "Last service mileage cannot be negative.";
+      return "Vehicle capacity cannot be negative.";
     }
 
 
+    // --------------------------------------------------------
+    // MANUFACTURE / REGISTRATION
+    // --------------------------------------------------------
+
     if (
-      formData.next_service_mileage !== "" &&
-      Number(formData.next_service_mileage) < 0
+      formData.date_of_manufacture &&
+      formData.date_of_registration &&
+      formData.date_of_registration <
+        formData.date_of_manufacture
     ) {
-      return "Next service mileage cannot be negative.";
+      return (
+        "Registration date cannot be earlier than the manufacture date."
+      );
     }
 
 
+    // --------------------------------------------------------
+    // INSPECTION
+    // --------------------------------------------------------
+
     if (
-      formData.inspection_date &&
       formData.inspection_expiry_date &&
-      formData.inspection_expiry_date <
-        formData.inspection_date
+      !formData.inspection_certificate_number.trim()
     ) {
-      return "Inspection expiry date cannot be before the inspection date.";
+      return (
+        "Enter the inspection certificate number when providing an inspection expiry date."
+      );
     }
 
 
+    // --------------------------------------------------------
+    // SPEED GOVERNOR
+    // --------------------------------------------------------
+
     if (
-      formData.insurance_expiry_date &&
-      formData.insurance_company.trim() === ""
+      formData.speed_governor_present &&
+      !formData.speed_governor_company.trim()
     ) {
-      return "Enter the insurance company when providing an insurance expiry date.";
+      return (
+        "Speed governor company is required when a speed governor is present."
+      );
     }
 
 
-    if (
-      formData.speed_governor_date &&
-      formData.speed_governor_expiry_date &&
-      formData.speed_governor_expiry_date <
-        formData.speed_governor_date
-    ) {
-      return "Speed governor expiry date cannot be before the issue/service date.";
-    }
-
+    // --------------------------------------------------------
+    // SERVICE DATES
+    // --------------------------------------------------------
 
     if (
-      formData.road_service_date &&
-      formData.road_service_expiry_date &&
-      formData.road_service_expiry_date <
-        formData.road_service_date
+      formData.date_of_service &&
+      formData.date_of_next_service &&
+      formData.date_of_next_service <
+        formData.date_of_service
     ) {
-      return "Road service expiry date cannot be before the road service date.";
-    }
-
-
-    if (
-      formData.last_service_date &&
-      formData.next_service_date &&
-      formData.next_service_date <
-        formData.last_service_date
-    ) {
-      return "Next service date cannot be before the last service date.";
+      return (
+        "Next service date cannot be earlier than the previous service date."
+      );
     }
 
 
@@ -444,11 +571,12 @@ const VehicleFormPage = () => {
   const buildPayload = () => {
 
     const payload = {
+      // ------------------------------------------------------
+      // IDENTITY
+      // ------------------------------------------------------
+
       registration_number:
         formData.registration_number.trim(),
-
-      vehicle_number:
-        formData.vehicle_number.trim(),
 
       make:
         formData.make.trim(),
@@ -456,20 +584,83 @@ const VehicleFormPage = () => {
       model:
         formData.model.trim(),
 
-      chassis_number:
-        formData.chassis_number.trim(),
+      vehicle_type:
+        formData.vehicle_type,
 
-      engine_number:
-        formData.engine_number.trim(),
+      // ------------------------------------------------------
+      // VEHICLE INFORMATION
+      // ------------------------------------------------------
 
-      logbook_number:
-        formData.logbook_number.trim(),
+      fuel_type:
+        formData.fuel_type,
+
+      color:
+        formData.color.trim(),
+
+      // ------------------------------------------------------
+      // OWNERSHIP
+      // ------------------------------------------------------
+
+      ownership_type:
+        formData.ownership_type,
+
+      owner_name:
+        formData.owner_name.trim(),
+
+      owner_phone:
+        formData.owner_phone.trim(),
+
+      // ------------------------------------------------------
+      // INSURANCE
+      // ------------------------------------------------------
 
       insurance_company:
         formData.insurance_company.trim(),
 
-      insurance_policy_number:
-        formData.insurance_policy_number.trim(),
+      insurance_number:
+        formData.insurance_number.trim(),
+
+      // ------------------------------------------------------
+      // INSPECTION
+      // ------------------------------------------------------
+
+      inspection_certificate_number:
+        formData.inspection_certificate_number.trim(),
+
+      // ------------------------------------------------------
+      // SPEED GOVERNOR
+      // ------------------------------------------------------
+
+      speed_governor_present:
+        formData.speed_governor_present,
+
+      speed_governor_company:
+        formData.speed_governor_company.trim(),
+
+      // ------------------------------------------------------
+      // ROAD SERVICE
+      // ------------------------------------------------------
+
+      road_service_licence_number:
+        formData.road_service_licence_number.trim(),
+
+      // ------------------------------------------------------
+      // LOGBOOK
+      // ------------------------------------------------------
+
+      logbook_number:
+        formData.logbook_number.trim(),
+
+      // ------------------------------------------------------
+      // STATUS
+      // ------------------------------------------------------
+
+      status:
+        formData.status,
+
+      // ------------------------------------------------------
+      // NOTES
+      // ------------------------------------------------------
 
       notes:
         formData.notes.trim(),
@@ -477,46 +668,14 @@ const VehicleFormPage = () => {
 
 
     // --------------------------------------------------------
-    // OPTIONAL NUMERIC FIELDS
+    // OPTIONAL CAPACITY
     // --------------------------------------------------------
 
-    if (
-      formData.year_of_manufacture !== ""
-    ) {
-      payload.year_of_manufacture =
-        Number(
-          formData.year_of_manufacture
-        );
-    }
-
-
-    if (
-      formData.current_mileage !== ""
-    ) {
-      payload.current_mileage =
-        Number(
-          formData.current_mileage
-        );
-    }
-
-
-    if (
-      formData.last_service_mileage !== ""
-    ) {
-      payload.last_service_mileage =
-        Number(
-          formData.last_service_mileage
-        );
-    }
-
-
-    if (
-      formData.next_service_mileage !== ""
-    ) {
-      payload.next_service_mileage =
-        Number(
-          formData.next_service_mileage
-        );
+    if (formData.capacity !== "") {
+      payload.capacity =
+        Number(formData.capacity);
+    } else {
+      payload.capacity = null;
     }
 
 
@@ -525,23 +684,22 @@ const VehicleFormPage = () => {
     // --------------------------------------------------------
 
     const dateFields = [
-      "last_service_date",
-      "next_service_date",
+      "date_of_manufacture",
+      "date_of_registration",
       "insurance_expiry_date",
-      "inspection_date",
       "inspection_expiry_date",
-      "speed_governor_date",
       "speed_governor_expiry_date",
-      "road_service_date",
-      "road_service_expiry_date",
+      "road_service_licence_expiry_date",
+      "logbook_expiry_date",
+      "date_of_service",
+      "date_of_next_service",
     ];
+
 
     dateFields.forEach((field) => {
 
-      if (formData[field]) {
-        payload[field] =
-          formData[field];
-      }
+      payload[field] =
+        formData[field] || null;
 
     });
 
@@ -581,6 +739,10 @@ const VehicleFormPage = () => {
       let response;
 
 
+      // ------------------------------------------------------
+      // UPDATE
+      // ------------------------------------------------------
+
       if (isEditMode) {
 
         response =
@@ -589,7 +751,13 @@ const VehicleFormPage = () => {
             payload
           );
 
-      } else {
+      }
+
+      // ------------------------------------------------------
+      // CREATE
+      // ------------------------------------------------------
+
+      else {
 
         response =
           await axiosInstance.post(
@@ -608,7 +776,7 @@ const VehicleFormPage = () => {
 
 
       // ------------------------------------------------------
-      // RETURN TO DETAILS PAGE
+      // GET SAVED ID
       // ------------------------------------------------------
 
       const savedId =
@@ -616,6 +784,10 @@ const VehicleFormPage = () => {
         response.data?.pk ||
         id;
 
+
+      // ------------------------------------------------------
+      // NAVIGATE TO DETAILS
+      // ------------------------------------------------------
 
       setTimeout(() => {
 
@@ -805,7 +977,7 @@ const VehicleFormPage = () => {
 
 
           {/* ==================================================
-              SECTION 1 — BASIC VEHICLE INFORMATION
+              SECTION 1 — VEHICLE IDENTITY
           ================================================== */}
 
           <section className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
@@ -821,7 +993,7 @@ const VehicleFormPage = () => {
                 <div>
 
                   <h2 className="font-semibold text-gray-800">
-                    Basic Vehicle Information
+                    Vehicle Identity
                   </h2>
 
                   <p className="text-xs text-gray-500">
@@ -837,12 +1009,42 @@ const VehicleFormPage = () => {
 
             <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
 
-              {/* Registration */}
+              {/* Vehicle ID */}
+
+              {isEditMode && (
+                <div>
+
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Vehicle ID
+                  </label>
+
+                  <input
+                    type="text"
+                    value={vehicleId}
+                    readOnly
+                    className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-gray-100 text-gray-600"
+                  />
+
+                  <p className="text-xs text-gray-500 mt-1">
+                    Automatically generated by the system.
+                  </p>
+
+                </div>
+              )}
+
+
+              {/* Registration Number */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
+
                   Registration Number
-                  <span className="text-red-500 ml-1">*</span>
+
+                  <span className="text-red-500 ml-1">
+                    *
+                  </span>
+
                 </label>
 
                 <input
@@ -860,33 +1062,18 @@ const VehicleFormPage = () => {
               </div>
 
 
-              {/* Vehicle Number */}
-              <div>
-
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Internal Vehicle Number
-                </label>
-
-                <input
-                  type="text"
-                  name="vehicle_number"
-                  value={
-                    formData.vehicle_number
-                  }
-                  onChange={handleChange}
-                  placeholder="e.g. BUS-001"
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-
-              </div>
-
-
               {/* Make */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
+
                   Make
-                  <span className="text-red-500 ml-1">*</span>
+
+                  <span className="text-red-500 ml-1">
+                    *
+                  </span>
+
                 </label>
 
                 <input
@@ -903,11 +1090,17 @@ const VehicleFormPage = () => {
 
 
               {/* Model */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
+
                   Model
-                  <span className="text-red-500 ml-1">*</span>
+
+                  <span className="text-red-500 ml-1">
+                    *
+                  </span>
+
                 </label>
 
                 <input
@@ -923,25 +1116,44 @@ const VehicleFormPage = () => {
               </div>
 
 
-              {/* Year */}
+              {/* Vehicle Type */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Year of Manufacture
+
+                  Vehicle Type
+
+                  <span className="text-red-500 ml-1">
+                    *
+                  </span>
+
                 </label>
 
-                <input
-                  type="number"
-                  name="year_of_manufacture"
-                  value={
-                    formData.year_of_manufacture
-                  }
+                <select
+                  name="vehicle_type"
+                  value={formData.vehicle_type}
                   onChange={handleChange}
-                  min="1900"
-                  max={new Date().getFullYear()}
-                  placeholder="e.g. 2020"
+                  required
                   className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
+                >
+
+                  <option value="">
+                    Select vehicle type
+                  </option>
+
+                  {vehicleTypeChoices.map(
+                    (choice) => (
+                      <option
+                        key={choice.value}
+                        value={choice.value}
+                      >
+                        {choice.label}
+                      </option>
+                    )
+                  )}
+
+                </select>
 
               </div>
 
@@ -951,7 +1163,7 @@ const VehicleFormPage = () => {
 
 
           {/* ==================================================
-              SECTION 2 — IDENTIFICATION
+              SECTION 2 — VEHICLE INFORMATION
           ================================================== */}
 
           <section className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
@@ -961,117 +1173,17 @@ const VehicleFormPage = () => {
               <div className="flex items-center gap-3">
 
                 <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
-                  <FileCheck2 size={19} />
-                </div>
-
-                <div>
-
-                  <h2 className="font-semibold text-gray-800">
-                    Vehicle Identification
-                  </h2>
-
-                  <p className="text-xs text-gray-500">
-                    Official vehicle identification records.
-                  </p>
-
-                </div>
-
-              </div>
-
-            </div>
-
-
-            <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-5">
-
-              {/* Chassis */}
-              <div>
-
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Chassis Number
-                </label>
-
-                <input
-                  type="text"
-                  name="chassis_number"
-                  value={
-                    formData.chassis_number
-                  }
-                  onChange={handleChange}
-                  placeholder="Chassis number"
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white uppercase focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-
-              </div>
-
-
-              {/* Engine */}
-              <div>
-
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Engine Number
-                </label>
-
-                <input
-                  type="text"
-                  name="engine_number"
-                  value={
-                    formData.engine_number
-                  }
-                  onChange={handleChange}
-                  placeholder="Engine number"
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white uppercase focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-
-              </div>
-
-
-              {/* Logbook */}
-              <div>
-
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Logbook Number
-                </label>
-
-                <input
-                  type="text"
-                  name="logbook_number"
-                  value={
-                    formData.logbook_number
-                  }
-                  onChange={handleChange}
-                  placeholder="Logbook number"
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-
-              </div>
-
-            </div>
-
-          </section>
-
-
-          {/* ==================================================
-              SECTION 3 — MILEAGE & SERVICE
-          ================================================== */}
-
-          <section className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
-
-            <div className="px-5 py-4 border-b border-gray-200">
-
-              <div className="flex items-center gap-3">
-
-                <div className="w-9 h-9 rounded-lg bg-green-100 text-green-700 flex items-center justify-center">
                   <Gauge size={19} />
                 </div>
 
                 <div>
 
                   <h2 className="font-semibold text-gray-800">
-                    Mileage & Service
+                    Vehicle Information
                   </h2>
 
                   <p className="text-xs text-gray-500">
-                    Track current mileage and planned servicing.
+                    Technical and physical information about the vehicle.
                   </p>
 
                 </div>
@@ -1083,62 +1195,19 @@ const VehicleFormPage = () => {
 
             <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
 
-              {/* Current Mileage */}
+              {/* Manufacture Date */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Current Mileage (km)
-                </label>
-
-                <input
-                  type="number"
-                  min="0"
-                  name="current_mileage"
-                  value={
-                    formData.current_mileage
-                  }
-                  onChange={handleChange}
-                  placeholder="e.g. 125000"
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-
-              </div>
-
-
-              {/* Last Service Mileage */}
-              <div>
-
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Last Service Mileage (km)
-                </label>
-
-                <input
-                  type="number"
-                  min="0"
-                  name="last_service_mileage"
-                  value={
-                    formData.last_service_mileage
-                  }
-                  onChange={handleChange}
-                  placeholder="e.g. 120000"
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-
-              </div>
-
-
-              {/* Last Service Date */}
-              <div>
-
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Last Service Date
+                  Date of Manufacture
                 </label>
 
                 <input
                   type="date"
-                  name="last_service_date"
+                  name="date_of_manufacture"
                   value={
-                    formData.last_service_date
+                    formData.date_of_manufacture
                   }
                   onChange={handleChange}
                   className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -1147,18 +1216,19 @@ const VehicleFormPage = () => {
               </div>
 
 
-              {/* Next Service Date */}
+              {/* Registration Date */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Next Service Date
+                  Date of Registration
                 </label>
 
                 <input
                   type="date"
-                  name="next_service_date"
+                  name="date_of_registration"
                   value={
-                    formData.next_service_date
+                    formData.date_of_registration
                   }
                   onChange={handleChange}
                   className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -1167,23 +1237,198 @@ const VehicleFormPage = () => {
               </div>
 
 
-              {/* Next Service Mileage */}
+              {/* Capacity */}
+
+              <div>
+
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Passenger Capacity
+                </label>
+
+                <input
+                  type="number"
+                  name="capacity"
+                  value={formData.capacity}
+                  onChange={handleChange}
+                  min="0"
+                  placeholder="e.g. 33"
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+
+                <p className="text-xs text-gray-500 mt-1">
+                  Passenger capacity where applicable.
+                </p>
+
+              </div>
+
+
+              {/* Fuel Type */}
+
+              <div>
+
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+
+                  Fuel Type
+
+                  <span className="text-red-500 ml-1">
+                    *
+                  </span>
+
+                </label>
+
+                <select
+                  name="fuel_type"
+                  value={formData.fuel_type}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+
+                  <option value="">
+                    Select fuel type
+                  </option>
+
+                  {fuelTypeChoices.map(
+                    (choice) => (
+                      <option
+                        key={choice.value}
+                        value={choice.value}
+                      >
+                        {choice.label}
+                      </option>
+                    )
+                  )}
+
+                </select>
+
+              </div>
+
+
+              {/* Color */}
+
               <div className="md:col-span-2">
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Next Service Mileage (km)
+                  Vehicle Color
                 </label>
 
                 <input
-                  type="number"
-                  min="0"
-                  name="next_service_mileage"
+                  type="text"
+                  name="color"
+                  value={formData.color}
+                  onChange={handleChange}
+                  placeholder="e.g. White"
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+
+              </div>
+
+            </div>
+
+          </section>
+
+
+          {/* ==================================================
+              SECTION 3 — OWNERSHIP
+          ================================================== */}
+
+          <section className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
+
+            <div className="px-5 py-4 border-b border-gray-200">
+
+              <div className="flex items-center gap-3">
+
+                <div className="w-9 h-9 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center">
+                  <User size={19} />
+                </div>
+
+                <div>
+
+                  <h2 className="font-semibold text-gray-800">
+                    Ownership
+                  </h2>
+
+                  <p className="text-xs text-gray-500">
+                    Record how the school vehicle is owned or operated.
+                  </p>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+
+              {/* Ownership Type */}
+
+              <div>
+
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Ownership Type
+                </label>
+
+                <select
+                  name="ownership_type"
                   value={
-                    formData.next_service_mileage
+                    formData.ownership_type
                   }
                   onChange={handleChange}
-                  placeholder="e.g. 130000"
                   className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+
+                  {ownershipTypeChoices.map(
+                    (choice) => (
+                      <option
+                        key={choice.value}
+                        value={choice.value}
+                      >
+                        {choice.label}
+                      </option>
+                    )
+                  )}
+
+                </select>
+
+              </div>
+
+
+              {/* Owner Name */}
+
+              <div>
+
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Owner Name
+                </label>
+
+                <input
+                  type="text"
+                  name="owner_name"
+                  value={formData.owner_name}
+                  onChange={handleChange}
+                  placeholder="Owner or company name"
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+
+              </div>
+
+
+              {/* Owner Phone */}
+
+              <div className="md:col-span-2">
+
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Owner Phone
+                </label>
+
+                <input
+                  type="tel"
+                  name="owner_phone"
+                  value={formData.owner_phone}
+                  onChange={handleChange}
+                  placeholder="e.g. 0712 345 678"
+                  className="w-full md:max-w-xl px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
 
               </div>
@@ -1210,11 +1455,11 @@ const VehicleFormPage = () => {
                 <div>
 
                   <h2 className="font-semibold text-gray-800">
-                    Insurance
+                    Current Insurance
                   </h2>
 
                   <p className="text-xs text-gray-500">
-                    Current vehicle insurance information.
+                    Record the vehicle's current insurance information.
                   </p>
 
                 </div>
@@ -1227,6 +1472,7 @@ const VehicleFormPage = () => {
             <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-5">
 
               {/* Company */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -1247,21 +1493,22 @@ const VehicleFormPage = () => {
               </div>
 
 
-              {/* Policy */}
+              {/* Insurance Number */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Policy Number
+                  Insurance Number
                 </label>
 
                 <input
                   type="text"
-                  name="insurance_policy_number"
+                  name="insurance_number"
                   value={
-                    formData.insurance_policy_number
+                    formData.insurance_number
                   }
                   onChange={handleChange}
-                  placeholder="Policy number"
+                  placeholder="Policy / insurance number"
                   className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
 
@@ -1269,6 +1516,7 @@ const VehicleFormPage = () => {
 
 
               {/* Expiry */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -1293,7 +1541,7 @@ const VehicleFormPage = () => {
 
 
           {/* ==================================================
-              SECTION 5 — INSPECTION & ROAD COMPLIANCE
+              SECTION 5 — INSPECTION
           ================================================== */}
 
           <section className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
@@ -1303,17 +1551,17 @@ const VehicleFormPage = () => {
               <div className="flex items-center gap-3">
 
                 <div className="w-9 h-9 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
-                  <FileCheck2 size={19} />
+                  <ClipboardCheck size={19} />
                 </div>
 
                 <div>
 
                   <h2 className="font-semibold text-gray-800">
-                    Inspection & Road Compliance
+                    Vehicle Inspection
                   </h2>
 
                   <p className="text-xs text-gray-500">
-                    Keep regulatory and road-service information current.
+                    Keep the current vehicle inspection record up to date.
                   </p>
 
                 </div>
@@ -1323,87 +1571,134 @@ const VehicleFormPage = () => {
             </div>
 
 
-            <div className="p-5 space-y-6">
+            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
 
-              {/* ------------------------------------------------
-                  INSPECTION
-              ------------------------------------------------ */}
+              {/* Certificate Number */}
 
               <div>
 
-                <h3 className="text-sm font-semibold text-gray-800 mb-3">
-                  Vehicle Inspection
-                </h3>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Inspection Certificate Number
+                </label>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <input
+                  type="text"
+                  name="inspection_certificate_number"
+                  value={
+                    formData.inspection_certificate_number
+                  }
+                  onChange={handleChange}
+                  placeholder="Certificate number"
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white uppercase focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
 
-                  <div>
-
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Inspection Date
-                    </label>
-
-                    <input
-                      type="date"
-                      name="inspection_date"
-                      value={
-                        formData.inspection_date
-                      }
-                      onChange={handleChange}
-                      className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    />
-
-                  </div>
+              </div>
 
 
-                  <div>
+              {/* Expiry */}
 
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Inspection Expiry Date
-                    </label>
+              <div>
 
-                    <input
-                      type="date"
-                      name="inspection_expiry_date"
-                      value={
-                        formData.inspection_expiry_date
-                      }
-                      onChange={handleChange}
-                      className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    />
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Inspection Expiry Date
+                </label>
 
-                  </div>
+                <input
+                  type="date"
+                  name="inspection_expiry_date"
+                  value={
+                    formData.inspection_expiry_date
+                  }
+                  onChange={handleChange}
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+
+              </div>
+
+            </div>
+
+          </section>
+
+
+          {/* ==================================================
+              SECTION 6 — SPEED GOVERNOR
+          ================================================== */}
+
+          <section className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
+
+            <div className="px-5 py-4 border-b border-gray-200">
+
+              <div className="flex items-center gap-3">
+
+                <div className="w-9 h-9 rounded-lg bg-green-100 text-green-700 flex items-center justify-center">
+                  <Gauge size={19} />
+                </div>
+
+                <div>
+
+                  <h2 className="font-semibold text-gray-800">
+                    Speed Governor
+                  </h2>
+
+                  <p className="text-xs text-gray-500">
+                    Record the vehicle's speed governor information.
+                  </p>
 
                 </div>
 
               </div>
 
+            </div>
 
-              {/* ------------------------------------------------
-                  SPEED GOVERNOR
-              ------------------------------------------------ */}
 
-              <div className="pt-5 border-t border-gray-200">
+            <div className="p-5 space-y-5">
 
-                <h3 className="text-sm font-semibold text-gray-800 mb-3">
-                  Speed Governor
-                </h3>
+              {/* Present */}
 
+              <label className="flex items-center gap-3 cursor-pointer">
+
+                <input
+                  type="checkbox"
+                  name="speed_governor_present"
+                  checked={
+                    formData.speed_governor_present
+                  }
+                  onChange={handleChange}
+                  className="w-4 h-4 text-purple-700 rounded focus:ring-purple-500"
+                />
+
+                <span className="text-sm font-medium text-gray-700">
+                  Speed governor is present
+                </span>
+
+              </label>
+
+
+              {/* Company */}
+
+              {formData.speed_governor_present && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
                   <div>
 
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Speed Governor Date
+
+                      Speed Governor Company
+
+                      <span className="text-red-500 ml-1">
+                        *
+                      </span>
+
                     </label>
 
                     <input
-                      type="date"
-                      name="speed_governor_date"
+                      type="text"
+                      name="speed_governor_company"
                       value={
-                        formData.speed_governor_date
+                        formData.speed_governor_company
                       }
                       onChange={handleChange}
+                      placeholder="Company / installer"
                       className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
 
@@ -1429,60 +1724,85 @@ const VehicleFormPage = () => {
                   </div>
 
                 </div>
+              )}
+
+            </div>
+
+          </section>
+
+
+          {/* ==================================================
+              SECTION 7 — ROAD SERVICE LICENCE
+          ================================================== */}
+
+          <section className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
+
+            <div className="px-5 py-4 border-b border-gray-200">
+
+              <div className="flex items-center gap-3">
+
+                <div className="w-9 h-9 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center">
+                  <FileCheck2 size={19} />
+                </div>
+
+                <div>
+
+                  <h2 className="font-semibold text-gray-800">
+                    Road Service Licence
+                  </h2>
+
+                  <p className="text-xs text-gray-500">
+                    Record the vehicle's road service licence.
+                  </p>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+
+              {/* Licence Number */}
+
+              <div>
+
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Licence Number
+                </label>
+
+                <input
+                  type="text"
+                  name="road_service_licence_number"
+                  value={
+                    formData.road_service_licence_number
+                  }
+                  onChange={handleChange}
+                  placeholder="Road service licence number"
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white uppercase focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
 
               </div>
 
 
-              {/* ------------------------------------------------
-                  ROAD SERVICE
-              ------------------------------------------------ */}
+              {/* Expiry */}
 
-              <div className="pt-5 border-t border-gray-200">
+              <div>
 
-                <h3 className="text-sm font-semibold text-gray-800 mb-3">
-                  Road Service
-                </h3>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Licence Expiry Date
+                </label>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
-                  <div>
-
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Road Service Date
-                    </label>
-
-                    <input
-                      type="date"
-                      name="road_service_date"
-                      value={
-                        formData.road_service_date
-                      }
-                      onChange={handleChange}
-                      className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    />
-
-                  </div>
-
-
-                  <div>
-
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Road Service Expiry Date
-                    </label>
-
-                    <input
-                      type="date"
-                      name="road_service_expiry_date"
-                      value={
-                        formData.road_service_expiry_date
-                      }
-                      onChange={handleChange}
-                      className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    />
-
-                  </div>
-
-                </div>
+                <input
+                  type="date"
+                  name="road_service_licence_expiry_date"
+                  value={
+                    formData.road_service_licence_expiry_date
+                  }
+                  onChange={handleChange}
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
 
               </div>
 
@@ -1492,7 +1812,166 @@ const VehicleFormPage = () => {
 
 
           {/* ==================================================
-              SECTION 6 — NOTES
+              SECTION 8 — LOGBOOK
+          ================================================== */}
+
+          <section className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
+
+            <div className="px-5 py-4 border-b border-gray-200">
+
+              <div className="flex items-center gap-3">
+
+                <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+                  <FileCheck2 size={19} />
+                </div>
+
+                <div>
+
+                  <h2 className="font-semibold text-gray-800">
+                    Logbook
+                  </h2>
+
+                  <p className="text-xs text-gray-500">
+                    Record the vehicle logbook information.
+                  </p>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+
+              {/* Number */}
+
+              <div>
+
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Logbook Number
+                </label>
+
+                <input
+                  type="text"
+                  name="logbook_number"
+                  value={
+                    formData.logbook_number
+                  }
+                  onChange={handleChange}
+                  placeholder="Logbook number"
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white uppercase focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+
+              </div>
+
+
+              {/* Expiry */}
+
+              <div>
+
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Logbook Expiry Date
+                </label>
+
+                <input
+                  type="date"
+                  name="logbook_expiry_date"
+                  value={
+                    formData.logbook_expiry_date
+                  }
+                  onChange={handleChange}
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+
+              </div>
+
+            </div>
+
+          </section>
+
+
+          {/* ==================================================
+              SECTION 9 — SERVICE
+          ================================================== */}
+
+          <section className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
+
+            <div className="px-5 py-4 border-b border-gray-200">
+
+              <div className="flex items-center gap-3">
+
+                <div className="w-9 h-9 rounded-lg bg-green-100 text-green-700 flex items-center justify-center">
+                  <Wrench size={19} />
+                </div>
+
+                <div>
+
+                  <h2 className="font-semibold text-gray-800">
+                    Vehicle Service
+                  </h2>
+
+                  <p className="text-xs text-gray-500">
+                    Record the most recent and upcoming service dates.
+                  </p>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+
+              {/* Previous Service */}
+
+              <div>
+
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Date of Last Service
+                </label>
+
+                <input
+                  type="date"
+                  name="date_of_service"
+                  value={
+                    formData.date_of_service
+                  }
+                  onChange={handleChange}
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+
+              </div>
+
+
+              {/* Next Service */}
+
+              <div>
+
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Date of Next Service
+                </label>
+
+                <input
+                  type="date"
+                  name="date_of_next_service"
+                  value={
+                    formData.date_of_next_service
+                  }
+                  onChange={handleChange}
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+
+              </div>
+
+            </div>
+
+          </section>
+
+
+          {/* ==================================================
+              SECTION 10 — STATUS & NOTES
           ================================================== */}
 
           <section className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
@@ -1508,11 +1987,11 @@ const VehicleFormPage = () => {
                 <div>
 
                   <h2 className="font-semibold text-gray-800">
-                    Additional Information
+                    Status & Additional Information
                   </h2>
 
                   <p className="text-xs text-gray-500">
-                    Add any useful notes about this vehicle.
+                    Manage the current vehicle status and notes.
                   </p>
 
                 </div>
@@ -1522,20 +2001,57 @@ const VehicleFormPage = () => {
             </div>
 
 
-            <div className="p-5">
+            <div className="p-5 space-y-5">
 
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Notes
-              </label>
+              {/* Status */}
 
-              <textarea
-                name="notes"
-                value={formData.notes}
-                onChange={handleChange}
-                rows={5}
-                placeholder="Enter any additional information about the vehicle..."
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white resize-y focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
+              <div>
+
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Vehicle Status
+                </label>
+
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  className="w-full md:w-1/2 px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+
+                  {statusChoices.map(
+                    (choice) => (
+                      <option
+                        key={choice.value}
+                        value={choice.value}
+                      >
+                        {choice.label}
+                      </option>
+                    )
+                  )}
+
+                </select>
+
+              </div>
+
+
+              {/* Notes */}
+
+              <div>
+
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Notes
+                </label>
+
+                <textarea
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleChange}
+                  rows={5}
+                  placeholder="Enter any additional information about the vehicle..."
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white resize-y focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+
+              </div>
 
             </div>
 
@@ -1573,6 +2089,7 @@ const VehicleFormPage = () => {
               ) : (
                 <>
                   <Save size={18} />
+
                   {isEditMode
                     ? "Update Vehicle"
                     : "Register Vehicle"}
@@ -1602,6 +2119,7 @@ const RefreshIcon = () => (
     viewBox="0 0 24 24"
     fill="none"
   >
+
     <circle
       cx="12"
       cy="12"
@@ -1617,9 +2135,9 @@ const RefreshIcon = () => (
       strokeWidth="3"
       strokeLinecap="round"
     />
+
   </svg>
 );
 
 
 export default VehicleFormPage;
-

@@ -42,11 +42,11 @@ import axiosInstance from "../../../../utils/axiosInstance";
 // 3. Driver overview
 // 4. Compliance / service alerts
 // 5. Recent fueling
-// 6. Driver mileage / weekly reports
+// 6. Driver weekly reports
 // 7. Transport costs
 // 8. Quick actions
 //
-// Backend:
+// Current backend endpoints:
 //
 // /api/transport/
 // ├── driver-profiles/
@@ -57,7 +57,6 @@ import axiosInstance from "../../../../utils/axiosInstance";
 // ├── maintenance/
 // ├── insurance/
 // ├── routes/
-// ├── stages/
 // └── assignments/
 // ============================================================
 
@@ -90,29 +89,14 @@ const getId = (item) => {
 };
 
 
-const getStudentName = (student) => {
-  if (!student) {
-    return "Unknown Student";
-  }
-
-  if (student.full_name) {
-    return student.full_name;
-  }
-
-  return [
-    student.first_name,
-    student.middle_name,
-    student.last_name,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .trim() || "Unknown Student";
-};
-
-
 const getDriverName = (driver) => {
   if (!driver) {
     return "Unknown Driver";
+  }
+
+  // Current DriverWeeklyReport serializer
+  if (driver.driver_name) {
+    return driver.driver_name;
   }
 
   if (driver.full_name) {
@@ -140,6 +124,13 @@ const getDriverName = (driver) => {
     }
   }
 
+  if (
+    typeof driver === "number" ||
+    typeof driver === "string"
+  ) {
+    return `Driver #${driver}`;
+  }
+
   return "Unknown Driver";
 };
 
@@ -147,6 +138,15 @@ const getDriverName = (driver) => {
 const getVehicleName = (vehicle) => {
   if (!vehicle) {
     return "Unknown Vehicle";
+  }
+
+  // Current DriverWeeklyReport serializer
+  if (vehicle.vehicle_registration) {
+    if (vehicle.vehicle_id) {
+      return `${vehicle.vehicle_registration} — ${vehicle.vehicle_id}`;
+    }
+
+    return vehicle.vehicle_registration;
   }
 
   const registration =
@@ -179,6 +179,36 @@ const getVehicleName = (vehicle) => {
 };
 
 
+const getReportDriverLabel = (report) => {
+  if (report?.driver_name) {
+    return report.driver_name;
+  }
+
+  if (report?.driver !== undefined && report?.driver !== null) {
+    return `Driver #${report.driver}`;
+  }
+
+  return "Unknown Driver";
+};
+
+
+const getReportVehicleLabel = (report) => {
+  if (report?.vehicle_registration) {
+    return report.vehicle_registration;
+  }
+
+  if (report?.vehicle_id) {
+    return report.vehicle_id;
+  }
+
+  if (report?.vehicle !== undefined && report?.vehicle !== null) {
+    return `Vehicle #${report.vehicle}`;
+  }
+
+  return "Unknown Vehicle";
+};
+
+
 const formatDate = (value) => {
   if (!value) {
     return "—";
@@ -196,6 +226,30 @@ const formatDate = (value) => {
       day: "2-digit",
       month: "short",
       year: "numeric",
+    }
+  );
+};
+
+
+const formatDateTime = (value) => {
+  if (!value) {
+    return "—";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString(
+    "en-GB",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     }
   );
 };
@@ -619,10 +673,24 @@ const TransportDashboard = () => {
           vehicle.status === "inactive"
       ).length;
 
+    // Current Vehicle model uses:
+    // "under_maintenance"
     const maintenanceCount =
       vehicles.filter(
         (vehicle) =>
-          vehicle.status === "maintenance"
+          vehicle.status === "under_maintenance"
+      ).length;
+
+    const retired =
+      vehicles.filter(
+        (vehicle) =>
+          vehicle.status === "retired"
+      ).length;
+
+    const sold =
+      vehicles.filter(
+        (vehicle) =>
+          vehicle.status === "sold"
       ).length;
 
     return {
@@ -630,6 +698,8 @@ const TransportDashboard = () => {
       active,
       inactive,
       maintenance: maintenanceCount,
+      retired,
+      sold,
     };
 
   }, [
@@ -697,6 +767,39 @@ const TransportDashboard = () => {
 
 
   // ==========================================================
+  // DRIVER REPORT STATISTICS
+  // ==========================================================
+
+  const driverReportStats =
+    useMemo(() => {
+
+      const total =
+        driverReports.length;
+
+      const reviewed =
+        driverReports.filter(
+          (report) =>
+            report.reviewed === true
+        ).length;
+
+      const pending =
+        driverReports.filter(
+          (report) =>
+            report.reviewed !== true
+        ).length;
+
+      return {
+        total,
+        reviewed,
+        pending,
+      };
+
+    }, [
+      driverReports,
+    ]);
+
+
+  // ==========================================================
   // COMPLIANCE ALERTS
   // ==========================================================
 
@@ -705,17 +808,16 @@ const TransportDashboard = () => {
 
       const alerts = [];
 
+
       // ------------------------------------------------------
       // VEHICLE INSURANCE
       // ------------------------------------------------------
 
-      insurance.forEach(
-        (record) => {
+      vehicles.forEach(
+        (vehicle) => {
 
           const expiry =
-            record.expiry_date ||
-            record.expiration_date ||
-            record.insurance_expiry;
+            vehicle.insurance_expiry_date;
 
           if (!expiry) {
             return;
@@ -734,8 +836,7 @@ const TransportDashboard = () => {
             alerts.push({
               type: "insurance",
               title: "Insurance",
-              vehicle:
-                record.vehicle,
+              vehicle,
               date: expiry,
               state,
             });
@@ -747,16 +848,172 @@ const TransportDashboard = () => {
 
 
       // ------------------------------------------------------
-      // VEHICLE MAINTENANCE
+      // VEHICLE INSPECTION
+      // ------------------------------------------------------
+
+      vehicles.forEach(
+        (vehicle) => {
+
+          const expiry =
+            vehicle.inspection_expiry_date;
+
+          if (!expiry) {
+            return;
+          }
+
+          const state =
+            getComplianceState(
+              expiry
+            );
+
+          if (
+            state === "expired" ||
+            state === "warning"
+          ) {
+
+            alerts.push({
+              type: "inspection",
+              title: "Inspection Certificate",
+              vehicle,
+              date: expiry,
+              state,
+            });
+
+          }
+
+        }
+      );
+
+
+      // ------------------------------------------------------
+      // SPEED GOVERNOR
+      // ------------------------------------------------------
+
+      vehicles.forEach(
+        (vehicle) => {
+
+          if (
+            vehicle.speed_governor_present !== true
+          ) {
+            return;
+          }
+
+          const expiry =
+            vehicle.speed_governor_expiry_date;
+
+          if (!expiry) {
+            return;
+          }
+
+          const state =
+            getComplianceState(
+              expiry
+            );
+
+          if (
+            state === "expired" ||
+            state === "warning"
+          ) {
+
+            alerts.push({
+              type: "speed_governor",
+              title: "Speed Governor",
+              vehicle,
+              date: expiry,
+              state,
+            });
+
+          }
+
+        }
+      );
+
+
+      // ------------------------------------------------------
+      // ROAD SERVICE LICENCE
+      // ------------------------------------------------------
+
+      vehicles.forEach(
+        (vehicle) => {
+
+          const expiry =
+            vehicle.road_service_licence_expiry_date;
+
+          if (!expiry) {
+            return;
+          }
+
+          const state =
+            getComplianceState(
+              expiry
+            );
+
+          if (
+            state === "expired" ||
+            state === "warning"
+          ) {
+
+            alerts.push({
+              type: "road_service_licence",
+              title: "Road Service Licence",
+              vehicle,
+              date: expiry,
+              state,
+            });
+
+          }
+
+        }
+      );
+
+
+      // ------------------------------------------------------
+      // MAINTENANCE / NEXT SERVICE
+      // ------------------------------------------------------
+
+      vehicles.forEach(
+        (vehicle) => {
+
+          const nextService =
+            vehicle.date_of_next_service;
+
+          if (!nextService) {
+            return;
+          }
+
+          const state =
+            getComplianceState(
+              nextService
+            );
+
+          if (
+            state === "expired" ||
+            state === "warning"
+          ) {
+
+            alerts.push({
+              type: "vehicle_service",
+              title: "Vehicle Service",
+              vehicle,
+              date: nextService,
+              state,
+            });
+
+          }
+
+        }
+      );
+
+
+      // ------------------------------------------------------
+      // MAINTENANCE RECORD NEXT SERVICE
       // ------------------------------------------------------
 
       maintenance.forEach(
         (record) => {
 
           const nextService =
-            record.next_service_date ||
-            record.next_service ||
-            record.service_due_date;
+            record.next_service_date;
 
           if (!nextService) {
             return;
@@ -774,50 +1031,9 @@ const TransportDashboard = () => {
 
             alerts.push({
               type: "maintenance",
-              title: "Maintenance",
-              vehicle:
-                record.vehicle,
+              title: "Maintenance Service",
+              vehicle: record.vehicle,
               date: nextService,
-              state,
-            });
-
-          }
-
-        }
-      );
-
-
-      // ------------------------------------------------------
-      // VEHICLE INSPECTION
-      // ------------------------------------------------------
-
-      vehicles.forEach(
-        (vehicle) => {
-
-          const inspectionDate =
-            vehicle.inspection_expiry ||
-            vehicle.inspection_expiry_date ||
-            vehicle.next_inspection_date;
-
-          if (!inspectionDate) {
-            return;
-          }
-
-          const state =
-            getComplianceState(
-              inspectionDate
-            );
-
-          if (
-            state === "expired" ||
-            state === "warning"
-          ) {
-
-            alerts.push({
-              type: "inspection",
-              title: "Inspection",
-              vehicle,
-              date: inspectionDate,
               state,
             });
 
@@ -831,10 +1047,14 @@ const TransportDashboard = () => {
         .sort((a, b) => {
 
           const aDate =
-            new Date(a.date).getTime();
+            new Date(
+              a.date
+            ).getTime();
 
           const bDate =
-            new Date(b.date).getTime();
+            new Date(
+              b.date
+            ).getTime();
 
           return aDate - bDate;
 
@@ -842,9 +1062,8 @@ const TransportDashboard = () => {
         .slice(0, 6);
 
     }, [
-      insurance,
-      maintenance,
       vehicles,
+      maintenance,
     ]);
 
 
@@ -894,19 +1113,19 @@ const TransportDashboard = () => {
       return [...driverReports]
         .sort((a, b) => {
 
+          // DriverWeeklyReport does NOT have created_at.
+          // submitted_at is the actual submission timestamp.
           const aDate =
             new Date(
-              a.report_date ||
+              a.submitted_at ||
               a.week_start ||
-              a.created_at ||
               0
             ).getTime();
 
           const bDate =
             new Date(
-              b.report_date ||
+              b.submitted_at ||
               b.week_start ||
-              b.created_at ||
               0
             ).getTime();
 
@@ -955,7 +1174,49 @@ const TransportDashboard = () => {
 
 
   // ==========================================================
+  // FUEL USED SUMMARY FROM WEEKLY REPORTS
+  // ==========================================================
+
+  const weeklyFuelUsed =
+    useMemo(() => {
+
+      return driverReports.reduce(
+        (total, report) => {
+
+          const quantity =
+            Number(
+              report.fuel_used_quantity
+            );
+
+          if (
+            Number.isNaN(
+              quantity
+            )
+          ) {
+            return total;
+          }
+
+          return total + quantity;
+
+        },
+        0
+      );
+
+    }, [
+      driverReports,
+    ]);
+
+
+  // ==========================================================
   // FUEL COST SUMMARY
+  // ==========================================================
+  //
+  // This comes from VehicleFueling financial records.
+  //
+  // IMPORTANT:
+  // DriverWeeklyReport.fuel_cost_per_liter is NOT included here.
+  // That field represents an operational reference price, not
+  // an actual financial fueling transaction.
   // ==========================================================
 
   const fuelingCost =
@@ -1002,8 +1263,8 @@ const TransportDashboard = () => {
 
           const cost =
             Number(
-              record.total_cost ??
               record.cost ??
+              record.total_cost ??
               record.amount ??
               record.receipt?.total ??
               0
@@ -1291,8 +1552,8 @@ const TransportDashboard = () => {
 
         <StatCard
           title="Driver Reports"
-          value={driverReports.length}
-          subtitle={`${driverStats.verified} verified drivers`}
+          value={driverReportStats.total}
+          subtitle={`${driverReportStats.pending} pending review`}
           icon={ClipboardList}
           iconClassName="bg-teal-100 text-teal-700"
           href="/transport/reports"
@@ -1395,6 +1656,40 @@ const TransportDashboard = () => {
             </div>
 
           </div>
+
+
+          {(vehicleStats.retired > 0 ||
+            vehicleStats.sold > 0) && (
+
+            <div className="grid grid-cols-2 gap-3 mt-4">
+
+              <div className="p-3 rounded-lg bg-gray-100 border border-gray-200">
+
+                <p className="text-xs text-gray-500">
+                  Retired
+                </p>
+
+                <p className="font-semibold text-gray-800 mt-1">
+                  {vehicleStats.retired}
+                </p>
+
+              </div>
+
+              <div className="p-3 rounded-lg bg-gray-100 border border-gray-200">
+
+                <p className="text-xs text-gray-500">
+                  Sold
+                </p>
+
+                <p className="font-semibold text-gray-800 mt-1">
+                  {vehicleStats.sold}
+                </p>
+
+              </div>
+
+            </div>
+
+          )}
 
         </div>
 
@@ -1506,9 +1801,9 @@ const TransportDashboard = () => {
         <SectionHeader
           icon={CalendarClock}
           title="Compliance & Service Alerts"
-          subtitle="Insurance, inspection and maintenance dates requiring attention"
-          href="/transport/expenses"
-          actionLabel="Manage"
+          subtitle="Insurance, inspection, licensing and service dates requiring attention"
+          href="/transport/vehicles"
+          actionLabel="Manage Vehicles"
         />
 
 
@@ -1526,7 +1821,7 @@ const TransportDashboard = () => {
             </p>
 
             <p className="text-sm text-green-700 mt-1">
-              No insurance, inspection or maintenance dates are currently due or approaching.
+              No insurance, inspection, licensing or service dates are currently due or approaching.
             </p>
 
           </div>
@@ -1746,24 +2041,35 @@ const TransportDashboard = () => {
                       <div className="grid grid-cols-2 gap-3 mt-3">
 
                         <div className="text-xs text-gray-500">
+
                           Quantity
+
                           <span className="block font-medium text-gray-700 mt-0.5">
+
                             {quantity !== undefined &&
                             quantity !== null
                               ? `${formatNumber(
                                   quantity
                                 )} L`
                               : "—"}
+
                           </span>
+
                         </div>
 
+
                         <div className="text-xs text-gray-500">
+
                           Fuel Type
+
                           <span className="block font-medium text-gray-700 mt-0.5">
+
                             {getStatusLabel(
                               record.fuel_type
                             )}
+
                           </span>
+
                         </div>
 
                       </div>
@@ -1790,7 +2096,7 @@ const TransportDashboard = () => {
           <SectionHeader
             icon={Gauge}
             title="Recent Driver Reports"
-            subtitle="Latest weekly mileage and fueling reports"
+            subtitle="Latest weekly mileage and fuel-use reports"
             href="/transport/reports"
           />
 
@@ -1817,11 +2123,6 @@ const TransportDashboard = () => {
               {recentReports.map(
                 (report, index) => {
 
-                  const driver =
-                    report.driver_profile ||
-                    report.driver ||
-                    report.staff;
-
                   const totalMileage =
                     report.total_mileage;
 
@@ -1829,9 +2130,11 @@ const TransportDashboard = () => {
                     report.fuel_used_quantity;
 
                   const reportDate =
-                    report.report_date ||
-                    report.week_start ||
-                    report.created_at;
+                    report.submitted_at ||
+                    report.week_start;
+
+                  const reviewed =
+                    report.reviewed === true;
 
                   return (
                     <div
@@ -1844,29 +2147,53 @@ const TransportDashboard = () => {
 
                       <div className="flex items-start justify-between gap-3">
 
-                        <div>
+                        <div className="min-w-0">
 
-                          <p className="font-semibold text-gray-800">
-                            {getDriverName(
-                              driver
+                          <p className="font-semibold text-gray-800 truncate">
+                            {getReportDriverLabel(
+                              report
+                            )}
+                          </p>
+
+                          <p className="text-sm text-gray-600 mt-1">
+                            {getReportVehicleLabel(
+                              report
                             )}
                           </p>
 
                           <p className="text-xs text-gray-500 mt-1">
+                            Week:{" "}
                             {formatDate(
-                              reportDate
+                              report.week_start
+                            )}
+                            {" — "}
+                            {formatDate(
+                              report.week_end
                             )}
                           </p>
 
                         </div>
 
 
-                        {report.reviewed === true && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                            reviewed
+                              ? "bg-green-100 text-green-700"
+                              : "bg-amber-100 text-amber-700"
+                          }`}
+                        >
+
+                          {reviewed ? (
                             <CheckCircle size={13} />
-                            Reviewed
-                          </span>
-                        )}
+                          ) : (
+                            <AlertTriangle size={13} />
+                          )}
+
+                          {reviewed
+                            ? "Reviewed"
+                            : "Pending"}
+
+                        </span>
 
                       </div>
 
@@ -1880,12 +2207,14 @@ const TransportDashboard = () => {
                           </p>
 
                           <p className="font-semibold text-gray-800 mt-0.5">
+
                             {totalMileage !== undefined &&
                             totalMileage !== null
                               ? `${formatNumber(
                                   totalMileage
                                 )} km`
                               : "—"}
+
                           </p>
 
                         </div>
@@ -1898,17 +2227,29 @@ const TransportDashboard = () => {
                           </p>
 
                           <p className="font-semibold text-gray-800 mt-0.5">
+
                             {fuelUsed !== undefined &&
                             fuelUsed !== null
                               ? `${formatNumber(
                                   fuelUsed
                                 )} L`
                               : "—"}
+
                           </p>
 
                         </div>
 
                       </div>
+
+
+                      {report.submitted_at && (
+                        <p className="text-xs text-gray-500 mt-3">
+                          Submitted:{" "}
+                          {formatDateTime(
+                            report.submitted_at
+                          )}
+                        </p>
+                      )}
 
                     </div>
                   );
@@ -1919,6 +2260,87 @@ const TransportDashboard = () => {
             </div>
 
           )}
+
+        </div>
+
+      </div>
+
+
+      {/* ====================================================
+          WEEKLY OPERATIONS SUMMARY
+      ==================================================== */}
+
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-6">
+
+        <SectionHeader
+          icon={Gauge}
+          title="Weekly Driver Report Overview"
+          subtitle="Operational mileage and fuel usage recorded by drivers"
+          href="/transport/reports"
+        />
+
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+          <div className="p-4 rounded-lg bg-cyan-50 border border-cyan-200">
+
+            <div className="flex items-center gap-2 text-cyan-700">
+
+              <Gauge size={18} />
+
+              <span className="text-sm font-medium">
+                Total Mileage
+              </span>
+
+            </div>
+
+            <p className="text-xl font-bold text-cyan-800 mt-2">
+              {formatNumber(
+                mileageSummary
+              )} km
+            </p>
+
+          </div>
+
+
+          <div className="p-4 rounded-lg bg-amber-50 border border-amber-200">
+
+            <div className="flex items-center gap-2 text-amber-700">
+
+              <Fuel size={18} />
+
+              <span className="text-sm font-medium">
+                Fuel Used
+              </span>
+
+            </div>
+
+            <p className="text-xl font-bold text-amber-800 mt-2">
+              {formatNumber(
+                weeklyFuelUsed
+              )} L
+            </p>
+
+          </div>
+
+
+          <div className="p-4 rounded-lg bg-purple-50 border border-purple-200">
+
+            <div className="flex items-center gap-2 text-purple-700">
+
+              <ClipboardList size={18} />
+
+              <span className="text-sm font-medium">
+                Reports Pending Review
+              </span>
+
+            </div>
+
+            <p className="text-xl font-bold text-purple-800 mt-2">
+              {driverReportStats.pending}
+            </p>
+
+          </div>
 
         </div>
 
@@ -2155,4 +2577,3 @@ const TransportDashboard = () => {
 
 
 export default TransportDashboard;
-

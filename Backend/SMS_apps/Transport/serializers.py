@@ -18,15 +18,16 @@ from .models import (
 # DRIVER PROFILE SERIALIZER
 # ============================================================
 
+from django.utils import timezone
+from rest_framework import serializers
+
+from .models import DriverProfile
+
+
 class DriverProfileSerializer(serializers.ModelSerializer):
-    """
-    Serializer for driver-specific information.
-
-    General identity/contact information belongs to Staff.
-
-    DriverProfile contains only information specific to
-    operating a vehicle.
-    """
+    # --------------------------------------------------
+    # STAFF INFORMATION
+    # --------------------------------------------------
 
     staff_name = serializers.CharField(
         source="staff.full_name",
@@ -37,6 +38,23 @@ class DriverProfileSerializer(serializers.ModelSerializer):
         source="staff.staff_id",
         read_only=True,
     )
+
+    # --------------------------------------------------
+    # DRIVER STATUS
+    # --------------------------------------------------
+    # Status belongs to Staff and is therefore derived
+    # from the linked Staff record.
+    #
+    # This prevents having two separate statuses that
+    # could become inconsistent.
+    status = serializers.CharField(
+        source="staff.status",
+        read_only=True,
+    )
+
+    # --------------------------------------------------
+    # VERIFICATION INFORMATION
+    # --------------------------------------------------
 
     verified_by_name = serializers.CharField(
         source="verified_by.get_full_name",
@@ -50,72 +68,68 @@ class DriverProfileSerializer(serializers.ModelSerializer):
         fields = [
             "id",
 
-            # ------------------------------------------------
-            # STAFF
-            # ------------------------------------------------
+            # Staff
             "staff",
             "staff_name",
             "staff_id",
+            "status",
 
-            # ------------------------------------------------
-            # LICENCE
-            # ------------------------------------------------
+            # Driving licence
             "license_number",
             "license_class",
             "license_issue_date",
             "license_expiry_date",
 
-            # ------------------------------------------------
             # PSV
-            # ------------------------------------------------
             "psv_license_number",
             "psv_expiry_date",
 
-            # ------------------------------------------------
-            # DRIVER IDENTIFICATION
-            # ------------------------------------------------
+            # Driver badge
             "driver_badge_number",
 
-            # ------------------------------------------------
-            # EXPERIENCE
-            # ------------------------------------------------
+            # Experience
             "years_of_experience",
             "previous_driving_experience",
 
-            # ------------------------------------------------
-            # MEDICAL
-            # ------------------------------------------------
+            # Medical
             "medical_certificate_expiry",
 
-            # ------------------------------------------------
-            # VERIFICATION
-            # ------------------------------------------------
+            # Verification
             "is_verified",
             "verified_at",
             "verified_by",
             "verified_by_name",
 
-            # ------------------------------------------------
-            # NOTES
-            # ------------------------------------------------
+            # Notes
             "notes",
 
-            # ------------------------------------------------
-            # SYSTEM
-            # ------------------------------------------------
+            # Timestamps
             "created_at",
             "updated_at",
         ]
 
         read_only_fields = [
             "id",
+
+            # Staff display information
             "staff_name",
             "staff_id",
+            "status",
+
+            # Verification information is controlled
+            # automatically by the backend.
             "verified_at",
+            "verified_by",
             "verified_by_name",
+
+            # Timestamps
             "created_at",
             "updated_at",
         ]
+
+    # --------------------------------------------------
+    # VALIDATION
+    # --------------------------------------------------
 
     def validate_years_of_experience(self, value):
         if value is not None and value < 0:
@@ -125,6 +139,96 @@ class DriverProfileSerializer(serializers.ModelSerializer):
 
         return value
 
+    # --------------------------------------------------
+    # CREATE
+    # --------------------------------------------------
+
+    def create(self, validated_data):
+        request = self.context.get("request")
+
+        is_verified = validated_data.get(
+            "is_verified",
+            False,
+        )
+
+        if is_verified:
+            user = getattr(request, "user", None)
+
+            if not user or not user.is_authenticated:
+                raise serializers.ValidationError({
+                    "is_verified": (
+                        "An authenticated user is required "
+                        "to verify a driver."
+                    )
+                })
+
+            # Automatically record the logged-in user.
+            validated_data["verified_by"] = user
+
+            # Automatically record verification time.
+            validated_data["verified_at"] = timezone.now()
+
+        else:
+            validated_data["verified_by"] = None
+            validated_data["verified_at"] = None
+
+        return super().create(validated_data)
+
+    # --------------------------------------------------
+    # UPDATE
+    # --------------------------------------------------
+
+    def update(self, instance, validated_data):
+        request = self.context.get("request")
+
+        is_verified = validated_data.get(
+            "is_verified",
+            instance.is_verified,
+        )
+
+        # ----------------------------------------------
+        # DRIVER IS BEING VERIFIED
+        # ----------------------------------------------
+
+        if is_verified:
+
+            # If the driver was previously unverified,
+            # the current logged-in user becomes the verifier.
+            if not instance.is_verified:
+
+                user = getattr(request, "user", None)
+
+                if not user or not user.is_authenticated:
+                    raise serializers.ValidationError({
+                        "is_verified": (
+                            "An authenticated user is required "
+                            "to verify a driver."
+                        )
+                    })
+
+                validated_data["verified_by"] = user
+                validated_data["verified_at"] = timezone.now()
+
+            else:
+                # Already verified.
+                # Preserve the original verification details.
+                validated_data["verified_by"] = (
+                    instance.verified_by
+                )
+
+                validated_data["verified_at"] = (
+                    instance.verified_at
+                )
+
+        # ----------------------------------------------
+        # DRIVER IS BEING UNVERIFIED
+        # ----------------------------------------------
+
+        else:
+            validated_data["verified_by"] = None
+            validated_data["verified_at"] = None
+
+        return super().update(instance, validated_data)
 
 # ============================================================
 # VEHICLE SERIALIZER
@@ -316,13 +420,8 @@ class VehicleAssignmentSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, attrs):
-        start_date = attrs.get(
-            "start_date"
-        )
-
-        end_date = attrs.get(
-            "end_date"
-        )
+        start_date = attrs.get("start_date")
+        end_date = attrs.get("end_date")
 
         if (
             start_date
@@ -343,27 +442,43 @@ class VehicleAssignmentSerializer(serializers.ModelSerializer):
 # DRIVER WEEKLY REPORT SERIALIZER
 # ============================================================
 
+
 class DriverWeeklyReportSerializer(
     serializers.ModelSerializer
 ):
     """
     Serializer for weekly driver reports.
 
-    The driver submits:
+    The report records:
+    - Driver
     - Vehicle
-    - Week
-    - Starting mileage
-    - Ending mileage
-    - Comments
+    - Reporting period
+    - Mileage
+    - Fuel usage
+    - Fueling location
+    - Fuel cost per litre
+    - Vehicle condition
+    - Incidents
+    - Maintenance requirements
+    - Driver comments
+    - Review information
 
-    Total mileage is calculated by the model/service and
-    therefore remains read-only.
+    Total mileage is calculated automatically by the model
+    and therefore remains read-only.
     """
+
+    # --------------------------------------------------------
+    # DRIVER
+    # --------------------------------------------------------
 
     driver_name = serializers.CharField(
         source="driver.staff.full_name",
         read_only=True,
     )
+
+    # --------------------------------------------------------
+    # VEHICLE
+    # --------------------------------------------------------
 
     vehicle_registration = serializers.CharField(
         source="vehicle.registration_number",
@@ -375,11 +490,19 @@ class DriverWeeklyReportSerializer(
         read_only=True,
     )
 
+    # --------------------------------------------------------
+    # REVIEW
+    # --------------------------------------------------------
+
     reviewed_by_name = serializers.CharField(
         source="reviewed_by.get_full_name",
         read_only=True,
         allow_null=True,
     )
+
+    # --------------------------------------------------------
+    # META
+    # --------------------------------------------------------
 
     class Meta:
         model = DriverWeeklyReport
@@ -390,42 +513,76 @@ class DriverWeeklyReportSerializer(
             # ------------------------------------------------
             # DRIVER
             # ------------------------------------------------
+
             "driver",
             "driver_name",
 
             # ------------------------------------------------
             # VEHICLE
             # ------------------------------------------------
+
             "vehicle",
             "vehicle_id",
             "vehicle_registration",
 
             # ------------------------------------------------
-            # WEEK
+            # REPORT PERIOD
             # ------------------------------------------------
+
             "week_start",
             "week_end",
 
             # ------------------------------------------------
             # MILEAGE
             # ------------------------------------------------
+
             "starting_mileage",
             "ending_mileage",
             "total_mileage",
 
             # ------------------------------------------------
+            # FUEL
+            # ------------------------------------------------
+
+            "fuel_used_quantity",
+            "fueling_location",
+            "fuel_cost_per_liter",
+
+            # ------------------------------------------------
+            # VEHICLE CONDITION
+            # ------------------------------------------------
+
+            "vehicle_condition",
+
+            # ------------------------------------------------
+            # INCIDENTS
+            # ------------------------------------------------
+
+            "incidents",
+
+            # ------------------------------------------------
+            # MAINTENANCE
+            # ------------------------------------------------
+
+            "maintenance_required",
+            "maintenance_notes",
+
+            # ------------------------------------------------
             # COMMENTS
             # ------------------------------------------------
+
             "comments",
 
             # ------------------------------------------------
             # SUBMISSION
             # ------------------------------------------------
+
             "submitted_at",
 
             # ------------------------------------------------
             # REVIEW
             # ------------------------------------------------
+
             "reviewed",
             "reviewed_at",
             "reviewed_by",
@@ -435,16 +592,35 @@ class DriverWeeklyReportSerializer(
 
         read_only_fields = [
             "id",
+
             "driver_name",
+
             "vehicle_id",
             "vehicle_registration",
+
             "total_mileage",
+
             "submitted_at",
+
             "reviewed_at",
             "reviewed_by_name",
         ]
 
+    # --------------------------------------------------------
+    # VALIDATION
+    # --------------------------------------------------------
+
     def validate(self, attrs):
+        """
+        Perform serializer-level validation.
+
+        Model.clean() performs the final validation as well.
+        """
+
+        # ----------------------------------------------------
+        # REPORT PERIOD
+        # ----------------------------------------------------
+
         week_start = attrs.get(
             "week_start"
         )
@@ -465,6 +641,10 @@ class DriverWeeklyReportSerializer(
                 )
             })
 
+        # ----------------------------------------------------
+        # MILEAGE
+        # ----------------------------------------------------
+
         starting_mileage = attrs.get(
             "starting_mileage"
         )
@@ -475,6 +655,26 @@ class DriverWeeklyReportSerializer(
 
         if (
             starting_mileage is not None
+            and starting_mileage < 0
+        ):
+            raise serializers.ValidationError({
+                "starting_mileage": (
+                    "Starting mileage cannot be negative."
+                )
+            })
+
+        if (
+            ending_mileage is not None
+            and ending_mileage < 0
+        ):
+            raise serializers.ValidationError({
+                "ending_mileage": (
+                    "Ending mileage cannot be negative."
+                )
+            })
+
+        if (
+            starting_mileage is not None
             and ending_mileage is not None
             and ending_mileage < starting_mileage
         ):
@@ -482,6 +682,69 @@ class DriverWeeklyReportSerializer(
                 "ending_mileage": (
                     "Ending mileage cannot be "
                     "less than starting mileage."
+                )
+            })
+
+        # ----------------------------------------------------
+        # FUEL QUANTITY
+        # ----------------------------------------------------
+
+        fuel_quantity = attrs.get(
+            "fuel_used_quantity"
+        )
+
+        if (
+            fuel_quantity is not None
+            and fuel_quantity < 0
+        ):
+            raise serializers.ValidationError({
+                "fuel_used_quantity": (
+                    "Fuel used quantity cannot "
+                    "be negative."
+                )
+            })
+
+        # ----------------------------------------------------
+        # FUEL COST PER LITRE
+        # ----------------------------------------------------
+
+        fuel_cost_per_liter = attrs.get(
+            "fuel_cost_per_liter"
+        )
+
+        if (
+            fuel_cost_per_liter is not None
+            and fuel_cost_per_liter < 0
+        ):
+            raise serializers.ValidationError({
+                "fuel_cost_per_liter": (
+                    "Fuel cost per litre cannot "
+                    "be negative."
+                )
+            })
+
+        # ----------------------------------------------------
+        # MAINTENANCE
+        # ----------------------------------------------------
+
+        maintenance_required = attrs.get(
+            "maintenance_required"
+        )
+
+        maintenance_notes = attrs.get(
+            "maintenance_notes"
+        )
+
+        if (
+            maintenance_required is False
+            and maintenance_notes
+            and maintenance_notes.strip()
+        ):
+            raise serializers.ValidationError({
+                "maintenance_notes": (
+                    "Maintenance notes should only "
+                    "be provided when maintenance "
+                    "is required."
                 )
             })
 
@@ -619,13 +882,8 @@ class VehicleMaintenanceSerializer(
         return value
 
     def validate(self, attrs):
-        department = attrs.get(
-            "department"
-        )
-
-        subdepartment = attrs.get(
-            "subdepartment"
-        )
+        department = attrs.get("department")
+        subdepartment = attrs.get("subdepartment")
 
         if (
             subdepartment
@@ -762,13 +1020,8 @@ class VehicleInsuranceSerializer(
         ]
 
     def validate(self, attrs):
-        start_date = attrs.get(
-            "start_date"
-        )
-
-        expiry_date = attrs.get(
-            "expiry_date"
-        )
+        start_date = attrs.get("start_date")
+        expiry_date = attrs.get("expiry_date")
 
         if (
             start_date
@@ -782,9 +1035,7 @@ class VehicleInsuranceSerializer(
                 )
             })
 
-        premium = attrs.get(
-            "premium"
-        )
+        premium = attrs.get("premium")
 
         if premium is not None and premium < 0:
             raise serializers.ValidationError({
@@ -794,13 +1045,8 @@ class VehicleInsuranceSerializer(
                 )
             })
 
-        department = attrs.get(
-            "department"
-        )
-
-        subdepartment = attrs.get(
-            "subdepartment"
-        )
+        department = attrs.get("department")
+        subdepartment = attrs.get("subdepartment")
 
         if (
             subdepartment
@@ -954,13 +1200,8 @@ class VehicleFuelingSerializer(
         ]
 
     def validate(self, attrs):
-        quantity = attrs.get(
-            "quantity"
-        )
-
-        unit_price = attrs.get(
-            "unit_price"
-        )
+        quantity = attrs.get("quantity")
+        unit_price = attrs.get("unit_price")
 
         if quantity is not None and quantity <= 0:
             raise serializers.ValidationError({
@@ -976,13 +1217,8 @@ class VehicleFuelingSerializer(
                 )
             })
 
-        department = attrs.get(
-            "department"
-        )
-
-        subdepartment = attrs.get(
-            "subdepartment"
-        )
+        department = attrs.get("department")
+        subdepartment = attrs.get("subdepartment")
 
         if (
             subdepartment
@@ -1001,62 +1237,6 @@ class VehicleFuelingSerializer(
 
 
 # ============================================================
-# TRANSPORT ROUTE SERIALIZER
-# ============================================================
-
-class TransportRouteSerializer(
-    serializers.ModelSerializer
-):
-    """
-    Serializer for transport routes.
-    """
-
-    class Meta:
-        model = TransportRoute
-
-        fields = [
-            "id",
-            "route_id",
-            "name",
-            "code",
-            "description",
-            "direction",
-            "distance_km",
-            "estimated_duration_minutes",
-            "status",
-            "notes",
-            "created_at",
-            "updated_at",
-        ]
-
-        read_only_fields = [
-            "id",
-            "route_id",
-            "created_at",
-            "updated_at",
-        ]
-
-    def validate_distance_km(self, value):
-        if value is not None and value < 0:
-            raise serializers.ValidationError(
-                "Route distance cannot be negative."
-            )
-
-        return value
-
-    def validate_estimated_duration_minutes(
-        self,
-        value
-    ):
-        if value is not None and value < 0:
-            raise serializers.ValidationError(
-                "Estimated duration cannot be negative."
-            )
-
-        return value
-
-
-# ============================================================
 # TRANSPORT STAGE SERIALIZER
 # ============================================================
 
@@ -1065,6 +1245,8 @@ class TransportStageSerializer(
 ):
     """
     Serializer for individual route stages.
+
+    A stage belongs to exactly one TransportRoute.
     """
 
     route_name = serializers.CharField(
@@ -1127,6 +1309,147 @@ class TransportStageSerializer(
         if value < 1:
             raise serializers.ValidationError(
                 "Stage sequence must start at 1 or higher."
+            )
+
+        return value
+
+    def validate(self, attrs):
+        pickup_time = attrs.get("pickup_time")
+        dropoff_time = attrs.get("dropoff_time")
+
+        if (
+            pickup_time
+            and dropoff_time
+            and dropoff_time < pickup_time
+        ):
+            raise serializers.ValidationError({
+                "dropoff_time": (
+                    "Drop-off time cannot be earlier "
+                    "than pickup time."
+                )
+            })
+
+        return attrs
+
+
+# ============================================================
+# TRANSPORT ROUTE SERIALIZER
+# ============================================================
+
+class TransportRouteSerializer(
+    serializers.ModelSerializer
+):
+    """
+    Serializer for transport routes.
+
+    The route serializer exposes:
+    - Route information
+    - Number of stages
+    - Existing stages
+
+    Stages are read-only here.
+
+    Stage creation and modification should continue to happen
+    through the TransportStage endpoint.
+    """
+
+    # --------------------------------------------------------
+    # STAGE COUNT
+    # --------------------------------------------------------
+
+    stage_count = serializers.SerializerMethodField()
+
+    # --------------------------------------------------------
+    # NESTED STAGES
+    # --------------------------------------------------------
+
+    stages = TransportStageSerializer(
+        many=True,
+        read_only=True,
+    )
+
+    class Meta:
+        model = TransportRoute
+
+        fields = [
+            "id",
+
+            # ------------------------------------------------
+            # ROUTE IDENTITY
+            # ------------------------------------------------
+            "route_id",
+            "name",
+            "code",
+
+            # ------------------------------------------------
+            # ROUTE INFORMATION
+            # ------------------------------------------------
+            "description",
+            "direction",
+            "distance_km",
+            "estimated_duration_minutes",
+
+            # ------------------------------------------------
+            # STATUS
+            # ------------------------------------------------
+            "status",
+
+            # ------------------------------------------------
+            # NOTES
+            # ------------------------------------------------
+            "notes",
+
+            # ------------------------------------------------
+            # STAGES
+            # ------------------------------------------------
+            "stage_count",
+            "stages",
+
+            # ------------------------------------------------
+            # SYSTEM
+            # ------------------------------------------------
+            "created_at",
+            "updated_at",
+        ]
+
+        read_only_fields = [
+            "id",
+            "route_id",
+            "stage_count",
+            "stages",
+            "created_at",
+            "updated_at",
+        ]
+
+    def get_stage_count(self, obj):
+        """
+        Return the number of stages belonging to this route.
+
+        TransportStage.route uses related_name="stages",
+        therefore:
+
+            obj.stages.count()
+
+        counts all stages belonging to this route.
+        """
+
+        return obj.stages.count()
+
+    def validate_distance_km(self, value):
+        if value is not None and value < 0:
+            raise serializers.ValidationError(
+                "Route distance cannot be negative."
+            )
+
+        return value
+
+    def validate_estimated_duration_minutes(
+        self,
+        value,
+    ):
+        if value is not None and value < 0:
+            raise serializers.ValidationError(
+                "Estimated duration cannot be negative."
             )
 
         return value
@@ -1260,13 +1583,8 @@ class TransportAssignmentSerializer(
         ]
 
     def validate(self, attrs):
-        start_date = attrs.get(
-            "start_date"
-        )
-
-        end_date = attrs.get(
-            "end_date"
-        )
+        start_date = attrs.get("start_date")
+        end_date = attrs.get("end_date")
 
         if (
             start_date
@@ -1280,13 +1598,8 @@ class TransportAssignmentSerializer(
                 )
             })
 
-        route = attrs.get(
-            "route"
-        )
-
-        stage = attrs.get(
-            "stage"
-        )
+        route = attrs.get("route")
+        stage = attrs.get("stage")
 
         if (
             route

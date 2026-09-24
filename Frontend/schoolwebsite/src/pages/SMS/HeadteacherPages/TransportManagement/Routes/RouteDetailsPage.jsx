@@ -1,4 +1,3 @@
-
 import React, {
   useEffect,
   useMemo,
@@ -10,10 +9,9 @@ import {
   ArrowLeft,
   CalendarDays,
   Car,
-  ChevronDown,
   ChevronRight,
+  Clock,
   Edit,
-  GripVertical,
   Map,
   MapPin,
   Plus,
@@ -85,167 +83,12 @@ const extractList = (
 };
 
 
-const getRouteName = (
-  route
-) => {
-  return (
-    getValue(
-      route,
-      "name",
-      "route_name",
-      "title"
-    ) ||
-    "Unnamed Route"
-  );
-};
-
-
-const getRouteCode = (
-  route
-) => {
-  return (
-    getValue(
-      route,
-      "code",
-      "route_code"
-    ) ||
-    "—"
-  );
-};
-
-
-const getRouteDescription = (
-  route
-) => {
-  return (
-    getValue(
-      route,
-      "description",
-      "notes"
-    ) ||
-    "No description provided."
-  );
-};
-
-
-const getIsActive = (
-  route
-) => {
-  if (
-    route?.is_active !==
-      undefined &&
-    route?.is_active !==
-      null
-  ) {
-    return Boolean(
-      route.is_active
-    );
-  }
-
-  if (
-    route?.status !==
-      undefined &&
-    route?.status !==
-      null
-  ) {
-    return (
-      String(
-        route.status
-      ).toLowerCase() ===
-      "active"
-    );
-  }
-
-  return true;
-};
-
-
-const getStageName = (
-  stage
-) => {
-  return (
-    getValue(
-      stage,
-      "name",
-      "stage_name",
-      "title"
-    ) ||
-    "Unnamed Stage"
-  );
-};
-
-
-const getStageLocation = (
-  stage
-) => {
-  return (
-    getValue(
-      stage,
-      "location",
-      "address",
-      "description"
-    ) ||
-    "Location not specified"
-  );
-};
-
-
-const getStageOrder = (
-  stage,
-  index
-) => {
-  const order =
-    getValue(
-      stage,
-      "order",
-      "sequence",
-      "stage_order",
-      "position"
-    );
-
-  return (
-    order ??
-    index + 1
-  );
-};
-
-
-const getStageActive = (
-  stage
-) => {
-  if (
-    stage?.is_active !==
-      undefined &&
-    stage?.is_active !==
-      null
-  ) {
-    return Boolean(
-      stage.is_active
-    );
-  }
-
-  if (
-    stage?.status !==
-      undefined &&
-    stage?.status !==
-      null
-  ) {
-    return (
-      String(
-        stage.status
-      ).toLowerCase() ===
-      "active"
-    );
-  }
-
-  return true;
-};
-
-
 const formatDate = (
   value
 ) => {
-  if (!value) return "—";
+  if (!value) {
+    return "—";
+  }
 
   const date =
     new Date(value);
@@ -272,27 +115,169 @@ const formatDate = (
 const formatTime = (
   value
 ) => {
-  if (!value) return null;
+  if (!value) {
+    return "—";
+  }
 
-  const date =
-    new Date(
-      `1970-01-01T${value}`
-    );
+  /*
+   * Django TimeField normally returns:
+   *
+   * 08:30:00
+   *
+   * We only need HH:MM for the UI.
+   */
 
   if (
-    Number.isNaN(
-      date.getTime()
+    typeof value === "string" &&
+    /^\d{2}:\d{2}(:\d{2})?$/.test(
+      value
     )
+  ) {
+    const [
+      hours,
+      minutes,
+    ] = value.split(":");
+
+    const hour =
+      Number(hours);
+
+    const suffix =
+      hour >= 12
+        ? "PM"
+        : "AM";
+
+    const displayHour =
+      hour % 12 || 12;
+
+    return `${displayHour}:${minutes} ${suffix}`;
+  }
+
+  return value;
+};
+
+
+const formatNumber = (
+  value,
+  decimals = 2
+) => {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return "—";
+  }
+
+  const number =
+    Number(value);
+
+  if (
+    Number.isNaN(number)
   ) {
     return value;
   }
 
-  return date.toLocaleTimeString(
-    "en-KE",
-    {
-      hour: "2-digit",
-      minute: "2-digit",
-    }
+  return number.toFixed(
+    decimals
+  );
+};
+
+
+const formatLabel = (
+  value
+) => {
+  if (!value) {
+    return "—";
+  }
+
+  return String(value)
+    .replace(
+      /_/g,
+      " "
+    )
+    .replace(
+      /\b\w/g,
+      (letter) =>
+        letter.toUpperCase()
+    );
+};
+
+
+const getRouteName = (
+  route
+) => {
+  return (
+    getValue(
+      route,
+      "name"
+    ) ||
+    "Unnamed Route"
+  );
+};
+
+
+const getRouteCode = (
+  route
+) => {
+  return (
+    getValue(
+      route,
+      "code"
+    ) ||
+    "—"
+  );
+};
+
+
+const getRouteStatus = (
+  route
+) => {
+  return (
+    getValue(
+      route,
+      "status"
+    ) ||
+    "inactive"
+  );
+};
+
+
+const getStageName = (
+  stage
+) => {
+  return (
+    getValue(
+      stage,
+      "name"
+    ) ||
+    "Unnamed Stage"
+  );
+};
+
+
+const getStageStatus = (
+  stage
+) => {
+  return (
+    getValue(
+      stage,
+      "status"
+    ) ||
+    "inactive"
+  );
+};
+
+
+const getStageOrder = (
+  stage,
+  index
+) => {
+  return (
+    getValue(
+      stage,
+      "sequence"
+    ) ??
+    index + 1
   );
 };
 
@@ -302,8 +287,13 @@ const formatTime = (
 // ============================================================
 
 const StatusBadge = ({
-  active,
+  status,
 }) => {
+  const active =
+    String(status)
+      .toLowerCase() ===
+    "active";
+
   return active ? (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
       <span className="w-1.5 h-1.5 rounded-full bg-green-600" />
@@ -314,6 +304,29 @@ const StatusBadge = ({
       <span className="w-1.5 h-1.5 rounded-full bg-gray-500" />
       Inactive
     </span>
+  );
+};
+
+
+// ============================================================
+// INFO ROW
+// ============================================================
+
+const InfoRow = ({
+  label,
+  value,
+  children,
+}) => {
+  return (
+    <div className="flex justify-between gap-4 py-3 border-b border-gray-100 last:border-b-0">
+      <span className="text-sm text-gray-500">
+        {label}
+      </span>
+
+      <span className="text-sm font-medium text-gray-800 text-right">
+        {children ?? value ?? "—"}
+      </span>
+    </div>
   );
 };
 
@@ -353,8 +366,10 @@ const RouteDetailsPage = () => {
   const [success, setSuccess] =
     useState("");
 
-  const [updatingStageId, setUpdatingStageId] =
-    useState(null);
+  const [
+    updatingStageId,
+    setUpdatingStageId,
+  ] = useState(null);
 
 
   // ==========================================================
@@ -364,7 +379,6 @@ const RouteDetailsPage = () => {
   const loadRoute = async (
     showRefresh = false
   ) => {
-
     try {
 
       if (showRefresh) {
@@ -375,6 +389,11 @@ const RouteDetailsPage = () => {
 
       setError("");
       setSuccess("");
+
+
+      // ------------------------------------------------------
+      // LOAD ROUTE
+      // ------------------------------------------------------
 
       const response =
         await axiosInstance.get(
@@ -390,14 +409,17 @@ const RouteDetailsPage = () => {
 
 
       // ------------------------------------------------------
-      // STAGES
+      // LOAD STAGES
       // ------------------------------------------------------
 
       /*
-       * Depending on the serializer, stages may already be
-       * embedded inside the route detail response.
+       * If the route serializer already includes:
        *
-       * If they are not embedded, fetch them separately.
+       * "stages": [...]
+       *
+       * use those stages.
+       *
+       * Otherwise request them separately.
        */
 
       if (
@@ -434,17 +456,13 @@ const RouteDetailsPage = () => {
           stageError
         ) {
 
-          /*
-           * Do not fail the entire route details page if
-           * stages are not exposed through the current API.
-           */
-
           console.warn(
             "Could not load route stages:",
             stageError
           );
 
           setStages([]);
+
         }
       }
 
@@ -462,7 +480,9 @@ const RouteDetailsPage = () => {
         typeof detail ===
         "string"
       ) {
-        setError(detail);
+        setError(
+          detail
+        );
       } else {
         setError(
           "Failed to load route information."
@@ -531,15 +551,21 @@ const RouteDetailsPage = () => {
   const activeStages =
     stages.filter(
       (stage) =>
-        getStageActive(
+        getStageStatus(
           stage
-        )
+        ) === "active"
     ).length;
 
 
   const inactiveStages =
     stages.length -
     activeStages;
+
+
+  const routeStatus =
+    getRouteStatus(
+      route
+    );
 
 
   // ==========================================================
@@ -558,10 +584,15 @@ const RouteDetailsPage = () => {
         return;
       }
 
-      const currentlyActive =
-        getStageActive(
+      const currentStatus =
+        getStageStatus(
           stage
         );
+
+      const currentlyActive =
+        currentStatus ===
+        "active";
+
 
       const confirmed =
         window.confirm(
@@ -578,6 +609,7 @@ const RouteDetailsPage = () => {
         return;
       }
 
+
       try {
 
         setUpdatingStageId(
@@ -587,19 +619,24 @@ const RouteDetailsPage = () => {
         setError("");
         setSuccess("");
 
+
         await axiosInstance.patch(
           `/transport/stages/${stageId}/`,
           {
-            is_active:
-              !currentlyActive,
+            status:
+              currentlyActive
+                ? "inactive"
+                : "active",
           }
         );
+
 
         setSuccess(
           currentlyActive
             ? "Stage deactivated successfully."
             : "Stage activated successfully."
         );
+
 
         await loadRoute(
           true
@@ -619,7 +656,9 @@ const RouteDetailsPage = () => {
           typeof detail ===
           "string"
         ) {
-          setError(detail);
+          setError(
+            detail
+          );
         } else {
           setError(
             "The stage status could not be updated."
@@ -735,11 +774,6 @@ const RouteDetailsPage = () => {
       route
     );
 
-  const routeActive =
-    getIsActive(
-      route
-    );
-
 
   // ==========================================================
   // RENDER
@@ -755,7 +789,7 @@ const RouteDetailsPage = () => {
             BREADCRUMB
         ==================================================== */}
 
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 mb-4">
 
           <Link
             to="/transport"
@@ -814,18 +848,32 @@ const RouteDetailsPage = () => {
                   </h1>
 
                   <StatusBadge
-                    active={
-                      routeActive
+                    status={
+                      routeStatus
                     }
                   />
 
                 </div>
 
                 <p className="text-gray-600 mt-1">
-                  Route Code:{" "}
+
+                  Route ID:{" "}
+
+                  <span className="font-medium">
+                    {route.route_id ||
+                      "—"}
+                  </span>
+
+                  <span className="mx-2 text-gray-300">
+                    |
+                  </span>
+
+                  Code:{" "}
+
                   <span className="font-medium">
                     {routeCode}
                   </span>
+
                 </p>
 
               </div>
@@ -933,6 +981,7 @@ const RouteDetailsPage = () => {
 
 
           {/* Route status */}
+
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
 
             <div className="flex items-center justify-between">
@@ -943,11 +992,13 @@ const RouteDetailsPage = () => {
                   Route Status
                 </p>
 
-                <p className="text-lg font-bold text-gray-800 mt-1">
-                  {routeActive
-                    ? "Active"
-                    : "Inactive"}
-                </p>
+                <div className="mt-2">
+                  <StatusBadge
+                    status={
+                      routeStatus
+                    }
+                  />
+                </div>
 
               </div>
 
@@ -965,6 +1016,7 @@ const RouteDetailsPage = () => {
 
 
           {/* Total stages */}
+
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
 
             <div className="flex items-center justify-between">
@@ -995,6 +1047,7 @@ const RouteDetailsPage = () => {
 
 
           {/* Active stages */}
+
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
 
             <div className="flex items-center justify-between">
@@ -1025,6 +1078,7 @@ const RouteDetailsPage = () => {
 
 
           {/* Inactive stages */}
+
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
 
             <div className="flex items-center justify-between">
@@ -1090,7 +1144,7 @@ const RouteDetailsPage = () => {
                     </h2>
 
                     <p className="text-sm text-gray-500">
-                      Basic route details.
+                      Basic route configuration.
                     </p>
 
                   </div>
@@ -1102,80 +1156,99 @@ const RouteDetailsPage = () => {
 
               <div className="p-5">
 
-                <div className="space-y-1">
 
-                  <div className="flex justify-between gap-4 py-3 border-b border-gray-100">
+                {/* Route details */}
 
-                    <span className="text-sm text-gray-500">
-                      Route Name
-                    </span>
+                <div>
 
-                    <span className="text-sm font-medium text-gray-800 text-right">
-                      {routeName}
-                    </span>
+                  <InfoRow
+                    label="Route ID"
+                    value={
+                      route.route_id
+                    }
+                  />
 
-                  </div>
+                  <InfoRow
+                    label="Route Name"
+                    value={
+                      routeName
+                    }
+                  />
 
+                  <InfoRow
+                    label="Route Code"
+                    value={
+                      routeCode
+                    }
+                  />
 
-                  <div className="flex justify-between gap-4 py-3 border-b border-gray-100">
+                  <InfoRow
+                    label="Direction"
+                    value={
+                      formatLabel(
+                        route.direction
+                      )
+                    }
+                  />
 
-                    <span className="text-sm text-gray-500">
-                      Route Code
-                    </span>
-
-                    <span className="text-sm font-medium text-gray-800">
-                      {routeCode}
-                    </span>
-
-                  </div>
-
-
-                  <div className="flex justify-between gap-4 py-3 border-b border-gray-100">
-
-                    <span className="text-sm text-gray-500">
-                      Status
-                    </span>
-
+                  <InfoRow
+                    label="Status"
+                  >
                     <StatusBadge
-                      active={
-                        routeActive
+                      status={
+                        route.status
                       }
                     />
+                  </InfoRow>
 
-                  </div>
+                  <InfoRow
+                    label="Distance"
+                    value={
+                      route.distance_km !==
+                      null &&
+                      route.distance_km !==
+                      undefined
+                        ? `${formatNumber(
+                            route.distance_km
+                          )} km`
+                        : "—"
+                    }
+                  />
 
+                  <InfoRow
+                    label="Estimated Duration"
+                    value={
+                      route.estimated_duration_minutes !==
+                        null &&
+                      route.estimated_duration_minutes !==
+                        undefined
+                        ? `${route.estimated_duration_minutes} minutes`
+                        : "—"
+                    }
+                  />
 
-                  <div className="flex justify-between gap-4 py-3 border-b border-gray-100">
-
-                    <span className="text-sm text-gray-500">
-                      Created
-                    </span>
-
-                    <span className="text-sm font-medium text-gray-800">
-                      {formatDate(
+                  <InfoRow
+                    label="Created"
+                    value={
+                      formatDate(
                         route.created_at
-                      )}
-                    </span>
+                      )
+                    }
+                  />
 
-                  </div>
-
-
-                  <div className="flex justify-between gap-4 py-3">
-
-                    <span className="text-sm text-gray-500">
-                      Last Updated
-                    </span>
-
-                    <span className="text-sm font-medium text-gray-800">
-                      {formatDate(
+                  <InfoRow
+                    label="Last Updated"
+                    value={
+                      formatDate(
                         route.updated_at
-                      )}
-                    </span>
-
-                  </div>
+                      )
+                    }
+                  />
 
                 </div>
 
+
+                {/* Description */}
 
                 <div className="mt-5">
 
@@ -1184,10 +1257,107 @@ const RouteDetailsPage = () => {
                   </p>
 
                   <div className="p-4 rounded-lg bg-gray-100 border border-gray-200 text-sm text-gray-700 whitespace-pre-wrap">
-                    {getRouteDescription(
-                      route
-                    )}
+
+                    {route.description ||
+                      "No description provided."}
+
                   </div>
+
+                </div>
+
+
+                {/* Notes */}
+
+                {route.notes && (
+
+                  <div className="mt-5">
+
+                    <p className="text-sm font-medium text-gray-700 mb-2">
+                      Notes
+                    </p>
+
+                    <div className="p-4 rounded-lg bg-gray-100 border border-gray-200 text-sm text-gray-700 whitespace-pre-wrap">
+
+                      {route.notes}
+
+                    </div>
+
+                  </div>
+
+                )}
+
+              </div>
+
+            </div>
+
+
+            {/* =================================================
+                ROUTE CHARACTERISTICS
+            ================================================= */}
+
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 mt-6">
+
+              <h3 className="font-semibold text-gray-800 mb-4">
+                Route Characteristics
+              </h3>
+
+
+              <div className="grid grid-cols-2 gap-3">
+
+                <div className="p-3 rounded-lg bg-gray-100 border border-gray-200">
+
+                  <div className="flex items-center gap-2 text-gray-500">
+
+                    <MapPin
+                      size={16}
+                    />
+
+                    <span className="text-xs">
+                      Distance
+                    </span>
+
+                  </div>
+
+                  <p className="text-lg font-bold text-gray-800 mt-1">
+
+                    {route.distance_km !==
+                    null &&
+                    route.distance_km !==
+                    undefined
+                      ? `${formatNumber(
+                          route.distance_km
+                        )} km`
+                      : "—"}
+
+                  </p>
+
+                </div>
+
+
+                <div className="p-3 rounded-lg bg-gray-100 border border-gray-200">
+
+                  <div className="flex items-center gap-2 text-gray-500">
+
+                    <Clock
+                      size={16}
+                    />
+
+                    <span className="text-xs">
+                      Duration
+                    </span>
+
+                  </div>
+
+                  <p className="text-lg font-bold text-gray-800 mt-1">
+
+                    {route.estimated_duration_minutes !==
+                    null &&
+                    route.estimated_duration_minutes !==
+                    undefined
+                      ? `${route.estimated_duration_minutes} min`
+                      : "—"}
+
+                  </p>
 
                 </div>
 
@@ -1207,6 +1377,7 @@ const RouteDetailsPage = () => {
               </h3>
 
               <div className="space-y-2">
+
 
                 <Link
                   to={`/transport/routes/${id}/stages/new`}
@@ -1270,6 +1441,9 @@ const RouteDetailsPage = () => {
 
             <div className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
 
+
+              {/* Header */}
+
               <div className="px-5 py-4 border-b border-gray-200">
 
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -1281,7 +1455,7 @@ const RouteDetailsPage = () => {
                     </h2>
 
                     <p className="text-sm text-gray-500 mt-0.5">
-                      Pickup and drop-off points in route order.
+                      Ordered pickup and drop-off locations for this route.
                     </p>
 
                   </div>
@@ -1305,6 +1479,8 @@ const RouteDetailsPage = () => {
               </div>
 
 
+              {/* No stages */}
+
               {sortedStages.length ===
               0 ? (
 
@@ -1323,7 +1499,7 @@ const RouteDetailsPage = () => {
                   </h3>
 
                   <p className="text-gray-500 text-sm mt-1 max-w-md mx-auto">
-                    Add the first pickup or drop-off stage to this route.
+                    Add the first stage to define where students will be picked up or dropped off along this route.
                   </p>
 
                   <Link
@@ -1347,11 +1523,12 @@ const RouteDetailsPage = () => {
 
                   <div className="relative">
 
-                    {/* Vertical line */}
+                    {/* Vertical route line */}
+
                     <div className="absolute left-[22px] top-7 bottom-7 w-px bg-gray-300" />
 
 
-                    <div className="space-y-3">
+                    <div className="space-y-4">
 
                       {sortedStages.map(
                         (
@@ -1364,10 +1541,14 @@ const RouteDetailsPage = () => {
                               stage
                             );
 
-                          const active =
-                            getStageActive(
+                          const status =
+                            getStageStatus(
                               stage
                             );
+
+                          const active =
+                            status ===
+                            "active";
 
                           const order =
                             getStageOrder(
@@ -1375,22 +1556,15 @@ const RouteDetailsPage = () => {
                               index
                             );
 
-                          const time =
-                            getValue(
-                              stage,
-                              "pickup_time",
-                              "dropoff_time",
-                              "time"
-                            );
+                          const pickupTime =
+                            stage.pickup_time;
 
-                          const stageType =
-                            getValue(
-                              stage,
-                              "stage_type",
-                              "type"
-                            );
+                          const dropoffTime =
+                            stage.dropoff_time;
+
 
                           return (
+
                             <div
                               key={
                                 stageId ||
@@ -1399,7 +1573,9 @@ const RouteDetailsPage = () => {
                               className="relative flex gap-4"
                             >
 
-                              {/* Order */}
+
+                              {/* Sequence */}
+
                               <div className="relative z-10 w-11 h-11 shrink-0 rounded-full bg-purple-800 text-white flex items-center justify-center font-bold text-sm shadow-sm">
 
                                 {order}
@@ -1408,107 +1584,195 @@ const RouteDetailsPage = () => {
 
 
                               {/* Stage card */}
+
                               <div className="flex-1 min-w-0 border border-gray-200 rounded-xl p-4 bg-white hover:border-purple-200 transition">
 
-                                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+                                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+
+
+                                  {/* Stage information */}
 
                                   <div className="min-w-0">
 
                                     <div className="flex flex-wrap items-center gap-2">
 
-                                      <h3 className="font-semibold text-gray-800">
+                                      <h3 className="font-semibold text-gray-800 text-lg">
+
                                         {getStageName(
                                           stage
                                         )}
+
                                       </h3>
 
+
                                       <StatusBadge
-                                        active={
-                                          active
+                                        status={
+                                          status
                                         }
                                       />
 
                                     </div>
 
 
-                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-gray-500">
+                                    {/* Stage code */}
 
-                                      <span className="inline-flex items-center gap-1.5">
+                                    <p className="text-xs text-gray-400 mt-1">
 
-                                        <MapPin
-                                          size={
-                                            14
-                                          }
-                                        />
+                                      Stage Code:{" "}
 
-                                        {getStageLocation(
-                                          stage
-                                        )}
+                                      <span className="font-medium text-gray-500">
+
+                                        {stage.code ||
+                                          "—"}
 
                                       </span>
 
+                                    </p>
 
-                                      {stageType && (
-                                        <span className="inline-flex items-center gap-1.5">
 
-                                          <RouteIcon
-                                            size={
-                                              14
-                                            }
-                                          />
+                                    {/* Location */}
 
-                                          {String(
-                                            stageType
-                                          )
-                                            .replace(
-                                              /_/g,
-                                              " "
-                                            )}
+                                    <div className="flex items-start gap-2 mt-3 text-sm text-gray-600">
 
+                                      <MapPin
+                                        size={15}
+                                        className="mt-0.5 text-purple-600 shrink-0"
+                                      />
+
+                                      <div>
+
+                                        <span className="font-medium text-gray-700">
+                                          Location
                                         </span>
-                                      )}
 
+                                        <p className="mt-0.5">
 
-                                      {time && (
-                                        <span className="inline-flex items-center gap-1.5">
+                                          {stage.location_description ||
+                                            "No location description provided."}
 
-                                          <CalendarDays
-                                            size={
-                                              14
-                                            }
-                                          />
+                                        </p>
 
-                                          {formatTime(
-                                            time
-                                          )}
-
-                                        </span>
-                                      )}
+                                      </div>
 
                                     </div>
 
 
-                                    {getValue(
-                                      stage,
-                                      "description",
-                                      "notes"
-                                    ) && (
-                                      <p className="text-sm text-gray-500 mt-2">
-                                        {getValue(
-                                          stage,
-                                          "description",
-                                          "notes"
+                                    {/* Landmark */}
+
+                                    {stage.landmark && (
+
+                                      <div className="flex items-start gap-2 mt-2 text-sm text-gray-600">
+
+                                        <MapPin
+                                          size={15}
+                                          className="mt-0.5 text-gray-400 shrink-0"
+                                        />
+
+                                        <div>
+
+                                          <span className="font-medium text-gray-700">
+                                            Landmark
+                                          </span>
+
+                                          <p className="mt-0.5">
+                                            {stage.landmark}
+                                          </p>
+
+                                        </div>
+
+                                      </div>
+
+                                    )}
+
+
+                                    {/* Times */}
+
+                                    {(pickupTime ||
+                                      dropoffTime) && (
+
+                                      <div className="flex flex-wrap gap-3 mt-3">
+
+                                        {pickupTime && (
+
+                                          <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-purple-50 text-purple-800">
+
+                                            <Clock
+                                              size={15}
+                                            />
+
+                                            <span className="text-sm">
+
+                                              Pickup:{" "}
+
+                                              <strong>
+                                                {formatTime(
+                                                  pickupTime
+                                                )}
+                                              </strong>
+
+                                            </span>
+
+                                          </div>
+
                                         )}
-                                      </p>
+
+
+                                        {dropoffTime && (
+
+                                          <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-gray-700">
+
+                                            <Clock
+                                              size={15}
+                                            />
+
+                                            <span className="text-sm">
+
+                                              Drop-off:{" "}
+
+                                              <strong>
+                                                {formatTime(
+                                                  dropoffTime
+                                                )}
+                                              </strong>
+
+                                            </span>
+
+                                          </div>
+
+                                        )}
+
+                                      </div>
+
+                                    )}
+
+
+                                    {/* Notes */}
+
+                                    {stage.notes && (
+
+                                      <div className="mt-3 p-3 rounded-lg bg-gray-50 border border-gray-100">
+
+                                        <p className="text-xs font-semibold uppercase text-gray-400 mb-1">
+                                          Notes
+                                        </p>
+
+                                        <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                                          {stage.notes}
+                                        </p>
+
+                                      </div>
+
                                     )}
 
                                   </div>
 
 
                                   {/* Actions */}
+
                                   <div className="flex items-center gap-1 shrink-0">
 
                                     {stageId && (
+
                                       <Link
                                         to={`/transport/routes/${id}/stages/${stageId}/edit`}
                                         title="Edit stage"
@@ -1516,16 +1780,16 @@ const RouteDetailsPage = () => {
                                       >
 
                                         <Edit
-                                          size={
-                                            16
-                                          }
+                                          size={16}
                                         />
 
                                       </Link>
+
                                     )}
 
 
                                     {stageId && (
+
                                       <button
                                         type="button"
                                         title={
@@ -1547,27 +1811,22 @@ const RouteDetailsPage = () => {
 
                                         {updatingStageId ===
                                         stageId ? (
+
                                           <RefreshCw
-                                            size={
-                                              16
-                                            }
+                                            size={16}
                                             className="animate-spin"
                                           />
-                                        ) : active ? (
-                                          <ChevronDown
-                                            size={
-                                              17
-                                            }
-                                          />
+
                                         ) : (
-                                          <ChevronRight
-                                            size={
-                                              17
-                                            }
+
+                                          <Activity
+                                            size={16}
                                           />
+
                                         )}
 
                                       </button>
+
                                     )}
 
                                   </div>
@@ -1575,64 +1834,58 @@ const RouteDetailsPage = () => {
                                 </div>
 
 
-                                {/* Additional stage data */}
-                                <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap gap-x-5 gap-y-2 text-xs text-gray-500">
+                                {/* Additional metadata */}
 
-                                  {getValue(
-                                    stage,
-                                    "distance_from_previous",
-                                    "distance"
-                                  ) !== null && (
-                                    <span>
-                                      Distance:{" "}
-                                      <strong className="text-gray-700">
-                                        {getValue(
-                                          stage,
-                                          "distance_from_previous",
-                                          "distance"
-                                        )}{" "}
-                                        km
-                                      </strong>
-                                    </span>
-                                  )}
+                                <div className="mt-4 pt-3 border-t border-gray-100 flex flex-wrap gap-x-5 gap-y-2 text-xs text-gray-500">
+
+                                  <span>
+
+                                    Sequence:{" "}
+
+                                    <strong className="text-gray-700">
+
+                                      {order}
+
+                                    </strong>
+
+                                  </span>
 
 
-                                  {getValue(
-                                    stage,
-                                    "latitude"
-                                  ) !== null && (
-                                    <span>
-                                      Latitude:{" "}
-                                      <strong className="text-gray-700">
-                                        {getValue(
-                                          stage,
-                                          "latitude"
-                                        )}
-                                      </strong>
-                                    </span>
-                                  )}
+                                  <span>
+
+                                    Created:{" "}
+
+                                    <strong className="text-gray-700">
+
+                                      {formatDate(
+                                        stage.created_at
+                                      )}
+
+                                    </strong>
+
+                                  </span>
 
 
-                                  {getValue(
-                                    stage,
-                                    "longitude"
-                                  ) !== null && (
-                                    <span>
-                                      Longitude:{" "}
-                                      <strong className="text-gray-700">
-                                        {getValue(
-                                          stage,
-                                          "longitude"
-                                        )}
-                                      </strong>
-                                    </span>
-                                  )}
+                                  <span>
+
+                                    Updated:{" "}
+
+                                    <strong className="text-gray-700">
+
+                                      {formatDate(
+                                        stage.updated_at
+                                      )}
+
+                                    </strong>
+
+                                  </span>
 
                                 </div>
 
                               </div>
 
                             </div>
+
                           );
                         }
                       )}
@@ -1687,6 +1940,7 @@ const RouteDetailsPage = () => {
 
         </div>
 
+
       </div>
 
     </div>
@@ -1695,4 +1949,3 @@ const RouteDetailsPage = () => {
 
 
 export default RouteDetailsPage;
-

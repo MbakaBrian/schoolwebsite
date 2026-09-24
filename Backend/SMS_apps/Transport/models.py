@@ -219,9 +219,15 @@ class DriverWeeklyReport(models.Model):
 
     Records:
     - Vehicle used
+    - Reporting period
     - Mileage
-    - Fuel used
-    - Comments
+    - Fuel usage
+    - Fueling location
+    - Fuel cost per litre
+    - Vehicle condition
+    - Incidents
+    - Maintenance requirements
+    - Driver comments
     - Review information
 
     Actual fuel expenditure is NOT stored here.
@@ -229,6 +235,10 @@ class DriverWeeklyReport(models.Model):
     Financial fueling transactions are stored separately
     through VehicleFueling.
     """
+
+    # --------------------------------------------------------
+    # DRIVER & VEHICLE
+    # --------------------------------------------------------
 
     driver = models.ForeignKey(
         DriverProfile,
@@ -282,6 +292,56 @@ class DriverWeeklyReport(models.Model):
         blank=True,
     )
 
+    fueling_location = models.CharField(
+        max_length=255,
+        blank=True,
+    )
+
+    fuel_cost_per_liter = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+
+    # --------------------------------------------------------
+    # VEHICLE CONDITION
+    # --------------------------------------------------------
+
+    VEHICLE_CONDITION_CHOICES = [
+        ("excellent", "Excellent"),
+        ("good", "Good"),
+        ("fair", "Fair"),
+        ("poor", "Poor"),
+        ("critical", "Critical"),
+    ]
+
+    vehicle_condition = models.CharField(
+        max_length=20,
+        choices=VEHICLE_CONDITION_CHOICES,
+        default="good",
+    )
+
+    # --------------------------------------------------------
+    # INCIDENTS
+    # --------------------------------------------------------
+
+    incidents = models.TextField(
+        blank=True,
+    )
+
+    # --------------------------------------------------------
+    # MAINTENANCE
+    # --------------------------------------------------------
+
+    maintenance_required = models.BooleanField(
+        default=False,
+    )
+
+    maintenance_notes = models.TextField(
+        blank=True,
+    )
+
     # --------------------------------------------------------
     # COMMENTS
     # --------------------------------------------------------
@@ -330,17 +390,29 @@ class DriverWeeklyReport(models.Model):
     def clean(self):
         errors = {}
 
+        # --------------------------------------------
+        # REPORT PERIOD
+        # --------------------------------------------
+
         if self.week_end < self.week_start:
             errors["week_end"] = (
                 "Week end cannot be earlier than "
                 "week start."
             )
 
+        # --------------------------------------------
+        # MILEAGE
+        # --------------------------------------------
+
         if self.ending_mileage < self.starting_mileage:
             errors["ending_mileage"] = (
                 "Ending mileage cannot be less than "
                 "starting mileage."
             )
+
+        # --------------------------------------------
+        # FUEL QUANTITY
+        # --------------------------------------------
 
         if (
             self.fuel_used_quantity is not None
@@ -350,8 +422,37 @@ class DriverWeeklyReport(models.Model):
                 "Fuel used quantity cannot be negative."
             )
 
+        # --------------------------------------------
+        # FUEL COST PER LITRE
+        # --------------------------------------------
+
+        if (
+            self.fuel_cost_per_liter is not None
+            and self.fuel_cost_per_liter < Decimal("0.00")
+        ):
+            errors["fuel_cost_per_liter"] = (
+                "Fuel cost per litre cannot be negative."
+            )
+
+        # --------------------------------------------
+        # MAINTENANCE
+        # --------------------------------------------
+
+        if (
+            not self.maintenance_required
+            and self.maintenance_notes.strip()
+        ):
+            errors["maintenance_notes"] = (
+                "Maintenance notes should only be provided "
+                "when maintenance is required."
+            )
+
         if errors:
             raise ValidationError(errors)
+
+    # --------------------------------------------------------
+    # SAVE
+    # --------------------------------------------------------
 
     def save(self, *args, **kwargs):
         """
@@ -369,12 +470,20 @@ class DriverWeeklyReport(models.Model):
 
         super().save(*args, **kwargs)
 
+    # --------------------------------------------------------
+    # STRING REPRESENTATION
+    # --------------------------------------------------------
+
     def __str__(self):
         return (
             f"{self.driver} - "
             f"{self.week_start} to "
             f"{self.week_end}"
         )
+
+    # --------------------------------------------------------
+    # META
+    # --------------------------------------------------------
 
     class Meta:
         ordering = [
@@ -1505,18 +1614,45 @@ class TransportRoute(models.Model):
 # TRANSPORT STAGE
 # ============================================================
 
+from decimal import Decimal
+
+from django.core.exceptions import ValidationError
+from django.db import models
+
+
 class TransportStage(models.Model):
     """
-    Represents a pickup/drop-off stage on a route.
+    Represents a pickup/drop-off stage on a transport route.
+
+    A stage belongs to one route and represents a specific location
+    where students may be picked up and/or dropped off.
     """
+
+    STAGE_TYPE_CHOICES = [
+        ("pickup", "Pickup"),
+        ("dropoff", "Drop-off"),
+        ("both", "Pickup & Drop-off"),
+        ("school", "School"),
+        ("stop", "General Stop"),
+    ]
 
     STATUS_CHOICES = [
         ("active", "Active"),
         ("inactive", "Inactive"),
     ]
 
+    # ==========================================================
+    # IDENTIFICATION
+    # ==========================================================
+
+    stage_id = models.CharField(
+        max_length=20,
+        unique=True,
+        editable=False,
+    )
+
     route = models.ForeignKey(
-        TransportRoute,
+        "TransportRoute",
         on_delete=models.CASCADE,
         related_name="stages",
     )
@@ -1529,16 +1665,60 @@ class TransportStage(models.Model):
         max_length=50,
     )
 
-    sequence = models.PositiveIntegerField()
+    # ==========================================================
+    # STAGE TYPE & ORDER
+    # ==========================================================
+
+    stage_type = models.CharField(
+        max_length=20,
+        choices=STAGE_TYPE_CHOICES,
+        default="both",
+    )
+
+    sequence = models.PositiveIntegerField(
+        default=1,
+    )
+
+    # ==========================================================
+    # LOCATION
+    # ==========================================================
 
     location_description = models.TextField(
         blank=True,
+        help_text="Description of the stage location.",
     )
 
     landmark = models.CharField(
         max_length=255,
         blank=True,
+        help_text="Nearby landmark or recognizable location.",
     )
+
+    latitude = models.DecimalField(
+        max_digits=10,
+        decimal_places=7,
+        null=True,
+        blank=True,
+    )
+
+    longitude = models.DecimalField(
+        max_digits=10,
+        decimal_places=7,
+        null=True,
+        blank=True,
+    )
+
+    distance_from_previous = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Distance from the previous stage in kilometres.",
+    )
+
+    # ==========================================================
+    # TIMING
+    # ==========================================================
 
     pickup_time = models.TimeField(
         null=True,
@@ -1550,15 +1730,38 @@ class TransportStage(models.Model):
         blank=True,
     )
 
+    # ==========================================================
+    # PRICING
+    # ==========================================================
+
+    monthly_fee = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        help_text="Current configured monthly transport fee for this stage.",
+    )
+
+    # ==========================================================
+    # STATUS
+    # ==========================================================
+
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default="active",
     )
 
+    # ==========================================================
+    # ADDITIONAL INFORMATION
+    # ==========================================================
+
     notes = models.TextField(
         blank=True,
     )
+
+    # ==========================================================
+    # AUDIT
+    # ==========================================================
 
     created_at = models.DateTimeField(
         auto_now_add=True,
@@ -1568,19 +1771,143 @@ class TransportStage(models.Model):
         auto_now=True,
     )
 
+    # ==========================================================
+    # VALIDATION
+    # ==========================================================
+
+    def clean(self):
+        errors = {}
+
+        # ------------------------------------------------------
+        # Distance
+        # ------------------------------------------------------
+
+        if (
+            self.distance_from_previous is not None
+            and self.distance_from_previous < Decimal("0.00")
+        ):
+            errors["distance_from_previous"] = (
+                "Distance cannot be negative."
+            )
+
+        # ------------------------------------------------------
+        # Monthly fee
+        # ------------------------------------------------------
+
+        if self.monthly_fee < Decimal("0.00"):
+            errors["monthly_fee"] = (
+                "Monthly transport fee cannot be negative."
+            )
+
+        # ------------------------------------------------------
+        # Latitude
+        # ------------------------------------------------------
+
+        if self.latitude is not None:
+            if (
+                self.latitude < Decimal("-90.0000000")
+                or self.latitude > Decimal("90.0000000")
+            ):
+                errors["latitude"] = (
+                    "Latitude must be between -90 and 90."
+                )
+
+        # ------------------------------------------------------
+        # Longitude
+        # ------------------------------------------------------
+
+        if self.longitude is not None:
+            if (
+                self.longitude < Decimal("-180.0000000")
+                or self.longitude > Decimal("180.0000000")
+            ):
+                errors["longitude"] = (
+                    "Longitude must be between -180 and 180."
+                )
+
+        # ------------------------------------------------------
+        # Time validation
+        # ------------------------------------------------------
+
+        if (
+            self.pickup_time
+            and self.dropoff_time
+            and self.dropoff_time < self.pickup_time
+        ):
+            errors["dropoff_time"] = (
+                "Drop-off time cannot be earlier than pickup time."
+            )
+
+        # ------------------------------------------------------
+        # Sequence
+        # ------------------------------------------------------
+
+        if self.sequence < 1:
+            errors["sequence"] = (
+                "Stage sequence must be at least 1."
+            )
+
+        if errors:
+            raise ValidationError(errors)
+
+    # ==========================================================
+    # SAVE
+    # ==========================================================
+
+    def save(self, *args, **kwargs):
+
+        if not self.stage_id:
+
+            last_stage = (
+                TransportStage.objects
+                .order_by("-id")
+                .first()
+            )
+
+            if last_stage:
+
+                last_number = int(
+                    last_stage.stage_id.split("-")[-1]
+                )
+
+                next_number = last_number + 1
+
+            else:
+
+                next_number = 1
+
+            self.stage_id = (
+                f"STAGE-{next_number:05d}"
+            )
+
+        self.full_clean()
+
+        super().save(*args, **kwargs)
+
+    # ==========================================================
+    # STRING REPRESENTATION
+    # ==========================================================
+
     def __str__(self):
+
         return (
             f"{self.route.name} - "
             f"{self.name}"
         )
 
+    # ==========================================================
+    # META
+    # ==========================================================
+
     class Meta:
+
         ordering = [
             "route",
             "sequence",
         ]
 
         constraints = [
+
             models.UniqueConstraint(
                 fields=[
                     "route",
@@ -1588,6 +1915,7 @@ class TransportStage(models.Model):
                 ],
                 name="unique_stage_sequence_per_route",
             ),
+
             models.UniqueConstraint(
                 fields=[
                     "route",
@@ -1595,8 +1923,8 @@ class TransportStage(models.Model):
                 ],
                 name="unique_stage_code_per_route",
             ),
-        ]
 
+        ]
 
 # ============================================================
 # TRANSPORT ASSIGNMENT

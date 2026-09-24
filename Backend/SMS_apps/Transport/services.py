@@ -506,6 +506,7 @@ def unverify_driver_profile(
 # ============================================================
 
 
+
 @transaction.atomic
 def create_driver_weekly_report(
     *,
@@ -517,17 +518,40 @@ def create_driver_weekly_report(
     Create a driver's weekly report.
 
     Total mileage is calculated automatically by the model.
+
+    The report records:
+    - Reporting period
+    - Mileage
+    - Fuel usage
+    - Fueling location
+    - Fuel cost per litre
+    - Vehicle condition
+    - Incidents
+    - Maintenance requirements
+    - Driver comments
     """
+
+    # --------------------------------------------------------
+    # DRIVER
+    # --------------------------------------------------------
 
     if not driver:
         raise ValidationError(
             "A driver is required."
         )
 
+    # --------------------------------------------------------
+    # VEHICLE
+    # --------------------------------------------------------
+
     if not vehicle:
         raise ValidationError(
             "A vehicle is required."
         )
+
+    # --------------------------------------------------------
+    # REPORT PERIOD
+    # --------------------------------------------------------
 
     week_start = data.get(
         "week_start"
@@ -547,6 +571,10 @@ def create_driver_weekly_report(
             "Week end is required."
         )
 
+    # --------------------------------------------------------
+    # DUPLICATE REPORT CHECK
+    # --------------------------------------------------------
+
     if DriverWeeklyReport.objects.filter(
         driver=driver,
         vehicle=vehicle,
@@ -557,13 +585,27 @@ def create_driver_weekly_report(
             "this driver, vehicle, and week."
         )
 
+    # --------------------------------------------------------
+    # CREATE REPORT
+    # --------------------------------------------------------
+
     report = DriverWeeklyReport(
         driver=driver,
         vehicle=vehicle,
         **data,
     )
 
+    # Model validation.
+    #
+    # This also validates:
+    # - week dates
+    # - mileage
+    # - fuel quantity
+    # - fuel cost per litre
+    # - maintenance notes
     report.full_clean()
+
+    # save() recalculates total_mileage
     report.save()
 
     return report
@@ -577,19 +619,32 @@ def update_driver_weekly_report(
     """
     Update a driver's weekly report.
 
-    The driver and vehicle are preserved through this
-    service to maintain report history.
+    Driver and vehicle cannot be changed through this
+    service because they form part of the historical
+    identity of the report.
     """
+
+    # --------------------------------------------------------
+    # PROTECT DRIVER
+    # --------------------------------------------------------
 
     data.pop(
         "driver",
         None,
     )
 
+    # --------------------------------------------------------
+    # PROTECT VEHICLE
+    # --------------------------------------------------------
+
     data.pop(
         "vehicle",
         None,
     )
+
+    # --------------------------------------------------------
+    # UPDATE FIELDS
+    # --------------------------------------------------------
 
     for field, value in data.items():
         setattr(
@@ -597,6 +652,10 @@ def update_driver_weekly_report(
             field,
             value,
         )
+
+    # --------------------------------------------------------
+    # DUPLICATE CHECK
+    # --------------------------------------------------------
 
     duplicate = (
         DriverWeeklyReport.objects.filter(
@@ -616,7 +675,13 @@ def update_driver_weekly_report(
             "this driver, vehicle, and week."
         )
 
+    # --------------------------------------------------------
+    # VALIDATE
+    # --------------------------------------------------------
+
     report.full_clean()
+
+    # save() recalculates total_mileage
     report.save()
 
     return report

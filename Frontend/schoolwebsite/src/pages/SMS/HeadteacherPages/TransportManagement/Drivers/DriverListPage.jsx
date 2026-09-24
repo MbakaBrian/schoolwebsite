@@ -1,4 +1,3 @@
-
 import React, {
   useEffect,
   useMemo,
@@ -10,7 +9,6 @@ import {
   ArrowLeft,
   ArrowRight,
   BadgeCheck,
-  Car,
   ChevronRight,
   Edit,
   Eye,
@@ -26,7 +24,6 @@ import {
 
 import {
   Link,
-  useNavigate,
 } from "react-router-dom";
 
 import axiosInstance from "../../../../../utils/axiosInstance";
@@ -39,6 +36,22 @@ import axiosInstance from "../../../../../utils/axiosInstance";
 // Driver management.
 //
 // DriverProfile is linked to the general Staff record.
+//
+// IMPORTANT STATUS ARCHITECTURE:
+// --------------------------------
+// DriverProfile does NOT have its own status field.
+//
+// Driver status is derived from the linked Staff record:
+//
+//     driver.status
+//
+// The backend serializer exposes Staff.status as a read-only
+// field on DriverProfile.
+//
+// Therefore:
+// - Do NOT use driver.is_active
+// - Do NOT use DriverProfile.status for writing
+// - Status changes must be made through the Staff API
 //
 // Driver information includes:
 //
@@ -57,6 +70,18 @@ import axiosInstance from "../../../../../utils/axiosInstance";
 // - Verification date
 // - Verified by
 // - Notes
+//
+// VERIFICATION ARCHITECTURE:
+// --------------------------
+// Verification is stored on DriverProfile.
+//
+// When the logged-in user verifies a driver:
+//
+// - is_verified = true
+// - verified_by = request.user
+// - verified_at = current time
+//
+// The frontend does NOT manually select the verifying user.
 //
 // API:
 //
@@ -309,11 +334,92 @@ const getExpiryLabel = (value) => {
 
 
 // ============================================================
+// STATUS HELPERS
+// ============================================================
+
+const getStatusLabel = (status) => {
+  const labels = {
+    active: "Active",
+    inactive: "Inactive",
+    suspended: "Suspended",
+    resigned: "Resigned",
+    terminated: "Terminated",
+    retired: "Retired",
+  };
+
+  return (
+    labels[status] ||
+    "Unknown"
+  );
+};
+
+
+const getStatusClasses = (status) => {
+  switch (status) {
+    case "active":
+      return {
+        badge:
+          "bg-green-100 text-green-700",
+        dot:
+          "bg-green-500",
+      };
+
+    case "suspended":
+      return {
+        badge:
+          "bg-amber-100 text-amber-700",
+        dot:
+          "bg-amber-500",
+      };
+
+    case "inactive":
+      return {
+        badge:
+          "bg-gray-100 text-gray-600",
+        dot:
+          "bg-gray-400",
+      };
+
+    case "resigned":
+      return {
+        badge:
+          "bg-orange-100 text-orange-700",
+        dot:
+          "bg-orange-500",
+      };
+
+    case "terminated":
+      return {
+        badge:
+          "bg-red-100 text-red-700",
+        dot:
+          "bg-red-500",
+      };
+
+    case "retired":
+      return {
+        badge:
+          "bg-slate-100 text-slate-600",
+        dot:
+          "bg-slate-400",
+      };
+
+    default:
+      return {
+        badge:
+          "bg-gray-100 text-gray-600",
+        dot:
+          "bg-gray-400",
+      };
+  }
+};
+
+
+// ============================================================
 // MAIN COMPONENT
 // ============================================================
 
 const DriversListPage = () => {
-  const navigate = useNavigate();
 
 
   // ==========================================================
@@ -393,11 +499,12 @@ const DriversListPage = () => {
     const total =
       drivers.length;
 
+    // Driver status comes from Staff.status.
+    // DriverProfile does not have is_active.
     const active =
       drivers.filter(
         (driver) =>
-          driver.status === "active" ||
-          driver.is_active === true
+          driver.status === "active"
       ).length;
 
     const verified =
@@ -409,8 +516,7 @@ const DriversListPage = () => {
     const unverified =
       drivers.filter(
         (driver) =>
-          driver.is_verified === false ||
-          !driver.is_verified
+          driver.is_verified !== true
       ).length;
 
     const licenceExpired =
@@ -515,25 +621,19 @@ const DriversListPage = () => {
         // ----------------------------------------------------
         // STATUS FILTER
         // ----------------------------------------------------
+        //
+        // Status is Staff.status.
+        //
+        // There is intentionally no is_active fallback.
+        // ----------------------------------------------------
 
         if (
           statusFilter !== "all"
         ) {
 
-          const active =
-            driver.status === "active" ||
-            driver.is_active === true;
-
           if (
-            statusFilter === "active" &&
-            !active
-          ) {
-            return false;
-          }
-
-          if (
-            statusFilter === "inactive" &&
-            active
+            driver.status !==
+            statusFilter
           ) {
             return false;
           }
@@ -635,12 +735,13 @@ const DriversListPage = () => {
   // DRIVER STATUS
   // ==========================================================
 
-  const isDriverActive = (driver) => {
-    return (
-      driver.status === "active" ||
-      driver.is_active === true
-    );
-  };
+  const getDriverStatus =
+    (driver) => {
+      return (
+        driver?.status ||
+        "unknown"
+      );
+    };
 
 
   // ==========================================================
@@ -655,6 +756,7 @@ const DriversListPage = () => {
     if (!date) {
       return (
         <div className="text-xs text-gray-500">
+
           <span className="block">
             {label}
           </span>
@@ -662,6 +764,7 @@ const DriversListPage = () => {
           <span className="block mt-0.5">
             Not provided
           </span>
+
         </div>
       );
     }
@@ -721,6 +824,35 @@ const DriversListPage = () => {
 
 
   // ==========================================================
+  // STATUS BADGE
+  // ==========================================================
+
+  const StatusBadge = ({
+    status,
+  }) => {
+
+    const classes =
+      getStatusClasses(
+        status
+      );
+
+    return (
+      <span
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold ${classes.badge}`}
+      >
+
+        <span
+          className={`w-2 h-2 rounded-full ${classes.dot}`}
+        />
+
+        {getStatusLabel(status)}
+
+      </span>
+    );
+  };
+
+
+  // ==========================================================
   // LOADING STATE
   // ==========================================================
 
@@ -752,6 +884,7 @@ const DriversListPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 p-4 md:p-6 lg:p-8">
+
 
       {/* ====================================================
           HEADER
@@ -855,6 +988,7 @@ const DriversListPage = () => {
       ==================================================== */}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+
 
         {/* Total */}
 
@@ -1092,6 +1226,7 @@ const DriversListPage = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 
+
           {/* Search */}
 
           <div className="lg:col-span-1">
@@ -1143,7 +1278,7 @@ const DriversListPage = () => {
             >
 
               <option value="all">
-                All Drivers
+                All Statuses
               </option>
 
               <option value="active">
@@ -1152,6 +1287,22 @@ const DriversListPage = () => {
 
               <option value="inactive">
                 Inactive
+              </option>
+
+              <option value="suspended">
+                Suspended
+              </option>
+
+              <option value="resigned">
+                Resigned
+              </option>
+
+              <option value="terminated">
+                Terminated
+              </option>
+
+              <option value="retired">
+                Retired
               </option>
 
             </select>
@@ -1321,10 +1472,12 @@ const DriversListPage = () => {
             </h3>
 
             <p className="text-sm text-gray-500 mt-1">
+
               {drivers.length === 0
                 ? "No driver profiles have been registered yet."
                 : "No drivers match the selected search and filters."
               }
+
             </p>
 
             {drivers.length === 0 && (
@@ -1390,19 +1543,25 @@ const DriversListPage = () => {
                     const driverId =
                       getId(driver);
 
-                    const active =
-                      isDriverActive(
+                    const status =
+                      getDriverStatus(
                         driver
                       );
 
                     const verified =
                       driver.is_verified === true;
 
+                    const statusClasses =
+                      getStatusClasses(
+                        status
+                      );
+
                     return (
                       <tr
                         key={driverId}
                         className="hover:bg-gray-100 transition-colors"
                       >
+
 
                         {/* DRIVER */}
 
@@ -1500,6 +1659,7 @@ const DriversListPage = () => {
                         <td className="px-5 py-4">
 
                           <p className="text-sm font-semibold text-gray-800">
+
                             {driver.years_of_experience !==
                               undefined &&
                             driver.years_of_experience !==
@@ -1512,6 +1672,7 @@ const DriversListPage = () => {
                                     : "s"
                                 }`
                               : "—"}
+
                           </p>
 
                           {driver.driver_badge_number && (
@@ -1573,27 +1734,11 @@ const DriversListPage = () => {
 
                             <div>
 
-                              {active ? (
-
-                                <span className="inline-flex items-center gap-1.5 text-xs text-green-700">
-
-                                  <span className="w-2 h-2 rounded-full bg-green-500" />
-
-                                  Active
-
-                                </span>
-
-                              ) : (
-
-                                <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
-
-                                  <span className="w-2 h-2 rounded-full bg-gray-400" />
-
-                                  Inactive
-
-                                </span>
-
-                              )}
+                              <StatusBadge
+                                status={
+                                  status
+                                }
+                              />
 
                             </div>
 
@@ -1676,4 +1821,3 @@ const DriversListPage = () => {
 
 
 export default DriversListPage;
-

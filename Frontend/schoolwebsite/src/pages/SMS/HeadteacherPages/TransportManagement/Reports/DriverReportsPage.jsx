@@ -13,7 +13,7 @@ import {
   User,
   Users,
   X,
-  XCircle,
+  Clock3,
 } from "lucide-react";
 import {
   Link,
@@ -33,39 +33,50 @@ Weekly driver-report workspace.
 API:
 GET /transport/driver-reports/
 
-Filters:
-- Driver
-- Vehicle
-- Week/date
-- Status
-- Search
-
-The page expects reports to contain information
-similar to:
+Current DriverWeeklyReport serializer fields:
 
 {
     id,
     driver,
     driver_name,
     vehicle,
-    vehicle_name,
-    report_date,
+    vehicle_id,
+    vehicle_registration,
     week_start,
     week_end,
-    status,
     starting_mileage,
     ending_mileage,
-    mileage,
-    fuel_quantity,
-    fuel_cost,
+    total_mileage,
+    fuel_used_quantity,
+    fueling_location,
+    fuel_cost_per_liter,
+    vehicle_condition,
     incidents,
+    maintenance_required,
+    maintenance_notes,
     comments,
     submitted_at,
-    created_at,
+    reviewed,
+    reviewed_at,
+    reviewed_by,
+    reviewed_by_name,
+    review_comments,
 }
 
-The helper functions intentionally tolerate
-slightly different serializer representations.
+Important:
+
+- "reviewed" is the report review state.
+- There is no status field.
+- There are no draft/submitted/approved/rejected
+  statuses in the current backend model.
+- fuel_used_quantity represents operational fuel
+  consumption in litres.
+- fuel_cost_per_liter represents the price per litre.
+- Reference fuel value is calculated in the UI only:
+      fuel_used_quantity * fuel_cost_per_liter
+
+That calculated value is NOT a financial fueling
+transaction.
 ==================================================
 */
 
@@ -75,9 +86,15 @@ slightly different serializer representations.
 // ==================================================
 
 const getId = (item) => {
-  if (!item) return null;
+  if (item === null || item === undefined) {
+    return null;
+  }
 
-  return item.id ?? item.pk ?? null;
+  if (typeof item === "object") {
+    return item.id ?? item.pk ?? null;
+  }
+
+  return item;
 };
 
 
@@ -97,16 +114,13 @@ const extractList = (response) => {
 
 
 const formatDate = (value) => {
-  if (!value) return "—";
+  if (!value) {
+    return "—";
+  }
 
-  const date =
-    new Date(value);
+  const date = new Date(value);
 
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
+  if (Number.isNaN(date.getTime())) {
     return String(value).slice(0, 10);
   }
 
@@ -121,13 +135,34 @@ const formatDate = (value) => {
 };
 
 
-const formatNumber = (value) => {
-  const number =
-    Number(value);
+const formatDateTime = (value) => {
+  if (!value) {
+    return "—";
+  }
 
-  if (
-    !Number.isFinite(number)
-  ) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return date.toLocaleString(
+    "en-KE",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }
+  );
+};
+
+
+const formatNumber = (value) => {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
     return "0";
   }
 
@@ -141,12 +176,9 @@ const formatNumber = (value) => {
 
 
 const formatCurrency = (value) => {
-  const number =
-    Number(value);
+  const number = Number(value);
 
-  if (
-    !Number.isFinite(number)
-  ) {
+  if (!Number.isFinite(number)) {
     return "KSh 0.00";
   }
 
@@ -160,181 +192,146 @@ const formatCurrency = (value) => {
 };
 
 
-const getDriverName = (report) => {
+// --------------------------------------------------
+// DRIVER
+// --------------------------------------------------
 
-  if (
-    report?.driver_name
-  ) {
+const getDriverName = (report) => {
+  if (report?.driver_name) {
     return report.driver_name;
   }
 
-  if (
-    report?.driver?.full_name
-  ) {
+  if (report?.driver?.full_name) {
     return report.driver.full_name;
   }
 
-  if (
-    report?.driver?.name
-  ) {
+  if (report?.driver?.name) {
     return report.driver.name;
   }
 
-  if (
-    report?.driver?.staff_name
-  ) {
+  if (report?.driver?.staff_name) {
     return report.driver.staff_name;
   }
 
   if (
-    typeof report?.driver ===
-    "string"
+    typeof report?.driver === "string"
   ) {
     return report.driver;
+  }
+
+  if (
+    report?.driver !== null &&
+    report?.driver !== undefined
+  ) {
+    return `Driver #${report.driver}`;
   }
 
   return "Unknown driver";
 };
 
 
-const getVehicleName = (report) => {
+// --------------------------------------------------
+// VEHICLE
+// --------------------------------------------------
 
-  if (
-    report?.vehicle_name
-  ) {
-    return report.vehicle_name;
+const getVehicleName = (report) => {
+  if (report?.vehicle_registration) {
+    return report.vehicle_registration;
   }
 
-  if (
-    report?.vehicle?.registration_number
-  ) {
+  if (report?.vehicle_id) {
+    return report.vehicle_id;
+  }
+
+  if (report?.vehicle?.registration_number) {
     return report.vehicle.registration_number;
   }
 
-  if (
-    report?.vehicle?.name
-  ) {
+  if (report?.vehicle?.name) {
     return report.vehicle.name;
   }
 
   if (
-    typeof report?.vehicle ===
-    "string"
+    typeof report?.vehicle === "string"
   ) {
     return report.vehicle;
+  }
+
+  if (
+    report?.vehicle !== null &&
+    report?.vehicle !== undefined
+  ) {
+    return `Vehicle #${report.vehicle}`;
   }
 
   return "Unknown vehicle";
 };
 
 
-const getStatus = (report) => {
+// --------------------------------------------------
+// REVIEW STATE
+// --------------------------------------------------
 
-  if (
-    report?.status
-  ) {
-    return String(
-      report.status
-    ).toLowerCase();
-  }
-
-  if (
-    report?.is_approved === true
-  ) {
-    return "approved";
-  }
-
-  if (
-    report?.is_submitted === true
-  ) {
-    return "submitted";
-  }
-
-  return "draft";
+const getReviewState = (report) => {
+  return report?.reviewed === true
+    ? "reviewed"
+    : "pending";
 };
 
 
-const getStatusLabel = (status) => {
-
-  const labels = {
-    draft: "Draft",
-    submitted: "Submitted",
-    approved: "Approved",
-    rejected: "Rejected",
-    reviewed: "Reviewed",
-  };
-
-  return (
-    labels[status] ||
-    status
-      ?.replaceAll("_", " ")
-      ?.replace(
-        /\b\w/g,
-        (letter) =>
-          letter.toUpperCase()
-      ) ||
-    "Unknown"
-  );
-};
-
-
-const getStatusClasses = (status) => {
-
-  switch (status) {
-
-    case "approved":
-    case "reviewed":
-      return "bg-green-100 text-green-700 border-green-200";
-
-    case "submitted":
-      return "bg-blue-100 text-blue-700 border-blue-200";
-
-    case "rejected":
-      return "bg-red-100 text-red-700 border-red-200";
-
-    case "draft":
-      return "bg-gray-100 text-gray-700 border-gray-200";
-
-    default:
-      return "bg-gray-100 text-gray-700 border-gray-200";
+const getReviewLabel = (state) => {
+  if (state === "reviewed") {
+    return "Reviewed";
   }
+
+  return "Pending Review";
 };
 
+
+const getReviewClasses = (state) => {
+  if (state === "reviewed") {
+    return "bg-green-100 text-green-700 border-green-200";
+  }
+
+  return "bg-yellow-100 text-yellow-700 border-yellow-200";
+};
+
+
+// --------------------------------------------------
+// REPORT DATE
+// --------------------------------------------------
 
 const getReportDate = (report) => {
-
   return (
-    report.week_start ||
-    report.report_date ||
-    report.date ||
-    report.created_at ||
+    report?.week_start ||
+    report?.week_end ||
+    report?.submitted_at ||
     null
   );
 };
 
 
-const getReportMileage = (report) => {
+// --------------------------------------------------
+// MILEAGE
+// --------------------------------------------------
 
+const getReportMileage = (report) => {
   if (
-    report.mileage !== undefined &&
-    report.mileage !== null
+    report?.total_mileage !== undefined &&
+    report?.total_mileage !== null
   ) {
-    return report.mileage;
+    return Number(report.total_mileage);
   }
 
   if (
-    report.starting_mileage !== undefined &&
-    report.ending_mileage !== undefined &&
-    report.starting_mileage !== null &&
-    report.ending_mileage !== null
+    report?.starting_mileage !== undefined &&
+    report?.ending_mileage !== undefined &&
+    report?.starting_mileage !== null &&
+    report?.ending_mileage !== null
   ) {
     return (
-      Number(
-        report.ending_mileage
-      ) -
-      Number(
-        report.starting_mileage
-      )
+      Number(report.ending_mileage) -
+      Number(report.starting_mileage)
     );
   }
 
@@ -342,15 +339,15 @@ const getReportMileage = (report) => {
 };
 
 
-const getErrorMessage = (error) => {
+// --------------------------------------------------
+// ERROR
+// --------------------------------------------------
 
+const getErrorMessage = (error) => {
   const detail =
     error?.response?.data?.detail;
 
-  if (
-    typeof detail ===
-    "string"
-  ) {
+  if (typeof detail === "string") {
     return detail;
   }
 
@@ -359,22 +356,17 @@ const getErrorMessage = (error) => {
 
   if (
     data &&
-    typeof data ===
-    "object"
+    typeof data === "object"
   ) {
-
     return Object.entries(data)
-      .map(
-        ([field, messages]) => {
+      .map(([field, messages]) => {
+        const message =
+          Array.isArray(messages)
+            ? messages.join(" ")
+            : String(messages);
 
-          const message =
-            Array.isArray(messages)
-              ? messages.join(" ")
-              : String(messages);
-
-          return `${field}: ${message}`;
-        }
-      )
+        return `${field}: ${message}`;
+      })
       .join(" ");
   }
 
@@ -390,9 +382,7 @@ const getErrorMessage = (error) => {
 // ==================================================
 
 const DriverReportsPage = () => {
-
-  const navigate =
-    useNavigate();
+  const navigate = useNavigate();
 
 
   // ==================================================
@@ -422,7 +412,7 @@ const DriverReportsPage = () => {
   const [vehicleFilter, setVehicleFilter] =
     useState("");
 
-  const [statusFilter, setStatusFilter] =
+  const [reviewFilter, setReviewFilter] =
     useState("");
 
   const [weekFilter, setWeekFilter] =
@@ -447,111 +437,89 @@ const DriverReportsPage = () => {
   // LOAD REPORTS
   // ==================================================
 
-  const loadReports =
-    async (
-      showInitialLoader = false
-    ) => {
+  const loadReports = async (
+    showInitialLoader = false
+  ) => {
+    try {
+      if (showInitialLoader) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
 
-      try {
-
-        if (showInitialLoader) {
-          setLoading(true);
-        } else {
-          setRefreshing(true);
-        }
-
-        setError("");
+      setError("");
 
 
-        const [
-          reportsResponse,
-          driversResponse,
-          vehiclesResponse,
-        ] = await Promise.all([
+      const [
+        reportsResponse,
+        driversResponse,
+        vehiclesResponse,
+      ] = await Promise.all([
+        axiosInstance.get(
+          "/transport/driver-reports/"
+        ),
 
-          axiosInstance.get(
-            "/transport/driver-reports/"
-          ),
+        axiosInstance
+          .get(
+            "/transport/driver-profiles/"
+          )
+          .catch(() => null),
 
-          axiosInstance
-            .get(
-              "/transport/driver-profiles/"
-            )
-            .catch(
-              () => null
-            ),
-
-          axiosInstance
-            .get(
-              "/transport/vehicles/"
-            )
-            .catch(
-              () => null
-            ),
-
-        ]);
+        axiosInstance
+          .get(
+            "/transport/vehicles/"
+          )
+          .catch(() => null),
+      ]);
 
 
-        setReports(
+      setReports(
+        extractList(
+          reportsResponse
+        )
+      );
+
+
+      if (driversResponse) {
+        setDrivers(
           extractList(
-            reportsResponse
+            driversResponse
           )
         );
-
-
-        if (driversResponse) {
-
-          setDrivers(
-            extractList(
-              driversResponse
-            )
-          );
-
-        } else {
-
-          setDrivers([]);
-
-        }
-
-
-        if (vehiclesResponse) {
-
-          setVehicles(
-            extractList(
-              vehiclesResponse
-            )
-          );
-
-        } else {
-
-          setVehicles([]);
-
-        }
-
-      } catch (err) {
-
-        console.error(
-          "Failed to load driver reports:",
-          err
-        );
-
-        setError(
-          getErrorMessage(err)
-        );
-
-      } finally {
-
-        setLoading(false);
-        setRefreshing(false);
-
+      } else {
+        setDrivers([]);
       }
-    };
+
+
+      if (vehiclesResponse) {
+        setVehicles(
+          extractList(
+            vehiclesResponse
+          )
+        );
+      } else {
+        setVehicles([]);
+      }
+
+    } catch (err) {
+      console.error(
+        "Failed to load driver reports:",
+        err
+      );
+
+      setError(
+        getErrorMessage(err)
+      );
+
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
 
   useEffect(() => {
-
     loadReports(true);
-
   }, []);
 
 
@@ -559,249 +527,277 @@ const DriverReportsPage = () => {
   // FILTERED REPORTS
   // ==================================================
 
-  const filteredReports =
-    useMemo(() => {
-
-      const search =
-        searchTerm
-          .toLowerCase()
-          .trim();
+  const filteredReports = useMemo(() => {
+    const search =
+      searchTerm
+        .toLowerCase()
+        .trim();
 
 
-      return reports.filter(
-        (report) => {
+    return reports.filter(
+      (report) => {
 
-          // --------------------------------------------
-          // SEARCH
-          // --------------------------------------------
+        // --------------------------------------------
+        // SEARCH
+        // --------------------------------------------
 
-          if (search) {
+        if (search) {
+          const driver =
+            getDriverName(
+              report
+            ).toLowerCase();
 
-            const driver =
-              getDriverName(
-                report
-              ).toLowerCase();
+          const vehicle =
+            getVehicleName(
+              report
+            ).toLowerCase();
 
-            const vehicle =
-              getVehicleName(
-                report
-              ).toLowerCase();
+          const fuelingLocation =
+            String(
+              report.fueling_location ||
+              ""
+            ).toLowerCase();
 
-            const comments =
-              String(
-                report.comments ||
-                report.notes ||
-                ""
-              ).toLowerCase();
+          const incidents =
+            String(
+              report.incidents ||
+              ""
+            ).toLowerCase();
 
-            const matchesSearch =
-              driver.includes(
-                search
-              ) ||
-              vehicle.includes(
-                search
-              ) ||
-              comments.includes(
-                search
-              );
+          const comments =
+            String(
+              report.comments ||
+              ""
+            ).toLowerCase();
 
-            if (
-              !matchesSearch
-            ) {
-              return false;
-            }
+          const maintenanceNotes =
+            String(
+              report.maintenance_notes ||
+              ""
+            ).toLowerCase();
+
+          const reviewComments =
+            String(
+              report.review_comments ||
+              ""
+            ).toLowerCase();
+
+          const matchesSearch =
+            driver.includes(search) ||
+            vehicle.includes(search) ||
+            fuelingLocation.includes(search) ||
+            incidents.includes(search) ||
+            comments.includes(search) ||
+            maintenanceNotes.includes(search) ||
+            reviewComments.includes(search);
+
+          if (!matchesSearch) {
+            return false;
           }
-
-
-          // --------------------------------------------
-          // DRIVER
-          // --------------------------------------------
-
-          if (
-            driverFilter
-          ) {
-
-            const reportDriverId =
-              getId(
-                report.driver
-              ) ||
-              report.driver_id ||
-              report.driver;
-
-            if (
-              String(
-                reportDriverId
-              ) !==
-              String(
-                driverFilter
-              )
-            ) {
-              return false;
-            }
-          }
-
-
-          // --------------------------------------------
-          // VEHICLE
-          // --------------------------------------------
-
-          if (
-            vehicleFilter
-          ) {
-
-            const reportVehicleId =
-              getId(
-                report.vehicle
-              ) ||
-              report.vehicle_id ||
-              report.vehicle;
-
-            if (
-              String(
-                reportVehicleId
-              ) !==
-              String(
-                vehicleFilter
-              )
-            ) {
-              return false;
-            }
-          }
-
-
-          // --------------------------------------------
-          // STATUS
-          // --------------------------------------------
-
-          if (
-            statusFilter
-          ) {
-
-            if (
-              getStatus(
-                report
-              ) !==
-              statusFilter
-            ) {
-              return false;
-            }
-          }
-
-
-          // --------------------------------------------
-          // WEEK / DATE
-          // --------------------------------------------
-
-          if (
-            weekFilter
-          ) {
-
-            const reportDate =
-              getReportDate(
-                report
-              );
-
-            if (
-              !reportDate ||
-              !String(
-                reportDate
-              ).startsWith(
-                weekFilter
-              )
-            ) {
-              return false;
-            }
-          }
-
-
-          return true;
         }
-      );
 
-    }, [
-      reports,
-      searchTerm,
-      driverFilter,
-      vehicleFilter,
-      statusFilter,
-      weekFilter,
-    ]);
+
+        // --------------------------------------------
+        // DRIVER
+        // --------------------------------------------
+
+        if (driverFilter) {
+          const reportDriverId =
+            getId(
+              report.driver
+            ) ??
+            report.driver_id;
+
+          if (
+            String(
+              reportDriverId
+            ) !==
+            String(
+              driverFilter
+            )
+          ) {
+            return false;
+          }
+        }
+
+
+        // --------------------------------------------
+        // VEHICLE
+        // --------------------------------------------
+
+        if (vehicleFilter) {
+          const reportVehicleId =
+            getId(
+              report.vehicle
+            ) ??
+            report.vehicle_id;
+
+          if (
+            String(
+              reportVehicleId
+            ) !==
+            String(
+              vehicleFilter
+            )
+          ) {
+            return false;
+          }
+        }
+
+
+        // --------------------------------------------
+        // REVIEW
+        // --------------------------------------------
+
+        if (reviewFilter) {
+          const reviewState =
+            getReviewState(
+              report
+            );
+
+          if (
+            reviewState !==
+            reviewFilter
+          ) {
+            return false;
+          }
+        }
+
+
+        // --------------------------------------------
+        // WEEK / DATE
+        // --------------------------------------------
+
+        if (weekFilter) {
+          const reportDate =
+            getReportDate(
+              report
+            );
+
+          if (
+            !reportDate ||
+            !String(
+              reportDate
+            ).startsWith(
+              weekFilter
+            )
+          ) {
+            return false;
+          }
+        }
+
+
+        return true;
+      }
+    );
+
+  }, [
+    reports,
+    searchTerm,
+    driverFilter,
+    vehicleFilter,
+    reviewFilter,
+    weekFilter,
+  ]);
 
 
   // ==================================================
   // STATS
   // ==================================================
 
-  const stats =
-    useMemo(() => {
+  const stats = useMemo(() => {
+    const total =
+      reports.length;
 
-      const total =
-        reports.length;
 
-      const submitted =
-        reports.filter(
-          (report) =>
-            getStatus(
+    const reviewed =
+      reports.filter(
+        (report) =>
+          report.reviewed === true
+      ).length;
+
+
+    const pending =
+      reports.filter(
+        (report) =>
+          report.reviewed !== true
+      ).length;
+
+
+    const maintenanceRequired =
+      reports.filter(
+        (report) =>
+          report.maintenance_required === true
+      ).length;
+
+
+    const totalMileage =
+      reports.reduce(
+        (sum, report) =>
+          sum +
+          Number(
+            getReportMileage(
               report
-            ) === "submitted"
-        ).length;
+            )
+          ),
+        0
+      );
 
-      const approved =
-        reports.filter(
-          (report) =>
-            getStatus(
-              report
-            ) === "approved" ||
-            getStatus(
-              report
-            ) === "reviewed"
-        ).length;
 
-      const draft =
-        reports.filter(
-          (report) =>
-            getStatus(
-              report
-            ) === "draft"
-        ).length;
+    const totalFuelUsed =
+      reports.reduce(
+        (sum, report) =>
+          sum +
+          Number(
+            report.fuel_used_quantity || 0
+          ),
+        0
+      );
 
-      const totalMileage =
-        reports.reduce(
-          (sum, report) =>
-            sum +
+
+    const referenceFuelValue =
+      reports.reduce(
+        (sum, report) => {
+          const quantity =
             Number(
-              getReportMileage(
-                report
-              )
-            ),
-          0
-        );
+              report.fuel_used_quantity
+            );
 
-      const totalFuelCost =
-        reports.reduce(
-          (sum, report) =>
-            sum +
+          const costPerLiter =
             Number(
-              report.fuel_cost ||
-              report.total_fuel_cost ||
-              0
-            ),
-          0
-        );
+              report.fuel_cost_per_liter
+            );
+
+          if (
+            !Number.isFinite(quantity) ||
+            !Number.isFinite(costPerLiter)
+          ) {
+            return sum;
+          }
+
+          return (
+            sum +
+            quantity *
+            costPerLiter
+          );
+        },
+        0
+      );
 
 
-      return {
-        total,
-        submitted,
-        approved,
-        draft,
-        totalMileage,
-        totalFuelCost,
-      };
+    return {
+      total,
+      reviewed,
+      pending,
+      maintenanceRequired,
+      totalMileage,
+      totalFuelUsed,
+      referenceFuelValue,
+    };
 
-    }, [
-      reports,
-    ]);
+  }, [
+    reports,
+  ]);
 
 
   // ==================================================
@@ -809,11 +805,10 @@ const DriverReportsPage = () => {
   // ==================================================
 
   const clearFilters = () => {
-
     setSearchTerm("");
     setDriverFilter("");
     setVehicleFilter("");
-    setStatusFilter("");
+    setReviewFilter("");
     setWeekFilter("");
   };
 
@@ -823,7 +818,7 @@ const DriverReportsPage = () => {
       searchTerm ||
       driverFilter ||
       vehicleFilter ||
-      statusFilter ||
+      reviewFilter ||
       weekFilter
     );
 
@@ -833,7 +828,6 @@ const DriverReportsPage = () => {
   // ==================================================
 
   if (loading) {
-
     return (
       <div className="min-h-screen bg-gray-100 p-6 flex items-center justify-center">
 
@@ -908,7 +902,7 @@ const DriverReportsPage = () => {
 
               <p className="text-gray-600 mt-1">
                 Review weekly driver activity, mileage,
-                fueling and operational reports.
+                fuel usage and operational observations.
               </p>
 
             </div>
@@ -923,9 +917,7 @@ const DriverReportsPage = () => {
               onClick={() =>
                 loadReports()
               }
-              disabled={
-                refreshing
-              }
+              disabled={refreshing}
               className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gray-700 text-white hover:bg-gray-800 disabled:opacity-50"
             >
 
@@ -1027,7 +1019,6 @@ const DriverReportsPage = () => {
       ================================================== */}
 
       {error && (
-
         <div className="mb-5 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 flex items-start gap-3">
 
           <X
@@ -1040,7 +1031,6 @@ const DriverReportsPage = () => {
           </span>
 
         </div>
-
       )}
 
 
@@ -1080,37 +1070,7 @@ const DriverReportsPage = () => {
         </div>
 
 
-        {/* Submitted */}
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
-
-          <div className="flex items-center justify-between">
-
-            <div>
-
-              <p className="text-sm font-medium text-gray-500">
-                Submitted
-              </p>
-
-              <p className="text-2xl font-bold text-gray-800 mt-1">
-                {stats.submitted}
-              </p>
-
-            </div>
-
-            <div className="p-3 rounded-xl bg-blue-100 text-blue-700">
-
-              <CheckCircle2
-                size={21}
-              />
-
-            </div>
-
-          </div>
-
-        </div>
-
-
-        {/* Approved */}
+        {/* Reviewed */}
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
 
           <div className="flex items-center justify-between">
@@ -1122,7 +1082,7 @@ const DriverReportsPage = () => {
               </p>
 
               <p className="text-2xl font-bold text-gray-800 mt-1">
-                {stats.approved}
+                {stats.reviewed}
               </p>
 
             </div>
@@ -1140,7 +1100,7 @@ const DriverReportsPage = () => {
         </div>
 
 
-        {/* Draft */}
+        {/* Pending */}
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
 
           <div className="flex items-center justify-between">
@@ -1148,16 +1108,46 @@ const DriverReportsPage = () => {
             <div>
 
               <p className="text-sm font-medium text-gray-500">
-                Drafts
+                Pending Review
               </p>
 
               <p className="text-2xl font-bold text-gray-800 mt-1">
-                {stats.draft}
+                {stats.pending}
               </p>
 
             </div>
 
-            <div className="p-3 rounded-xl bg-gray-200 text-gray-700">
+            <div className="p-3 rounded-xl bg-yellow-100 text-yellow-700">
+
+              <Clock3
+                size={21}
+              />
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        {/* Maintenance */}
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
+
+          <div className="flex items-center justify-between">
+
+            <div>
+
+              <p className="text-sm font-medium text-gray-500">
+                Maintenance Required
+              </p>
+
+              <p className="text-2xl font-bold text-gray-800 mt-1">
+                {stats.maintenanceRequired}
+              </p>
+
+            </div>
+
+            <div className="p-3 rounded-xl bg-red-100 text-red-700">
 
               <ClipboardList
                 size={21}
@@ -1176,8 +1166,9 @@ const DriverReportsPage = () => {
           OPERATIONAL SUMMARY
       ================================================== */}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 
+        {/* Mileage */}
         <div className="bg-purple-50 border border-purple-200 rounded-xl p-5">
 
           <p className="text-xs uppercase font-semibold text-purple-600">
@@ -1198,20 +1189,42 @@ const DriverReportsPage = () => {
         </div>
 
 
+        {/* Fuel */}
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
 
           <p className="text-xs uppercase font-semibold text-gray-500">
-            Reported Fuel Cost
+            Fuel Used
+          </p>
+
+          <p className="text-2xl font-bold text-gray-800 mt-1">
+            {formatNumber(
+              stats.totalFuelUsed
+            )}
+            {" L"}
+          </p>
+
+          <p className="text-sm text-gray-500 mt-1">
+            Operational fuel consumption reported by drivers.
+          </p>
+
+        </div>
+
+
+        {/* Reference value */}
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
+
+          <p className="text-xs uppercase font-semibold text-gray-500">
+            Reference Fuel Value
           </p>
 
           <p className="text-2xl font-bold text-gray-800 mt-1">
             {formatCurrency(
-              stats.totalFuelCost
+              stats.referenceFuelValue
             )}
           </p>
 
           <p className="text-sm text-gray-500 mt-1">
-            Fuel expenditure recorded within driver reports.
+            Fuel used × price per litre. Not a financial transaction.
           </p>
 
         </div>
@@ -1235,14 +1248,13 @@ const DriverReportsPage = () => {
 
             <p className="text-sm text-gray-500 mt-1">
               Filter weekly reports by driver, vehicle,
-              date and status.
+              week and review status.
             </p>
 
           </div>
 
 
           {hasFilters && (
-
             <button
               type="button"
               onClick={clearFilters}
@@ -1256,7 +1268,6 @@ const DriverReportsPage = () => {
               Clear Filters
 
             </button>
-
           )}
 
         </div>
@@ -1286,7 +1297,7 @@ const DriverReportsPage = () => {
                     event.target.value
                   )
                 }
-                placeholder="Search driver, vehicle or comments..."
+                placeholder="Search driver, vehicle, fueling location or notes..."
                 className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
 
@@ -1317,29 +1328,23 @@ const DriverReportsPage = () => {
               </option>
 
               {drivers.map(
-                (driver) => (
+                (driver) => {
 
-                  <option
-                    key={
-                      getId(
-                        driver
-                      )
-                    }
-                    value={
-                      getId(
-                        driver
-                      )
-                    }
-                  >
-                    {driver.staff_name ||
-                      driver.name ||
-                      driver.staff?.full_name ||
-                      `Driver #${getId(
-                        driver
-                      )}`}
-                  </option>
+                  const driverId =
+                    getId(driver);
 
-                )
+                  return (
+                    <option
+                      key={driverId}
+                      value={driverId}
+                    >
+                      {driver.staff_name ||
+                        driver.name ||
+                        driver.staff?.full_name ||
+                        `Driver #${driverId}`}
+                    </option>
+                  );
+                }
               )}
 
             </select>
@@ -1369,26 +1374,23 @@ const DriverReportsPage = () => {
               </option>
 
               {vehicles.map(
-                (vehicle) => (
+                (vehicle) => {
 
-                  <option
-                    key={
-                      getId(
-                        vehicle
-                      )
-                    }
-                    value={
-                      getId(
-                        vehicle
-                      )
-                    }
-                  >
-                    {getVehicleName({
-                      vehicle,
-                    })}
-                  </option>
+                  const vehicleId =
+                    getId(vehicle);
 
-                )
+                  return (
+                    <option
+                      key={vehicleId}
+                      value={vehicleId}
+                    >
+                      {vehicle.registration_number ||
+                        vehicle.vehicle_id ||
+                        vehicle.name ||
+                        `Vehicle #${vehicleId}`}
+                    </option>
+                  );
+                }
               )}
 
             </select>
@@ -1396,17 +1398,17 @@ const DriverReportsPage = () => {
           </div>
 
 
-          {/* Status */}
+          {/* Review status */}
           <div>
 
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Status
+              Review Status
             </label>
 
             <select
-              value={statusFilter}
+              value={reviewFilter}
               onChange={(event) =>
-                setStatusFilter(
+                setReviewFilter(
                   event.target.value
                 )
               }
@@ -1414,27 +1416,15 @@ const DriverReportsPage = () => {
             >
 
               <option value="">
-                All statuses
+                All reports
               </option>
 
-              <option value="draft">
-                Draft
-              </option>
-
-              <option value="submitted">
-                Submitted
-              </option>
-
-              <option value="approved">
-                Approved
+              <option value="pending">
+                Pending Review
               </option>
 
               <option value="reviewed">
                 Reviewed
-              </option>
-
-              <option value="rejected">
-                Rejected
               </option>
 
             </select>
@@ -1448,7 +1438,7 @@ const DriverReportsPage = () => {
         <div className="mt-4 max-w-xs">
 
           <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            Week / Report Date
+            Week Start
           </label>
 
           <div className="relative">
@@ -1491,15 +1481,21 @@ const DriverReportsPage = () => {
             </h2>
 
             <p className="text-sm text-gray-500 mt-1">
+
               Showing{" "}
+
               <span className="font-medium text-gray-700">
                 {filteredReports.length}
               </span>
+
               {" "}of{" "}
+
               <span className="font-medium text-gray-700">
                 {reports.length}
               </span>
+
               {" "}report(s)
+
             </p>
 
           </div>
@@ -1531,7 +1527,6 @@ const DriverReportsPage = () => {
 
 
             {!hasFilters && (
-
               <Link
                 to="/transport/reports/new"
                 className="inline-flex items-center gap-2 mt-5 px-4 py-2.5 rounded-lg bg-purple-800 text-white hover:bg-purple-900"
@@ -1544,7 +1539,6 @@ const DriverReportsPage = () => {
                 Create First Report
 
               </Link>
-
             )}
 
           </div>
@@ -1580,7 +1574,7 @@ const DriverReportsPage = () => {
                   </th>
 
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-600 uppercase">
-                    Status
+                    Review
                   </th>
 
                   <th className="text-right px-5 py-3 text-xs font-semibold text-gray-600 uppercase">
@@ -1598,12 +1592,10 @@ const DriverReportsPage = () => {
                   (report) => {
 
                     const reportId =
-                      getId(
-                        report
-                      );
+                      getId(report);
 
-                    const status =
-                      getStatus(
+                    const reviewState =
+                      getReviewState(
                         report
                       );
 
@@ -1613,22 +1605,30 @@ const DriverReportsPage = () => {
                       );
 
                     const fuelQuantity =
-                      report.fuel_quantity ??
-                      report.quantity ??
-                      report.litres ??
-                      0;
+                      Number(
+                        report.fuel_used_quantity || 0
+                      );
 
-                    const fuelCost =
-                      report.fuel_cost ??
-                      report.total_fuel_cost ??
-                      0;
+                    const fuelCostPerLiter =
+                      Number(
+                        report.fuel_cost_per_liter || 0
+                      );
+
+                    const referenceFuelValue =
+                      Number.isFinite(
+                        fuelQuantity
+                      ) &&
+                      Number.isFinite(
+                        fuelCostPerLiter
+                      )
+                        ? fuelQuantity *
+                          fuelCostPerLiter
+                        : 0;
+
 
                     return (
-
                       <tr
-                        key={
-                          reportId
-                        }
+                        key={reportId}
                         className="hover:bg-gray-100"
                       >
 
@@ -1668,6 +1668,13 @@ const DriverReportsPage = () => {
                                 Report #{reportId}
                               </p>
 
+                              <p className="text-xs text-gray-400 mt-0.5">
+                                Submitted{" "}
+                                {formatDate(
+                                  report.submitted_at
+                                )}
+                              </p>
+
                             </div>
 
                           </div>
@@ -1685,11 +1692,26 @@ const DriverReportsPage = () => {
                               className="text-gray-400"
                             />
 
-                            <span className="text-sm text-gray-700">
-                              {getDriverName(
-                                report
-                              )}
-                            </span>
+                            <div>
+
+                              <p className="text-sm text-gray-700">
+                                {getDriverName(
+                                  report
+                                )}
+                              </p>
+
+                              {report.driver !==
+                                undefined &&
+                                report.driver !==
+                                  null && (
+
+                                  <p className="text-xs text-gray-400 mt-0.5">
+                                    Driver #{report.driver}
+                                  </p>
+
+                                )}
+
+                            </div>
 
                           </div>
 
@@ -1699,11 +1721,21 @@ const DriverReportsPage = () => {
                         {/* Vehicle */}
                         <td className="px-5 py-4">
 
-                          <span className="text-sm text-gray-700">
-                            {getVehicleName(
-                              report
+                          <div>
+
+                            <p className="text-sm font-medium text-gray-700">
+                              {getVehicleName(
+                                report
+                              )}
+                            </p>
+
+                            {report.vehicle_id && (
+                              <p className="text-xs text-gray-400 mt-0.5">
+                                {report.vehicle_id}
+                              </p>
                             )}
-                          </span>
+
+                          </div>
 
                         </td>
 
@@ -1712,28 +1744,34 @@ const DriverReportsPage = () => {
                         <td className="px-5 py-4">
 
                           <p className="text-sm font-medium text-gray-800">
+
                             {formatNumber(
                               mileage
                             )}
                             {" km"}
+
                           </p>
 
-                          {report.starting_mileage !== undefined &&
-                          report.ending_mileage !== undefined && (
+                          {report.starting_mileage !==
+                            undefined &&
+                            report.ending_mileage !==
+                              undefined && (
 
-                            <p className="text-xs text-gray-500 mt-1">
+                              <p className="text-xs text-gray-500 mt-1">
 
-                              {formatNumber(
-                                report.starting_mileage
-                              )}
-                              {" → "}
-                              {formatNumber(
-                                report.ending_mileage
-                              )}
+                                {formatNumber(
+                                  report.starting_mileage
+                                )}
 
-                            </p>
+                                {" → "}
 
-                          )}
+                                {formatNumber(
+                                  report.ending_mileage
+                                )}
+
+                              </p>
+
+                            )}
 
                         </td>
 
@@ -1750,55 +1788,67 @@ const DriverReportsPage = () => {
 
                           </p>
 
-                          <p className="text-xs text-gray-500 mt-1">
+                          {report.fuel_cost_per_liter !==
+                            null &&
+                            report.fuel_cost_per_liter !==
+                              undefined && (
 
-                            {formatCurrency(
-                              fuelCost
+                              <p className="text-xs text-gray-500 mt-1">
+
+                                {formatCurrency(
+                                  fuelCostPerLiter
+                                )}
+                                {" / L"}
+
+                              </p>
+
                             )}
 
-                          </p>
+                          {referenceFuelValue >
+                            0 && (
+
+                              <p className="text-xs text-gray-400 mt-0.5">
+
+                                Ref.{" "}
+                                {formatCurrency(
+                                  referenceFuelValue
+                                )}
+
+                              </p>
+
+                            )}
 
                         </td>
 
 
-                        {/* Status */}
+                        {/* Review */}
                         <td className="px-5 py-4">
 
                           <span
-                            className={`inline-flex items-center px-2.5 py-1 rounded-full border text-xs font-semibold ${getStatusClasses(
-                              status
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full border text-xs font-semibold ${getReviewClasses(
+                              reviewState
                             )}`}
                           >
 
-                            {status ===
-                              "approved" ||
-                            status ===
-                              "reviewed" ? (
+                            {reviewState ===
+                            "reviewed" ? (
 
                               <CheckCircle2
                                 size={13}
                                 className="mr-1"
                               />
 
-                            ) : status ===
-                              "rejected" ? (
-
-                              <XCircle
-                                size={13}
-                                className="mr-1"
-                              />
-
                             ) : (
 
-                              <ClipboardList
+                              <Clock3
                                 size={13}
                                 className="mr-1"
                               />
 
                             )}
 
-                            {getStatusLabel(
-                              status
+                            {getReviewLabel(
+                              reviewState
                             )}
 
                           </span>
@@ -1851,7 +1901,6 @@ const DriverReportsPage = () => {
                         </td>
 
                       </tr>
-
                     );
                   }
                 )}
@@ -1861,7 +1910,6 @@ const DriverReportsPage = () => {
             </table>
 
           </div>
-
         )}
 
       </div>
@@ -1889,10 +1937,10 @@ const DriverReportsPage = () => {
             <p className="text-sm text-gray-600 mt-1">
               Weekly driver reports provide an operational
               history of vehicle mileage, fuel usage,
-              incidents and driver observations. These
-              records are retained independently so they
-              can be reviewed alongside fueling,
-              maintenance and vehicle records.
+              incidents, vehicle condition and driver
+              observations. Reports can be reviewed
+              independently from financial fueling and
+              maintenance transactions.
             </p>
 
           </div>
@@ -1907,4 +1955,3 @@ const DriverReportsPage = () => {
 
 
 export default DriverReportsPage;
-

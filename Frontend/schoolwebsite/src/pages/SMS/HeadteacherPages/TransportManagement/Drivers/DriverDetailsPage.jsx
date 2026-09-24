@@ -15,7 +15,6 @@ import {
   ShieldCheck,
   User,
   UserCheck,
-  X,
   XCircle,
 } from "lucide-react";
 import {
@@ -32,6 +31,7 @@ import axiosInstance from "../../../../../utils/axiosInstance";
 // ============================================================
 //
 // Displays:
+//
 // - Driver profile
 // - Staff information
 // - Driving licence information
@@ -42,10 +42,28 @@ import axiosInstance from "../../../../../utils/axiosInstance";
 // - Verification
 // - Notes
 //
+// IMPORTANT ARCHITECTURE
+// ------------------------------------------------------------
 // DriverProfile belongs to Staff through a OneToOne relationship.
 //
-// The page does not modify verification information directly.
-// Verification remains controlled by the backend/workflow.
+// Staff is the source of truth for employment/status.
+//
+// Therefore:
+//     Staff.status
+//          ↓
+//     DriverProfile.status
+//
+// DriverProfile does NOT have its own status field.
+//
+// Verification is controlled by the backend:
+//
+//     is_verified
+//     verified_by
+//     verified_at
+//
+// When a logged-in user verifies a driver, Django automatically
+// records that logged-in user as verified_by and the current time
+// as verified_at.
 //
 // ============================================================
 
@@ -96,14 +114,11 @@ const formatDate = (value) => {
     return value;
   }
 
-  return date.toLocaleDateString(
-    "en-KE",
-    {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    }
-  );
+  return date.toLocaleDateString("en-KE", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 };
 
 
@@ -118,14 +133,32 @@ const formatShortDate = (value) => {
     return value;
   }
 
-  return date.toLocaleDateString(
-    "en-KE",
-    {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    }
-  );
+  return date.toLocaleDateString("en-KE", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
+
+
+const formatDateTime = (value) => {
+  if (!value) {
+    return "—";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString("en-KE", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 };
 
 
@@ -153,6 +186,15 @@ const getStatusClasses = (status) => {
     case "suspended":
       return "bg-amber-100 text-amber-800 border-amber-200";
 
+    case "resigned":
+      return "bg-orange-100 text-orange-800 border-orange-200";
+
+    case "terminated":
+      return "bg-red-100 text-red-800 border-red-200";
+
+    case "retired":
+      return "bg-purple-100 text-purple-800 border-purple-200";
+
     default:
       return "bg-gray-100 text-gray-700 border-gray-200";
   }
@@ -179,11 +221,10 @@ const getExpiryState = (dateValue) => {
     expiry.getTime() -
     today.getTime();
 
-  const daysRemaining =
-    Math.ceil(
-      difference /
-        (1000 * 60 * 60 * 24)
-    );
+  const daysRemaining = Math.ceil(
+    difference /
+      (1000 * 60 * 60 * 24)
+  );
 
   if (daysRemaining < 0) {
     return {
@@ -237,7 +278,6 @@ const getInitials = (name) => {
 const DriverDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-
 
   // ==========================================================
   // STATE
@@ -303,12 +343,51 @@ const DriverDetailsPage = () => {
     driver?.staff_name ||
     getStaffName(staff);
 
-  const driverStatus =
-    driver?.status ||
-    (driver?.is_active
-      ? "active"
-      : "inactive");
+  // ----------------------------------------------------------
+  // STATUS
+  // ----------------------------------------------------------
+  //
+  // Driver status now comes directly from:
+  //
+  //     driver.status
+  //
+  // which the serializer derives from:
+  //
+  //     driver.staff.status
+  //
+  // There is no driver.is_active fallback because
+  // DriverProfile does not contain an is_active field.
+  // ----------------------------------------------------------
 
+  const driverStatus =
+    driver?.status || "unknown";
+
+
+  // ----------------------------------------------------------
+  // STAFF ID
+  // ----------------------------------------------------------
+  //
+  // Depending on the serializer representation, driver.staff
+  // may be either:
+  //
+  //     5
+  //
+  // or:
+  //
+  //     { id: 5, ... }
+  //
+  // getId() handles both.
+  // ----------------------------------------------------------
+
+  const staffId =
+    getId(driver?.staff) ||
+    driver?.staff_id ||
+    null;
+
+
+  // ----------------------------------------------------------
+  // EXPIRY INFORMATION
+  // ----------------------------------------------------------
 
   const licenceExpiry =
     getExpiryState(
@@ -336,6 +415,10 @@ const DriverDetailsPage = () => {
     medicalExpiry.icon;
 
 
+  // ----------------------------------------------------------
+  // INITIALS
+  // ----------------------------------------------------------
+
   const initials = useMemo(
     () => getInitials(staffName),
     [staffName]
@@ -345,11 +428,30 @@ const DriverDetailsPage = () => {
   // ==========================================================
   // DEACTIVATE DRIVER
   // ==========================================================
+  //
+  // IMPORTANT:
+  //
+  // DriverProfile has no status field.
+  //
+  // Staff.status is the source of truth.
+  //
+  // Therefore, deactivating a driver means changing the
+  // linked Staff member's status to "inactive".
+  //
+  // ==========================================================
 
   const handleDeactivate = async () => {
+    if (!staffId) {
+      setError(
+        "The linked staff member could not be identified."
+      );
+
+      return;
+    }
+
     const confirmed =
       window.confirm(
-        `Deactivate the driver profile for ${staffName}?`
+        `Deactivate ${staffName} as a driver? This will also change the linked staff member's status to Inactive.`
       );
 
     if (!confirmed) {
@@ -361,16 +463,16 @@ const DriverDetailsPage = () => {
       setError("");
 
       await axiosInstance.patch(
-        `/transport/driver-profiles/${id}/`,
+        `/staff/${staffId}/`,
         {
-          is_active: false,
           status: "inactive",
         }
       );
 
+      // Update the local driver state so the UI
+      // immediately reflects the Staff status.
       setDriver((current) => ({
         ...current,
-        is_active: false,
         status: "inactive",
       }));
 
@@ -382,7 +484,8 @@ const DriverDetailsPage = () => {
 
       setError(
         err.response?.data?.detail ||
-          "The driver profile could not be deactivated."
+          err.response?.data?.status?.[0] ||
+          "The driver could not be deactivated."
       );
     } finally {
       setDeactivating(false);
@@ -604,7 +707,7 @@ const DriverDetailsPage = () => {
                   Driver Status
                 </p>
 
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex flex-wrap items-center gap-2 mt-1">
 
                   <span
                     className={`inline-flex items-center px-3 py-1 rounded-full border text-sm font-semibold ${getStatusClasses(
@@ -623,6 +726,11 @@ const DriverDetailsPage = () => {
                   )}
 
                 </div>
+
+                <p className="text-xs text-gray-500 mt-2">
+                  Status is inherited from the linked
+                  staff member.
+                </p>
 
               </div>
 
@@ -644,7 +752,10 @@ const DriverDetailsPage = () => {
                 <button
                   type="button"
                   onClick={handleDeactivate}
-                  disabled={deactivating}
+                  disabled={
+                    deactivating ||
+                    !staffId
+                  }
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 text-sm font-medium disabled:opacity-50"
                 >
                   <XCircle size={16} />
@@ -667,6 +778,7 @@ const DriverDetailsPage = () => {
         ================================================== */}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+
 
           {/* ------------------------------------------------
               STAFF INFORMATION
@@ -703,7 +815,9 @@ const DriverDetailsPage = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
+
                 {/* Name */}
+
                 <div>
 
                   <p className="text-xs uppercase tracking-wide font-semibold text-gray-500 mb-1">
@@ -718,6 +832,7 @@ const DriverDetailsPage = () => {
 
 
                 {/* Employee Number */}
+
                 <div>
 
                   <p className="text-xs uppercase tracking-wide font-semibold text-gray-500 mb-1">
@@ -734,6 +849,7 @@ const DriverDetailsPage = () => {
 
 
                 {/* Staff ID */}
+
                 <div>
 
                   <p className="text-xs uppercase tracking-wide font-semibold text-gray-500 mb-1">
@@ -749,7 +865,29 @@ const DriverDetailsPage = () => {
                 </div>
 
 
+                {/* Staff Status */}
+
+                <div>
+
+                  <p className="text-xs uppercase tracking-wide font-semibold text-gray-500 mb-1">
+                    Staff Status
+                  </p>
+
+                  <span
+                    className={`inline-flex items-center px-2.5 py-1 rounded-full border text-xs font-semibold ${getStatusClasses(
+                      driverStatus
+                    )}`}
+                  >
+                    {formatStatus(
+                      driverStatus
+                    )}
+                  </span>
+
+                </div>
+
+
                 {/* Phone */}
+
                 <div>
 
                   <p className="text-xs uppercase tracking-wide font-semibold text-gray-500 mb-1">
@@ -760,6 +898,7 @@ const DriverDetailsPage = () => {
                     staff?.phone ||
                     driver?.staff_phone
                   ) ? (
+
                     <a
                       href={`tel:${
                         staff?.phone ||
@@ -768,19 +907,24 @@ const DriverDetailsPage = () => {
                       className="inline-flex items-center gap-2 text-purple-700 hover:text-purple-900"
                     >
                       <Phone size={15} />
+
                       {staff?.phone ||
                         driver?.staff_phone}
                     </a>
+
                   ) : (
+
                     <p className="text-gray-800">
                       —
                     </p>
+
                   )}
 
                 </div>
 
 
                 {/* Email */}
+
                 <div>
 
                   <p className="text-xs uppercase tracking-wide font-semibold text-gray-500 mb-1">
@@ -791,6 +935,7 @@ const DriverDetailsPage = () => {
                     staff?.email ||
                     driver?.staff_email
                   ) ? (
+
                     <a
                       href={`mailto:${
                         staff?.email ||
@@ -799,19 +944,24 @@ const DriverDetailsPage = () => {
                       className="inline-flex items-center gap-2 text-purple-700 hover:text-purple-900 break-all"
                     >
                       <Mail size={15} />
+
                       {staff?.email ||
                         driver?.staff_email}
                     </a>
+
                   ) : (
+
                     <p className="text-gray-800">
                       —
                     </p>
+
                   )}
 
                 </div>
 
 
                 {/* Employment Type */}
+
                 <div>
 
                   <p className="text-xs uppercase tracking-wide font-semibold text-gray-500 mb-1">
@@ -829,6 +979,7 @@ const DriverDetailsPage = () => {
 
 
                 {/* Date Joined */}
+
                 <div>
 
                   <p className="text-xs uppercase tracking-wide font-semibold text-gray-500 mb-1">
@@ -840,7 +991,8 @@ const DriverDetailsPage = () => {
                     <CalendarDays size={15} />
 
                     {formatDate(
-                      staff?.date_joined
+                      staff?.date_joined ||
+                        driver?.date_joined
                     )}
 
                   </div>
@@ -849,6 +1001,7 @@ const DriverDetailsPage = () => {
 
 
                 {/* Location */}
+
                 <div>
 
                   <p className="text-xs uppercase tracking-wide font-semibold text-gray-500 mb-1">
@@ -862,6 +1015,8 @@ const DriverDetailsPage = () => {
                     {[
                       staff?.subcounty,
                       staff?.county,
+                      driver?.staff_subcounty,
+                      driver?.staff_county,
                     ]
                       .filter(Boolean)
                       .join(", ") || "—"}
@@ -875,18 +1030,27 @@ const DriverDetailsPage = () => {
 
               <div className="mt-5 pt-5 border-t border-gray-200">
 
-                <Link
-                  to={
-                    staff?.id
-                      ? `/staff/members/${staff.id}`
-                      : "/staff/members"
-                  }
-                  className="inline-flex items-center gap-2 text-sm font-medium text-purple-700 hover:text-purple-900"
-                >
-                  <UserCheck size={16} />
-                  View Staff Record
-                  <ChevronRight size={15} />
-                </Link>
+                {staffId ? (
+
+                  <Link
+                    to={`/staff/members/${staffId}`}
+                    className="inline-flex items-center gap-2 text-sm font-medium text-purple-700 hover:text-purple-900"
+                  >
+                    <UserCheck size={16} />
+
+                    View Staff Record
+
+                    <ChevronRight size={15} />
+                  </Link>
+
+                ) : (
+
+                  <span className="inline-flex items-center gap-2 text-sm text-gray-400">
+                    <UserCheck size={16} />
+                    Staff record unavailable
+                  </span>
+
+                )}
 
               </div>
 
@@ -927,6 +1091,7 @@ const DriverDetailsPage = () => {
 
 
             <div className="p-5 space-y-5">
+
 
               <div>
 
@@ -979,15 +1144,19 @@ const DriverDetailsPage = () => {
                 <p className="mt-1">
 
                   {driver?.is_verified ? (
+
                     <span className="inline-flex items-center gap-1.5 text-green-700 font-medium">
                       <CheckCircle2 size={16} />
                       Verified
                     </span>
+
                   ) : (
+
                     <span className="inline-flex items-center gap-1.5 text-gray-600 font-medium">
                       <Clock size={16} />
                       Not verified
                     </span>
+
                   )}
 
                 </p>
@@ -1006,6 +1175,7 @@ const DriverDetailsPage = () => {
         ================================================== */}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
 
           {/* ------------------------------------------------
               DRIVING LICENCE
@@ -1053,6 +1223,7 @@ const DriverDetailsPage = () => {
             <div className="p-5">
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+
 
                 <div>
 
@@ -1165,6 +1336,7 @@ const DriverDetailsPage = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
+
                 <div>
 
                   <p className="text-xs uppercase tracking-wide font-semibold text-gray-500">
@@ -1208,6 +1380,7 @@ const DriverDetailsPage = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
 
+
           {/* ------------------------------------------------
               MEDICAL
           ------------------------------------------------ */}
@@ -1216,19 +1389,15 @@ const DriverDetailsPage = () => {
 
             <div className="px-5 py-4 border-b border-gray-200">
 
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
 
-                <div className="flex items-center gap-3">
-
-                  <div className="w-9 h-9 rounded-lg bg-green-100 text-green-700 flex items-center justify-center">
-                    <ShieldCheck size={19} />
-                  </div>
-
-                  <h2 className="font-semibold text-gray-800">
-                    Medical Compliance
-                  </h2>
-
+                <div className="w-9 h-9 rounded-lg bg-green-100 text-green-700 flex items-center justify-center">
+                  <ShieldCheck size={19} />
                 </div>
+
+                <h2 className="font-semibold text-gray-800">
+                  Medical Compliance
+                </h2>
 
               </div>
 
@@ -1365,7 +1534,9 @@ const DriverDetailsPage = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
-              {/* Verification status */}
+
+              {/* Verification Status */}
+
               <div>
 
                 <p className="text-xs uppercase tracking-wide font-semibold text-gray-500">
@@ -1375,15 +1546,25 @@ const DriverDetailsPage = () => {
                 <div className="mt-2">
 
                   {driver?.is_verified ? (
+
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-100 text-green-800 border border-green-200 text-sm font-semibold">
+
                       <CheckCircle2 size={15} />
+
                       Verified
+
                     </span>
+
                   ) : (
+
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 border border-gray-200 text-sm font-semibold">
+
                       <Clock size={15} />
+
                       Not Verified
+
                     </span>
+
                   )}
 
                 </div>
@@ -1391,23 +1572,29 @@ const DriverDetailsPage = () => {
               </div>
 
 
-              {/* Verification date */}
+              {/* Verification Date */}
+
               <div>
 
                 <p className="text-xs uppercase tracking-wide font-semibold text-gray-500">
-                  Verification Date
+                  Verified At
                 </p>
 
                 <p className="text-gray-800 mt-2">
-                  {formatDate(
-                    driver?.verification_date
-                  )}
+
+                  {driver?.is_verified
+                    ? formatDateTime(
+                        driver?.verified_at
+                      )
+                    : "—"}
+
                 </p>
 
               </div>
 
 
-              {/* Verified by */}
+              {/* Verified By */}
+
               <div>
 
                 <p className="text-xs uppercase tracking-wide font-semibold text-gray-500">
@@ -1415,14 +1602,52 @@ const DriverDetailsPage = () => {
                 </p>
 
                 <p className="text-gray-800 mt-2">
-                  {driver?.verified_by_name ||
-                    driver?.verified_by ||
-                    "—"}
+
+                  {driver?.is_verified
+                    ? (
+                        driver?.verified_by_name ||
+                        "—"
+                      )
+                    : "—"}
+
                 </p>
 
               </div>
 
             </div>
+
+
+            {/* Verification explanation */}
+
+            {driver?.is_verified && (
+              <div className="mt-5 pt-5 border-t border-gray-200">
+
+                <div className="flex items-start gap-3 p-4 rounded-lg bg-blue-50 border border-blue-200">
+
+                  <ShieldCheck
+                    size={19}
+                    className="text-blue-700 mt-0.5 shrink-0"
+                  />
+
+                  <div>
+
+                    <p className="text-sm font-semibold text-blue-900">
+                      Verification Recorded
+                    </p>
+
+                    <p className="text-sm text-blue-800 mt-1">
+                      This driver was verified by the
+                      authenticated system user shown above.
+                      The verification date and time were
+                      recorded automatically by the backend.
+                    </p>
+
+                  </div>
+
+                </div>
+
+              </div>
+            )}
 
           </div>
 
@@ -1434,6 +1659,7 @@ const DriverDetailsPage = () => {
         ================================================== */}
 
         {driver?.notes && (
+
           <div className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden mb-6">
 
             <div className="px-5 py-4 border-b border-gray-200">
@@ -1453,6 +1679,7 @@ const DriverDetailsPage = () => {
             </div>
 
           </div>
+
         )}
 
 
@@ -1491,9 +1718,11 @@ const DriverDetailsPage = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
+
               {/* Driver Reports */}
+
               <Link
-                to="/transport/driver-reports"
+                to="/transport/reports"
                 className="group p-4 rounded-xl border border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50 transition"
               >
 
@@ -1530,6 +1759,7 @@ const DriverDetailsPage = () => {
 
 
               {/* Vehicles */}
+
               <Link
                 to="/transport/vehicles"
                 className="group p-4 rounded-xl border border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50 transition"
@@ -1592,6 +1822,7 @@ const DriverDetailsPage = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
+
               <div>
 
                 <p className="text-xs uppercase tracking-wide font-semibold text-gray-500">
@@ -1649,4 +1880,3 @@ const DriverDetailsPage = () => {
 
 
 export default DriverDetailsPage;
-

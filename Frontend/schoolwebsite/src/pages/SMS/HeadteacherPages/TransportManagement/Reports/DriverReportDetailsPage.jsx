@@ -1,5 +1,9 @@
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
-import React, { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -7,8 +11,8 @@ import {
   CheckCircle2,
   ClipboardList,
   Edit,
-  Gauge,
   Fuel,
+  Gauge,
   MapPin,
   RefreshCw,
   User,
@@ -16,6 +20,7 @@ import {
   Wrench,
   X,
 } from "lucide-react";
+
 import {
   Link,
   useNavigate,
@@ -41,15 +46,36 @@ Sections:
 - Vehicle
 - Reporting period
 - Mileage
-- Fuel
+- Fuel usage
+- Fueling location
+- Fuel cost per litre
 - Vehicle condition
 - Maintenance
 - Incidents
 - Driver comments
+- Review information
 - Record metadata
 
-The report itself is historical and should not be
-deleted merely because it is no longer current.
+IMPORTANT:
+
+This page follows the DriverWeeklyReport model.
+
+The weekly report stores:
+
+- fuel_used_quantity
+- fueling_location
+- fuel_cost_per_liter
+
+It does NOT store a total fuel expenditure.
+
+The displayed "Reference Fuel Value" is calculated:
+
+    fuel_used_quantity × fuel_cost_per_liter
+
+It is only an operational reference.
+
+Actual financial fueling transactions
+are stored separately through VehicleFueling.
 ==================================================
 */
 
@@ -59,14 +85,22 @@ deleted merely because it is no longer current.
 // ==================================================
 
 const getId = (item) => {
-  if (!item) return null;
+  if (!item) {
+    return null;
+  }
 
   return item.id ?? item.pk ?? null;
 };
 
 
+// --------------------------------------------------
+// DATE
+// --------------------------------------------------
+
 const formatDate = (value) => {
-  if (!value) return "—";
+  if (!value) {
+    return "—";
+  }
 
   const date = new Date(value);
 
@@ -85,8 +119,14 @@ const formatDate = (value) => {
 };
 
 
+// --------------------------------------------------
+// DATE + TIME
+// --------------------------------------------------
+
 const formatDateTime = (value) => {
-  if (!value) return "—";
+  if (!value) {
+    return "—";
+  }
 
   const date = new Date(value);
 
@@ -103,6 +143,10 @@ const formatDateTime = (value) => {
   );
 };
 
+
+// --------------------------------------------------
+// NUMBER
+// --------------------------------------------------
 
 const formatNumber = (value) => {
   if (
@@ -128,6 +172,10 @@ const formatNumber = (value) => {
 };
 
 
+// --------------------------------------------------
+// CURRENCY
+// --------------------------------------------------
+
 const formatCurrency = (value) => {
   if (
     value === null ||
@@ -152,6 +200,10 @@ const formatCurrency = (value) => {
   )}`;
 };
 
+
+// --------------------------------------------------
+// ERROR
+// --------------------------------------------------
 
 const getErrorMessage = (error) => {
 
@@ -192,6 +244,10 @@ const getErrorMessage = (error) => {
 };
 
 
+// --------------------------------------------------
+// DRIVER NAME
+// --------------------------------------------------
+
 const getDriverName = (driver) => {
 
   if (!driver) {
@@ -218,6 +274,7 @@ const getDriverName = (driver) => {
     driver.staff?.first_name ||
     driver.staff?.last_name
   ) {
+
     return [
       driver.staff.first_name,
       driver.staff.middle_name,
@@ -230,6 +287,10 @@ const getDriverName = (driver) => {
   return `Driver #${getId(driver)}`;
 };
 
+
+// --------------------------------------------------
+// VEHICLE NAME
+// --------------------------------------------------
 
 const getVehicleName = (vehicle) => {
 
@@ -273,19 +334,9 @@ const getVehicleName = (vehicle) => {
 };
 
 
-const getStatusLabel = (status) => {
-
-  if (!status) {
-    return "Draft";
-  }
-
-  return String(status)
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (letter) =>
-      letter.toUpperCase()
-    );
-};
-
+// --------------------------------------------------
+// CONDITION LABEL
+// --------------------------------------------------
 
 const getConditionLabel = (
   condition
@@ -334,9 +385,6 @@ const DriverReportDetailsPage = () => {
 
   const [error, setError] =
     useState("");
-
-  const [deactivating, setDeactivating] =
-    useState(false);
 
 
   // ==================================================
@@ -399,6 +447,10 @@ const DriverReportDetailsPage = () => {
     report?.vehicle;
 
 
+  // --------------------------------------------------
+  // MILEAGE
+  // --------------------------------------------------
+
   const startingMileage =
     report?.starting_mileage ??
     report?.start_mileage;
@@ -410,7 +462,7 @@ const DriverReportDetailsPage = () => {
 
 
   const mileage =
-    report?.mileage ??
+    report?.total_mileage ??
     (
       startingMileage !== undefined &&
       endingMileage !== undefined
@@ -420,23 +472,85 @@ const DriverReportDetailsPage = () => {
     );
 
 
-  const fuelQuantity =
+  // --------------------------------------------------
+  // FUEL
+  // --------------------------------------------------
+
+  const fuelUsedQuantity =
+    report?.fuel_used_quantity ??
     report?.fuel_quantity ??
     report?.fuel_litres ??
     report?.litres ??
-    report?.quantity;
+    report?.quantity ??
+    null;
 
 
-  const fuelCost =
-    report?.fuel_cost ??
-    report?.total_fuel_cost ??
-    report?.cost;
+  const fuelingLocation =
+    report?.fueling_location ||
+    "";
 
+
+  const fuelCostPerLiter =
+    report?.fuel_cost_per_liter ??
+    null;
+
+
+  // --------------------------------------------------
+  // REFERENCE FUEL VALUE
+  // --------------------------------------------------
+
+  const referenceFuelValue =
+    useMemo(() => {
+
+      if (
+        fuelUsedQuantity === null ||
+        fuelUsedQuantity === undefined ||
+        fuelUsedQuantity === "" ||
+        fuelCostPerLiter === null ||
+        fuelCostPerLiter === undefined ||
+        fuelCostPerLiter === ""
+      ) {
+        return null;
+      }
+
+      const quantity =
+        Number(
+          fuelUsedQuantity
+        );
+
+      const costPerLiter =
+        Number(
+          fuelCostPerLiter
+        );
+
+      if (
+        !Number.isFinite(quantity) ||
+        !Number.isFinite(costPerLiter)
+      ) {
+        return null;
+      }
+
+      return quantity * costPerLiter;
+
+    }, [
+      fuelUsedQuantity,
+      fuelCostPerLiter,
+    ]);
+
+
+  // --------------------------------------------------
+  // CONDITION
+  // --------------------------------------------------
 
   const condition =
     report?.vehicle_condition ??
-    report?.condition;
+    report?.condition ??
+    null;
 
+
+  // --------------------------------------------------
+  // MAINTENANCE
+  // --------------------------------------------------
 
   const maintenanceRequired =
     Boolean(
@@ -444,16 +558,24 @@ const DriverReportDetailsPage = () => {
     );
 
 
+  const maintenanceNotes =
+    report?.maintenance_notes ||
+    "";
+
+
+  // --------------------------------------------------
+  // INCIDENTS
+  // --------------------------------------------------
+
   const incidents =
     report?.incidents ||
     report?.incident_notes ||
     "";
 
 
-  const maintenanceNotes =
-    report?.maintenance_notes ||
-    "";
-
+  // --------------------------------------------------
+  // COMMENTS
+  // --------------------------------------------------
 
   const comments =
     report?.comments ||
@@ -462,48 +584,30 @@ const DriverReportDetailsPage = () => {
 
 
   // ==================================================
-  // REPORT STATUS
+  // REVIEW STATUS
   // ==================================================
 
-  const status =
-    report?.status ||
-    "draft";
+  const reviewed =
+    Boolean(
+      report?.reviewed
+    );
 
 
-  const isInactive =
-    report?.is_active === false ||
-    status === "inactive";
+  const reviewedByName =
+    report?.reviewed_by_name ||
+    (
+      report?.reviewed_by &&
+      typeof report.reviewed_by === "object"
+        ? report.reviewed_by.full_name ||
+          report.reviewed_by.name
+        : null
+    ) ||
+    "";
 
 
-  // ==================================================
-  // STATUS STYLING
-  // ==================================================
-
-  const statusClasses =
-    useMemo(() => {
-
-      switch (String(status).toLowerCase()) {
-
-        case "submitted":
-          return "bg-blue-100 text-blue-800";
-
-        case "reviewed":
-          return "bg-purple-100 text-purple-800";
-
-        case "approved":
-          return "bg-green-100 text-green-800";
-
-        case "inactive":
-          return "bg-gray-200 text-gray-700";
-
-        case "rejected":
-          return "bg-red-100 text-red-800";
-
-        default:
-          return "bg-yellow-100 text-yellow-800";
-      }
-
-    }, [status]);
+  const reviewComments =
+    report?.review_comments ||
+    "";
 
 
   // ==================================================
@@ -537,79 +641,6 @@ const DriverReportDetailsPage = () => {
       }
 
     }, [condition]);
-
-
-  // ==================================================
-  // DEACTIVATE
-  // ==================================================
-
-  const handleDeactivate =
-    async () => {
-
-      const confirmed =
-        window.confirm(
-          "Deactivate this driver report? The historical record will be retained."
-        );
-
-      if (!confirmed) {
-        return;
-      }
-
-
-      try {
-
-        setDeactivating(true);
-        setError("");
-
-
-        let payload;
-
-        if (
-          typeof report?.is_active ===
-          "boolean"
-        ) {
-
-          payload = {
-            is_active: false,
-          };
-
-        } else {
-
-          payload = {
-            status: "inactive",
-          };
-
-        }
-
-
-        const response =
-          await axiosInstance.patch(
-            `/transport/driver-reports/${id}/`,
-            payload
-          );
-
-
-        setReport(
-          response.data
-        );
-
-      } catch (err) {
-
-        console.error(
-          "Failed to deactivate report:",
-          err
-        );
-
-        setError(
-          getErrorMessage(err)
-        );
-
-      } finally {
-
-        setDeactivating(false);
-
-      }
-    };
 
 
   // ==================================================
@@ -779,13 +810,31 @@ const DriverReportDetailsPage = () => {
                   Driver Weekly Report
                 </h1>
 
-                <span
-                  className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusClasses}`}
-                >
-                  {getStatusLabel(
-                    status
-                  )}
-                </span>
+                {reviewed ? (
+
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 text-green-800 text-xs font-semibold">
+
+                    <CheckCircle2
+                      size={14}
+                    />
+
+                    Reviewed
+
+                  </span>
+
+                ) : (
+
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-semibold">
+
+                    <ClipboardList
+                      size={14}
+                    />
+
+                    Pending Review
+
+                  </span>
+
+                )}
 
               </div>
 
@@ -794,9 +843,11 @@ const DriverReportDetailsPage = () => {
               </p>
 
               {report.id && (
+
                 <p className="text-xs text-gray-500 mt-1">
                   Report #{report.id}
                 </p>
+
               )}
 
             </div>
@@ -870,7 +921,8 @@ const DriverReportDetailsPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 
 
-          {/* Driver */}
+          {/* DRIVER */}
+
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
 
             <div className="flex items-center gap-2 text-purple-700">
@@ -894,7 +946,8 @@ const DriverReportDetailsPage = () => {
           </div>
 
 
-          {/* Vehicle */}
+          {/* VEHICLE */}
+
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
 
             <div className="flex items-center gap-2 text-purple-700">
@@ -918,7 +971,8 @@ const DriverReportDetailsPage = () => {
           </div>
 
 
-          {/* Mileage */}
+          {/* MILEAGE */}
+
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
 
             <div className="flex items-center gap-2 text-purple-700">
@@ -934,19 +988,23 @@ const DriverReportDetailsPage = () => {
             </div>
 
             <p className="font-bold text-gray-800 mt-2">
+
               {formatNumber(
                 mileage
               )}
+
               {mileage !== null &&
                 mileage !== undefined &&
                 mileage !== "" &&
                 " km"}
+
             </p>
 
           </div>
 
 
-          {/* Fuel */}
+          {/* FUEL */}
+
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
 
             <div className="flex items-center gap-2 text-purple-700">
@@ -956,15 +1014,22 @@ const DriverReportDetailsPage = () => {
               />
 
               <span className="text-xs font-semibold uppercase">
-                Fuel Cost
+                Fuel Used
               </span>
 
             </div>
 
             <p className="font-bold text-gray-800 mt-2">
-              {formatCurrency(
-                fuelCost
+
+              {formatNumber(
+                fuelUsedQuantity
               )}
+
+              {fuelUsedQuantity !== null &&
+                fuelUsedQuantity !== undefined &&
+                fuelUsedQuantity !== "" &&
+                " L"}
+
             </p>
 
           </div>
@@ -979,7 +1044,8 @@ const DriverReportDetailsPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
 
 
-          {/* Driver Card */}
+          {/* DRIVER CARD */}
+
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
 
             <div className="flex items-center gap-3 mb-5">
@@ -1024,8 +1090,10 @@ const DriverReportDetailsPage = () => {
               </div>
 
 
-              {(driver?.license_number ||
-                driver?.psv_license_number) && (
+              {(
+                driver?.license_number ||
+                driver?.psv_license_number
+              ) && (
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
@@ -1088,7 +1156,8 @@ const DriverReportDetailsPage = () => {
           </div>
 
 
-          {/* Vehicle Card */}
+          {/* VEHICLE CARD */}
+
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
 
             <div className="flex items-center gap-3 mb-5">
@@ -1171,20 +1240,16 @@ const DriverReportDetailsPage = () => {
               </div>
 
 
-              {vehicle?.current_mileage !==
-                undefined && (
+              {vehicle?.vehicle_id && (
 
                 <div>
 
                   <p className="text-xs uppercase font-semibold text-gray-500">
-                    Current Mileage
+                    Vehicle ID
                   </p>
 
                   <p className="text-gray-800 mt-1">
-                    {formatNumber(
-                      vehicle.current_mileage
-                    )}{" "}
-                    km
+                    {vehicle.vehicle_id}
                   </p>
 
                 </div>
@@ -1239,9 +1304,7 @@ const DriverReportDetailsPage = () => {
 
               <p className="text-gray-800 font-medium mt-1">
                 {formatDate(
-                  report.week_start ||
-                  report.report_date ||
-                  report.date
+                  report.week_start
                 )}
               </p>
 
@@ -1274,7 +1337,8 @@ const DriverReportDetailsPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
 
 
-          {/* Mileage */}
+          {/* MILEAGE */}
+
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
 
             <div className="flex items-center gap-3 mb-5">
@@ -1311,12 +1375,15 @@ const DriverReportDetailsPage = () => {
                 </p>
 
                 <p className="text-lg font-bold text-gray-800 mt-1">
+
                   {formatNumber(
                     startingMileage
                   )}
+
                   {startingMileage !== null &&
                     startingMileage !== undefined &&
                     " km"}
+
                 </p>
 
               </div>
@@ -1329,12 +1396,15 @@ const DriverReportDetailsPage = () => {
                 </p>
 
                 <p className="text-lg font-bold text-gray-800 mt-1">
+
                   {formatNumber(
                     endingMileage
                   )}
+
                   {endingMileage !== null &&
                     endingMileage !== undefined &&
                     " km"}
+
                 </p>
 
               </div>
@@ -1347,12 +1417,15 @@ const DriverReportDetailsPage = () => {
                 </p>
 
                 <p className="text-lg font-bold text-purple-800 mt-1">
+
                   {formatNumber(
                     mileage
                   )}
+
                   {mileage !== null &&
                     mileage !== undefined &&
                     " km"}
+
                 </p>
 
               </div>
@@ -1362,7 +1435,8 @@ const DriverReportDetailsPage = () => {
           </div>
 
 
-          {/* Fuel */}
+          {/* FUEL */}
+
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
 
             <div className="flex items-center gap-3 mb-5">
@@ -1382,7 +1456,7 @@ const DriverReportDetailsPage = () => {
                 </h2>
 
                 <p className="text-sm text-gray-500">
-                  Fuel consumed during the period.
+                  Fuel information recorded by the driver.
                 </p>
 
               </div>
@@ -1392,39 +1466,113 @@ const DriverReportDetailsPage = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
+              {/* QUANTITY */}
+
               <div>
 
                 <p className="text-xs uppercase font-semibold text-gray-500">
-                  Quantity
+                  Fuel Used
                 </p>
 
                 <p className="text-lg font-bold text-gray-800 mt-1">
+
                   {formatNumber(
-                    fuelQuantity
+                    fuelUsedQuantity
                   )}
-                  {fuelQuantity !== null &&
-                    fuelQuantity !== undefined &&
+
+                  {fuelUsedQuantity !== null &&
+                    fuelUsedQuantity !== undefined &&
                     " L"}
+
                 </p>
 
               </div>
 
 
+              {/* COST PER LITRE */}
+
               <div>
 
                 <p className="text-xs uppercase font-semibold text-gray-500">
-                  Cost
+                  Cost per Litre
                 </p>
 
                 <p className="text-lg font-bold text-gray-800 mt-1">
+
                   {formatCurrency(
-                    fuelCost
+                    fuelCostPerLiter
                   )}
+
                 </p>
 
               </div>
 
             </div>
+
+
+            {/* FUELING LOCATION */}
+
+            <div className="mt-5 pt-5 border-t border-gray-200">
+
+              <div className="flex items-center gap-2 mb-2">
+
+                <MapPin
+                  size={17}
+                  className="text-purple-700"
+                />
+
+                <p className="text-xs uppercase font-semibold text-gray-500">
+                  Fueling Location
+                </p>
+
+              </div>
+
+              {fuelingLocation ? (
+
+                <p className="text-gray-800 font-medium">
+                  {fuelingLocation}
+                </p>
+
+              ) : (
+
+                <p className="text-gray-500">
+                  Not recorded
+                </p>
+
+              )}
+
+            </div>
+
+
+            {/* REFERENCE FUEL VALUE */}
+
+            {referenceFuelValue !== null && (
+
+              <div className="mt-5 p-4 rounded-lg bg-purple-50 border border-purple-200">
+
+                <p className="text-xs uppercase font-semibold text-purple-600">
+                  Reference Fuel Value
+                </p>
+
+                <p className="text-2xl font-bold text-purple-900 mt-1">
+
+                  {formatCurrency(
+                    referenceFuelValue
+                  )}
+
+                </p>
+
+                <p className="text-xs text-purple-700 mt-1">
+
+                  Fuel used × cost per litre.
+                  This is an operational reference only
+                  and is not a stored financial transaction.
+
+                </p>
+
+              </div>
+
+            )}
 
           </div>
 
@@ -1432,7 +1580,7 @@ const DriverReportDetailsPage = () => {
 
 
         {/* ==================================================
-            CONDITION
+            VEHICLE CONDITION
         ================================================== */}
 
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-6">
@@ -1454,7 +1602,7 @@ const DriverReportDetailsPage = () => {
               </h2>
 
               <p className="text-sm text-gray-500">
-                Condition reported for the vehicle.
+                Condition reported by the driver.
               </p>
 
             </div>
@@ -1493,7 +1641,7 @@ const DriverReportDetailsPage = () => {
                   size={16}
                 />
 
-                No Maintenance Flag
+                No Maintenance Required
 
               </span>
 
@@ -1638,6 +1786,135 @@ const DriverReportDetailsPage = () => {
 
 
         {/* ==================================================
+            REVIEW INFORMATION
+        ================================================== */}
+
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-6">
+
+          <div className="flex items-center gap-3 mb-5">
+
+            <div className="p-2.5 rounded-lg bg-purple-100 text-purple-700">
+
+              <CheckCircle2
+                size={20}
+              />
+
+            </div>
+
+            <div>
+
+              <h2 className="font-semibold text-gray-800">
+                Review Information
+              </h2>
+
+              <p className="text-sm text-gray-500">
+                Review status for this weekly report.
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+
+            {/* REVIEW STATUS */}
+
+            <div>
+
+              <p className="text-xs uppercase font-semibold text-gray-500">
+                Review Status
+              </p>
+
+              {reviewed ? (
+
+                <span className="inline-flex items-center gap-2 mt-2 px-3 py-1.5 rounded-full bg-green-100 text-green-800 text-sm font-semibold">
+
+                  <CheckCircle2
+                    size={15}
+                  />
+
+                  Reviewed
+
+                </span>
+
+              ) : (
+
+                <span className="inline-flex items-center gap-2 mt-2 px-3 py-1.5 rounded-full bg-yellow-100 text-yellow-800 text-sm font-semibold">
+
+                  <ClipboardList
+                    size={15}
+                  />
+
+                  Pending Review
+
+                </span>
+
+              )}
+
+            </div>
+
+
+            {/* REVIEWED BY */}
+
+            <div>
+
+              <p className="text-xs uppercase font-semibold text-gray-500">
+                Reviewed By
+              </p>
+
+              <p className="text-gray-800 font-medium mt-1">
+
+                {reviewedByName ||
+                  "Not yet reviewed"}
+
+              </p>
+
+            </div>
+
+
+            {/* REVIEWED AT */}
+
+            <div>
+
+              <p className="text-xs uppercase font-semibold text-gray-500">
+                Reviewed At
+              </p>
+
+              <p className="text-gray-800 font-medium mt-1">
+
+                {formatDateTime(
+                  report.reviewed_at
+                )}
+
+              </p>
+
+            </div>
+
+          </div>
+
+
+          {reviewComments && (
+
+            <div className="mt-5 p-4 rounded-lg bg-purple-50 border border-purple-200">
+
+              <p className="text-xs uppercase font-semibold text-purple-700">
+                Review Comments
+              </p>
+
+              <p className="text-sm text-purple-900 mt-2 whitespace-pre-wrap">
+                {reviewComments}
+              </p>
+
+            </div>
+
+          )}
+
+        </div>
+
+
+        {/* ==================================================
             RECORD INFORMATION
         ================================================== */}
 
@@ -1649,6 +1926,9 @@ const DriverReportDetailsPage = () => {
 
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+
+
+            {/* REPORT ID */}
 
             <div>
 
@@ -1663,46 +1943,62 @@ const DriverReportDetailsPage = () => {
             </div>
 
 
+            {/* SUBMITTED */}
+
             <div>
 
               <p className="text-xs uppercase font-semibold text-gray-500">
-                Status
+                Submitted
               </p>
 
               <p className="text-gray-800 font-medium mt-1">
-                {getStatusLabel(
-                  status
+                {formatDateTime(
+                  report.submitted_at
                 )}
               </p>
 
             </div>
 
 
+            {/* REVIEWED */}
+
             <div>
 
               <p className="text-xs uppercase font-semibold text-gray-500">
-                Created
+                Reviewed
               </p>
 
               <p className="text-gray-800 font-medium mt-1">
-                {formatDateTime(
-                  report.created_at
-                )}
+
+                {reviewed
+                  ? "Yes"
+                  : "No"}
+
               </p>
 
             </div>
 
 
+            {/* WEEK */}
+
             <div>
 
               <p className="text-xs uppercase font-semibold text-gray-500">
-                Last Updated
+                Reporting Week
               </p>
 
               <p className="text-gray-800 font-medium mt-1">
-                {formatDateTime(
-                  report.updated_at
+
+                {formatDate(
+                  report.week_start
                 )}
+
+                {" — "}
+
+                {formatDate(
+                  report.week_end
+                )}
+
               </p>
 
             </div>
@@ -1732,10 +2028,13 @@ const DriverReportDetailsPage = () => {
               </h3>
 
               <p className="text-sm text-purple-700 mt-1">
-                This weekly report is part of the transport history.
-                It can be used alongside fueling, maintenance,
-                insurance and vehicle mileage records to review
-                vehicle operations over time.
+
+                This weekly report is retained as part of
+                the transport history. Mileage and fuel
+                information can be compared with fueling,
+                maintenance and other transport records
+                over time.
+
               </p>
 
             </div>
@@ -1751,6 +2050,9 @@ const DriverReportDetailsPage = () => {
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-8">
 
+
+          {/* BACK */}
+
           <Link
             to="/transport/reports"
             className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300"
@@ -1765,55 +2067,20 @@ const DriverReportDetailsPage = () => {
           </Link>
 
 
-          <div className="flex flex-col sm:flex-row gap-3">
+          {/* EDIT */}
 
-            <Link
-              to={`/transport/reports/${id}/edit`}
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-purple-800 text-white hover:bg-purple-900"
-            >
+          <Link
+            to={`/transport/reports/${id}/edit`}
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-purple-800 text-white hover:bg-purple-900"
+          >
 
-              <Edit
-                size={18}
-              />
+            <Edit
+              size={18}
+            />
 
-              Edit Report
+            Edit Report
 
-            </Link>
-
-
-            {!isInactive && (
-
-              <button
-                type="button"
-                onClick={handleDeactivate}
-                disabled={deactivating}
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
-              >
-
-                {deactivating ? (
-
-                  <RefreshCw
-                    size={18}
-                    className="animate-spin"
-                  />
-
-                ) : (
-
-                  <X
-                    size={18}
-                  />
-
-                )}
-
-                {deactivating
-                  ? "Deactivating..."
-                  : "Deactivate Report"}
-
-              </button>
-
-            )}
-
-          </div>
+          </Link>
 
         </div>
 

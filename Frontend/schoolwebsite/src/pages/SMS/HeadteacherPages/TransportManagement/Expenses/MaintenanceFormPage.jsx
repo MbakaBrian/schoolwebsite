@@ -1,12 +1,20 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import {
   ArrowLeft,
   Check,
   ClipboardList,
+  ExternalLink,
+  Plus,
   Receipt,
   RefreshCw,
   X,
 } from "lucide-react";
+
 import {
   Link,
   useNavigate,
@@ -28,22 +36,30 @@ EDIT
 GET   /transport/maintenance/:id/
 PATCH /transport/maintenance/:id/
 
+RELATED DATA
+
+Vehicles:
+GET /transport/vehicles/
+
+Receipts:
+GET /receipts/
+
+Departments:
+GET /receipts/departments/
+
+Subdepartments:
+GET /receipts/departments/:id/subdepartments/
+
+CREATE RECEIPT:
+Frontend route:
+    /receipts/add
+
 A maintenance record represents one historical
 maintenance/service event.
 
-The vehicle itself should NOT be overwritten when
-a new maintenance record is created.
+The vehicle itself is NOT overwritten when a new
+maintenance record is created.
 
-Example:
-
-Vehicle
-   |
-   ├── Maintenance #1
-   ├── Maintenance #2
-   ├── Maintenance #3
-   └── Maintenance #4
-
-This gives us a complete maintenance history.
 ==================================================
 */
 
@@ -98,7 +114,6 @@ const getErrorMessage = (error) => {
   ) {
     return Object.entries(data)
       .map(([field, messages]) => {
-
         const message =
           Array.isArray(messages)
             ? messages.join(" ")
@@ -175,22 +190,59 @@ const getReceiptLabel = (receipt) => {
 };
 
 
+const getDepartmentName = (department) => {
+  return (
+    department?.name ||
+    department?.code ||
+    `Department #${getId(department)}`
+  );
+};
+
+
+const getSubdepartmentName = (subdepartment) => {
+  return (
+    subdepartment?.name ||
+    subdepartment?.code ||
+    `Subdepartment #${getId(subdepartment)}`
+  );
+};
+
+
 // ==================================================
 // INITIAL FORM
 // ==================================================
 
 const INITIAL_FORM = {
   vehicle: "",
+
   maintenance_date: "",
+
   mileage: "",
-  maintenance_type: "routine_service",
+
+  maintenance_type: "service",
+
   description: "",
+
   service_provider: "",
-  service_provider_phone: "",
+
   cost: "",
+
   receipt: "",
+
   next_service_date: "",
+
   next_service_mileage: "",
+
+  invoice_number: "",
+
+  department: "",
+
+  subdepartment: "",
+
+  payment_method: "cash",
+
+  payment_reference: "",
+
   notes: "",
 };
 
@@ -200,12 +252,9 @@ const INITIAL_FORM = {
 // ==================================================
 
 const MaintenanceFormPage = () => {
-
   const navigate = useNavigate();
 
-  const {
-    id,
-  } = useParams();
+  const { id } = useParams();
 
   const isEditMode =
     Boolean(id);
@@ -219,6 +268,12 @@ const MaintenanceFormPage = () => {
     useState([]);
 
   const [receipts, setReceipts] =
+    useState([]);
+
+  const [departments, setDepartments] =
+    useState([]);
+
+  const [subdepartments, setSubdepartments] =
     useState([]);
 
 
@@ -237,6 +292,9 @@ const MaintenanceFormPage = () => {
   const [loading, setLoading] =
     useState(true);
 
+  const [loadingSubdepartments, setLoadingSubdepartments] =
+    useState(false);
+
   const [saving, setSaving] =
     useState(false);
 
@@ -248,48 +306,41 @@ const MaintenanceFormPage = () => {
 
 
   // ==================================================
-  // LOAD DATA
+  // LOAD MAIN FORM DATA
   // ==================================================
 
   useEffect(() => {
-
     const loadFormData =
       async () => {
-
         try {
-
           setLoading(true);
           setError("");
 
           const requests = [
-
+            // Vehicles
             axiosInstance.get(
               "/transport/vehicles/"
             ),
 
-            /*
-            Receipt linkage is optional.
-
-            If the receipt endpoint is temporarily
-            unavailable, maintenance records can
-            still be created.
-            */
-
+            // Receipts
             axiosInstance
               .get("/receipts/")
               .catch(() => null),
 
+            // Departments
+            axiosInstance.get(
+              "/receipts/departments/"
+            ),
           ];
 
 
+          // Edit record
           if (isEditMode) {
-
             requests.push(
               axiosInstance.get(
                 `/transport/maintenance/${id}/`
               )
             );
-
           }
 
 
@@ -315,18 +366,25 @@ const MaintenanceFormPage = () => {
           // ------------------------------------------------
 
           if (responses[1]) {
-
             setReceipts(
               extractList(
                 responses[1]
               )
             );
-
           } else {
-
             setReceipts([]);
-
           }
+
+
+          // ------------------------------------------------
+          // DEPARTMENTS
+          // ------------------------------------------------
+
+          setDepartments(
+            extractList(
+              responses[2]
+            )
+          );
 
 
           // ------------------------------------------------
@@ -334,14 +392,18 @@ const MaintenanceFormPage = () => {
           // ------------------------------------------------
 
           if (isEditMode) {
-
             const maintenance =
-              responses[2]?.data;
+              responses[3]?.data;
 
             if (maintenance) {
+              const departmentId =
+                getId(
+                  maintenance.department
+                ) ||
+                maintenance.department ||
+                "";
 
               setFormData({
-
                 vehicle:
                   getId(
                     maintenance.vehicle
@@ -351,19 +413,16 @@ const MaintenanceFormPage = () => {
 
                 maintenance_date:
                   formatDateForInput(
-                    maintenance.maintenance_date ||
-                    maintenance.date
+                    maintenance.maintenance_date
                   ),
 
                 mileage:
                   maintenance.mileage ??
-                  maintenance.odometer_reading ??
                   "",
 
                 maintenance_type:
                   maintenance.maintenance_type ||
-                  maintenance.service_type ||
-                  "routine_service",
+                  "service",
 
                 description:
                   maintenance.description ||
@@ -371,17 +430,10 @@ const MaintenanceFormPage = () => {
 
                 service_provider:
                   maintenance.service_provider ||
-                  maintenance.workshop ||
-                  "",
-
-                service_provider_phone:
-                  maintenance.service_provider_phone ||
-                  maintenance.provider_phone ||
                   "",
 
                 cost:
                   maintenance.cost ??
-                  maintenance.total_cost ??
                   "",
 
                 receipt:
@@ -400,6 +452,28 @@ const MaintenanceFormPage = () => {
                   maintenance.next_service_mileage ??
                   "",
 
+                invoice_number:
+                  maintenance.invoice_number ||
+                  "",
+
+                department:
+                  departmentId,
+
+                subdepartment:
+                  getId(
+                    maintenance.subdepartment
+                  ) ||
+                  maintenance.subdepartment ||
+                  "",
+
+                payment_method:
+                  maintenance.payment_method ||
+                  "cash",
+
+                payment_reference:
+                  maintenance.payment_reference ||
+                  "",
+
                 notes:
                   maintenance.notes ||
                   "",
@@ -408,7 +482,6 @@ const MaintenanceFormPage = () => {
           }
 
         } catch (err) {
-
           console.error(
             "Failed to load maintenance form:",
             err
@@ -419,9 +492,7 @@ const MaintenanceFormPage = () => {
           );
 
         } finally {
-
           setLoading(false);
-
         }
       };
 
@@ -435,12 +506,56 @@ const MaintenanceFormPage = () => {
 
 
   // ==================================================
+  // LOAD SUBDEPARTMENTS
+  // ==================================================
+
+  useEffect(() => {
+    const loadSubdepartments =
+      async () => {
+        if (!formData.department) {
+          setSubdepartments([]);
+          return;
+        }
+
+        try {
+          setLoadingSubdepartments(true);
+
+          const response =
+            await axiosInstance.get(
+              `/receipts/departments/${formData.department}/subdepartments/`
+            );
+
+          setSubdepartments(
+            extractList(response)
+          );
+
+        } catch (err) {
+          console.error(
+            "Failed to load subdepartments:",
+            err
+          );
+
+          setSubdepartments([]);
+
+        } finally {
+          setLoadingSubdepartments(false);
+        }
+      };
+
+
+    loadSubdepartments();
+
+  }, [
+    formData.department,
+  ]);
+
+
+  // ==================================================
   // SELECTED VEHICLE
   // ==================================================
 
   const selectedVehicle =
     useMemo(() => {
-
       return vehicles.find(
         (vehicle) =>
           String(
@@ -450,7 +565,6 @@ const MaintenanceFormPage = () => {
             formData.vehicle
           )
       );
-
     }, [
       vehicles,
       formData.vehicle,
@@ -464,11 +578,11 @@ const MaintenanceFormPage = () => {
   const handleChange = (
     event
   ) => {
-
     const {
       name,
       value,
     } = event.target;
+
 
     setFormData(
       (current) => ({
@@ -477,9 +591,89 @@ const MaintenanceFormPage = () => {
       })
     );
 
+
     setError("");
     setSuccess("");
   };
+
+
+  // ==================================================
+  // HANDLE DEPARTMENT CHANGE
+  // ==================================================
+
+  const handleDepartmentChange = (
+    event
+  ) => {
+    const value =
+      event.target.value;
+
+    setFormData(
+      (current) => ({
+        ...current,
+
+        department:
+          value,
+
+        // A subdepartment must always
+        // belong to the selected department.
+        subdepartment:
+          "",
+      })
+    );
+
+    setSubdepartments([]);
+
+    setError("");
+    setSuccess("");
+  };
+
+
+  // ==================================================
+  // OPEN RECEIPT CREATION
+  // ==================================================
+
+  const handleCreateReceipt = () => {
+    window.open(
+      "/receipts/add",
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
+
+  // ==================================================
+  // REFRESH RECEIPTS
+  // ==================================================
+
+  const handleRefreshReceipts =
+    async () => {
+      try {
+        setError("");
+
+        const response =
+          await axiosInstance.get(
+            "/receipts/"
+          );
+
+        setReceipts(
+          extractList(response)
+        );
+
+        setSuccess(
+          "Receipt list refreshed."
+        );
+
+      } catch (err) {
+        console.error(
+          "Failed to refresh receipts:",
+          err
+        );
+
+        setError(
+          getErrorMessage(err)
+        );
+      }
+    };
 
 
   // ==================================================
@@ -489,76 +683,51 @@ const MaintenanceFormPage = () => {
   const validateForm = () => {
 
     if (!formData.vehicle) {
-
-      return (
-        "Select a vehicle."
-      );
+      return "Select a vehicle.";
     }
 
 
-    if (
-      !formData.maintenance_date
-    ) {
-
-      return (
-        "Select the maintenance date."
-      );
+    if (!formData.maintenance_date) {
+      return "Select the maintenance date.";
     }
 
 
-    if (
-      formData.mileage === ""
-    ) {
+    if (formData.mileage !== "") {
+      const mileage =
+        Number(
+          formData.mileage
+        );
 
-      return (
-        "Enter the vehicle mileage at the time of maintenance."
-      );
+      if (
+        !Number.isFinite(mileage) ||
+        mileage < 0
+      ) {
+        return "Mileage must be a valid number greater than or equal to zero.";
+      }
     }
 
 
-    const mileage =
-      Number(
-        formData.mileage
-      );
-
-    if (
-      !Number.isFinite(mileage) ||
-      mileage < 0
-    ) {
-
-      return (
-        "Mileage must be a valid number greater than or equal to zero."
-      );
-    }
-
-
-    if (
-      !formData.maintenance_type
-    ) {
-
-      return (
-        "Select the maintenance type."
-      );
+    if (!formData.maintenance_type) {
+      return "Select the maintenance type.";
     }
 
 
     if (
       !formData.description.trim()
     ) {
-
-      return (
-        "Enter a description of the maintenance work."
-      );
+      return "Enter a description of the maintenance work.";
     }
 
 
     if (
-      formData.cost === ""
+      !formData.service_provider.trim()
     ) {
+      return "Enter the service provider or workshop.";
+    }
 
-      return (
-        "Enter the maintenance cost."
-      );
+
+    if (formData.cost === "") {
+      return "Enter the maintenance cost.";
     }
 
 
@@ -571,21 +740,38 @@ const MaintenanceFormPage = () => {
       !Number.isFinite(cost) ||
       cost < 0
     ) {
-
-      return (
-        "Maintenance cost must be a valid amount."
-      );
+      return "Maintenance cost must be a valid amount.";
     }
 
 
+    // Department is required by the model.
+    if (!formData.department) {
+      return "Select the department responsible for this expense.";
+    }
+
+
+    // Payment method is required by the model.
+    if (!formData.payment_method) {
+      return "Select the payment method.";
+    }
+
+
+    // Validate next mileage.
     if (
       formData.next_service_mileage !== ""
     ) {
-
       const nextMileage =
         Number(
           formData.next_service_mileage
         );
+
+      const currentMileage =
+        formData.mileage === ""
+          ? null
+          : Number(
+              formData.mileage
+            );
+
 
       if (
         !Number.isFinite(
@@ -593,19 +779,15 @@ const MaintenanceFormPage = () => {
         ) ||
         nextMileage < 0
       ) {
-
-        return (
-          "Next service mileage must be a valid number."
-        );
+        return "Next service mileage must be a valid number.";
       }
 
-      if (
-        nextMileage < mileage
-      ) {
 
-        return (
-          "Next service mileage cannot be lower than the current mileage."
-        );
+      if (
+        currentMileage !== null &&
+        nextMileage < currentMileage
+      ) {
+        return "Next service mileage cannot be lower than the current mileage.";
       }
     }
 
@@ -615,10 +797,7 @@ const MaintenanceFormPage = () => {
       formData.next_service_date <
         formData.maintenance_date
     ) {
-
-      return (
-        "Next service date cannot be earlier than the maintenance date."
-      );
+      return "Next service date cannot be earlier than the maintenance date.";
     }
 
 
@@ -633,14 +812,14 @@ const MaintenanceFormPage = () => {
   const handleSubmit = async (
     event
   ) => {
-
     event.preventDefault();
+
 
     const validationError =
       validateForm();
 
-    if (validationError) {
 
+    if (validationError) {
       setError(
         validationError
       );
@@ -650,14 +829,12 @@ const MaintenanceFormPage = () => {
 
 
     try {
-
       setSaving(true);
       setError("");
       setSuccess("");
 
 
       const payload = {
-
         vehicle:
           Number(
             formData.vehicle
@@ -667,9 +844,11 @@ const MaintenanceFormPage = () => {
           formData.maintenance_date,
 
         mileage:
-          Number(
-            formData.mileage
-          ),
+          formData.mileage === ""
+            ? null
+            : Number(
+                formData.mileage
+              ),
 
         maintenance_type:
           formData.maintenance_type,
@@ -679,9 +858,6 @@ const MaintenanceFormPage = () => {
 
         service_provider:
           formData.service_provider.trim(),
-
-        service_provider_phone:
-          formData.service_provider_phone.trim(),
 
         cost:
           Number(
@@ -705,6 +881,27 @@ const MaintenanceFormPage = () => {
                 formData.next_service_mileage
               )
             : null,
+
+        invoice_number:
+          formData.invoice_number.trim(),
+
+        department:
+          Number(
+            formData.department
+          ),
+
+        subdepartment:
+          formData.subdepartment
+            ? Number(
+                formData.subdepartment
+              )
+            : null,
+
+        payment_method:
+          formData.payment_method,
+
+        payment_reference:
+          formData.payment_reference.trim(),
 
         notes:
           formData.notes.trim(),
@@ -740,11 +937,9 @@ const MaintenanceFormPage = () => {
 
 
       setTimeout(() => {
-
         navigate(
           "/transport/expenses"
         );
-
       }, 700);
 
     } catch (err) {
@@ -759,9 +954,7 @@ const MaintenanceFormPage = () => {
       );
 
     } finally {
-
       setSaving(false);
-
     }
   };
 
@@ -771,7 +964,6 @@ const MaintenanceFormPage = () => {
   // ==================================================
 
   if (loading) {
-
     return (
       <div className="min-h-screen bg-gray-100 p-6 flex items-center justify-center">
 
@@ -815,9 +1007,7 @@ const MaintenanceFormPage = () => {
             Transport
           </Link>
 
-          <span>
-            /
-          </span>
+          <span>/</span>
 
           <Link
             to="/transport/expenses"
@@ -826,9 +1016,7 @@ const MaintenanceFormPage = () => {
             Vehicle Expenses
           </Link>
 
-          <span>
-            /
-          </span>
+          <span>/</span>
 
           <span className="text-gray-700">
             {isEditMode
@@ -867,8 +1055,8 @@ const MaintenanceFormPage = () => {
 
               <p className="text-gray-600 mt-1">
 
-                Record service, repairs, mileage,
-                costs and future maintenance information.
+                Record service, repairs, costs,
+                payment and future maintenance information.
 
               </p>
 
@@ -885,7 +1073,9 @@ const MaintenanceFormPage = () => {
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gray-700 text-white hover:bg-gray-800"
           >
 
-            <ArrowLeft size={17} />
+            <ArrowLeft
+              size={17}
+            />
 
             Back
 
@@ -899,7 +1089,6 @@ const MaintenanceFormPage = () => {
         ================================================== */}
 
         {error && (
-
           <div className="mb-5 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 flex items-start gap-3">
 
             <X
@@ -912,12 +1101,10 @@ const MaintenanceFormPage = () => {
             </span>
 
           </div>
-
         )}
 
 
         {success && (
-
           <div className="mb-5 p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 flex items-start gap-3">
 
             <Check
@@ -930,7 +1117,6 @@ const MaintenanceFormPage = () => {
             </span>
 
           </div>
-
         )}
 
 
@@ -965,6 +1151,7 @@ const MaintenanceFormPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
               {/* Vehicle */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -976,6 +1163,7 @@ const MaintenanceFormPage = () => {
                   </span>
 
                 </label>
+
 
                 <select
                   name="vehicle"
@@ -991,7 +1179,6 @@ const MaintenanceFormPage = () => {
 
                   {vehicles.map(
                     (vehicle) => (
-
                       <option
                         key={
                           getId(
@@ -1008,7 +1195,6 @@ const MaintenanceFormPage = () => {
                           vehicle
                         )}
                       </option>
-
                     )
                   )}
 
@@ -1016,24 +1202,21 @@ const MaintenanceFormPage = () => {
 
 
                 {selectedVehicle && (
-
                   <p className="text-xs text-gray-500 mt-1.5">
 
-                    Current vehicle mileage:
+                    Registration:
                     {" "}
-                    {selectedVehicle.current_mileage ??
-                      selectedVehicle.mileage ??
-                      selectedVehicle.odometer_reading ??
+                    {selectedVehicle.registration_number ||
                       "—"}
 
                   </p>
-
                 )}
 
               </div>
 
 
               {/* Maintenance Date */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -1061,26 +1244,24 @@ const MaintenanceFormPage = () => {
 
 
               {/* Mileage */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
 
                   Mileage at Maintenance
 
-                  <span className="text-red-500 ml-1">
-                    *
-                  </span>
-
                 </label>
 
                 <input
                   type="number"
                   name="mileage"
-                  value={formData.mileage}
+                  value={
+                    formData.mileage
+                  }
                   onChange={handleChange}
                   min="0"
-                  step="1"
-                  required
+                  step="0.01"
                   placeholder="e.g. 128500"
                   className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
@@ -1093,6 +1274,7 @@ const MaintenanceFormPage = () => {
 
 
               {/* Maintenance Type */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -1115,28 +1297,24 @@ const MaintenanceFormPage = () => {
                   className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
 
-                  <option value="routine_service">
-                    Routine Service
-                  </option>
-
-                  <option value="major_service">
-                    Major Service
+                  <option value="service">
+                    Service
                   </option>
 
                   <option value="repair">
                     Repair
                   </option>
 
-                  <option value="tyre_replacement">
-                    Tyre Replacement
+                  <option value="inspection">
+                    Inspection
+                  </option>
+
+                  <option value="tyre">
+                    Tyre
                   </option>
 
                   <option value="oil_change">
                     Oil Change
-                  </option>
-
-                  <option value="brake_service">
-                    Brake Service
                   </option>
 
                   <option value="electrical">
@@ -1145,10 +1323,6 @@ const MaintenanceFormPage = () => {
 
                   <option value="bodywork">
                     Bodywork
-                  </option>
-
-                  <option value="inspection">
-                    Inspection
                   </option>
 
                   <option value="other">
@@ -1186,6 +1360,7 @@ const MaintenanceFormPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
               {/* Description */}
+
               <div className="md:col-span-2">
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -1215,10 +1390,17 @@ const MaintenanceFormPage = () => {
 
 
               {/* Service Provider */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
+
                   Service Provider / Workshop
+
+                  <span className="text-red-500 ml-1">
+                    *
+                  </span>
+
                 </label>
 
                 <input
@@ -1229,6 +1411,7 @@ const MaintenanceFormPage = () => {
                   }
                   onChange={handleChange}
                   maxLength={255}
+                  required
                   placeholder="e.g. XYZ Auto Garage"
                   className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
@@ -1236,22 +1419,25 @@ const MaintenanceFormPage = () => {
               </div>
 
 
-              {/* Provider Phone */}
+              {/* Invoice Number */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Workshop Phone
+
+                  Invoice Number
+
                 </label>
 
                 <input
-                  type="tel"
-                  name="service_provider_phone"
+                  type="text"
+                  name="invoice_number"
                   value={
-                    formData.service_provider_phone
+                    formData.invoice_number
                   }
                   onChange={handleChange}
-                  maxLength={30}
-                  placeholder="e.g. 07XXXXXXXX"
+                  maxLength={100}
+                  placeholder="e.g. INV-2026-0045"
                   className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
 
@@ -1263,7 +1449,7 @@ const MaintenanceFormPage = () => {
 
 
           {/* ==================================================
-              COST
+              DEPARTMENT
           ================================================== */}
 
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
@@ -1271,11 +1457,155 @@ const MaintenanceFormPage = () => {
             <div className="mb-5">
 
               <h2 className="text-lg font-semibold text-gray-800">
-                Maintenance Cost
+                Expense Classification
               </h2>
 
               <p className="text-sm text-gray-500 mt-1">
-                Record the amount paid for this maintenance event.
+                Classify this maintenance expense under the appropriate department and subdepartment.
+              </p>
+
+            </div>
+
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+              {/* Department */}
+
+              <div>
+
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+
+                  Department
+
+                  <span className="text-red-500 ml-1">
+                    *
+                  </span>
+
+                </label>
+
+                <select
+                  name="department"
+                  value={
+                    formData.department
+                  }
+                  onChange={
+                    handleDepartmentChange
+                  }
+                  required
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+
+                  <option value="">
+                    Select department
+                  </option>
+
+                  {departments.map(
+                    (department) => (
+                      <option
+                        key={
+                          getId(
+                            department
+                          )
+                        }
+                        value={
+                          getId(
+                            department
+                          )
+                        }
+                      >
+                        {getDepartmentName(
+                          department
+                        )}
+                      </option>
+                    )
+                  )}
+
+                </select>
+
+              </div>
+
+
+              {/* Subdepartment */}
+
+              <div>
+
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+
+                  Subdepartment
+
+                </label>
+
+                <select
+                  name="subdepartment"
+                  value={
+                    formData.subdepartment
+                  }
+                  onChange={
+                    handleChange
+                  }
+                  disabled={
+                    !formData.department ||
+                    loadingSubdepartments
+                  }
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white disabled:bg-gray-100 disabled:text-gray-400 px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+
+                  <option value="">
+                    {loadingSubdepartments
+                      ? "Loading subdepartments..."
+                      : formData.department
+                        ? "Select subdepartment (optional)"
+                        : "Select department first"}
+                  </option>
+
+                  {subdepartments.map(
+                    (subdepartment) => (
+                      <option
+                        key={
+                          getId(
+                            subdepartment
+                          )
+                        }
+                        value={
+                          getId(
+                            subdepartment
+                          )
+                        }
+                      >
+                        {getSubdepartmentName(
+                          subdepartment
+                        )}
+                      </option>
+                    )
+                  )}
+
+                </select>
+
+                <p className="text-xs text-gray-500 mt-1.5">
+                  The subdepartment is filtered according to the selected department.
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          {/* ==================================================
+              COST & PAYMENT
+          ================================================== */}
+
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
+
+            <div className="mb-5">
+
+              <h2 className="text-lg font-semibold text-gray-800">
+                Cost & Payment
+              </h2>
+
+              <p className="text-sm text-gray-500 mt-1">
+                Record the maintenance cost and how the payment was made.
               </p>
 
             </div>
@@ -1284,6 +1614,7 @@ const MaintenanceFormPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
               {/* Cost */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -1321,7 +1652,90 @@ const MaintenanceFormPage = () => {
               </div>
 
 
+              {/* Payment Method */}
+
+              <div>
+
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+
+                  Payment Method
+
+                  <span className="text-red-500 ml-1">
+                    *
+                  </span>
+
+                </label>
+
+                <select
+                  name="payment_method"
+                  value={
+                    formData.payment_method
+                  }
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+
+                  <option value="cash">
+                    Cash
+                  </option>
+
+                  <option value="mpesa">
+                    M-Pesa
+                  </option>
+
+                  <option value="bank_transfer">
+                    Bank Transfer
+                  </option>
+
+                  <option value="cheque">
+                    Cheque
+                  </option>
+
+                  <option value="card">
+                    Card
+                  </option>
+
+                  <option value="eft">
+                    EFT
+                  </option>
+
+                  <option value="other">
+                    Other
+                  </option>
+
+                </select>
+
+              </div>
+
+
+              {/* Payment Reference */}
+
+              <div>
+
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+
+                  Payment Reference
+
+                </label>
+
+                <input
+                  type="text"
+                  name="payment_reference"
+                  value={
+                    formData.payment_reference
+                  }
+                  onChange={handleChange}
+                  maxLength={100}
+                  placeholder="e.g. M-Pesa transaction code"
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+
+              </div>
+
+
               {/* Receipt */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -1330,51 +1744,110 @@ const MaintenanceFormPage = () => {
 
                 </label>
 
-                <select
-                  name="receipt"
-                  value={
-                    formData.receipt
-                  }
-                  onChange={handleChange}
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
+                <div className="flex gap-2">
 
-                  <option value="">
-                    No receipt linked
-                  </option>
+                  <select
+                    name="receipt"
+                    value={
+                      formData.receipt
+                    }
+                    onChange={handleChange}
+                    className="flex-1 min-w-0 px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
 
-                  {receipts.map(
-                    (receipt) => (
+                    <option value="">
+                      No receipt linked
+                    </option>
 
-                      <option
-                        key={
-                          getId(
+                    {receipts.map(
+                      (receipt) => (
+                        <option
+                          key={
+                            getId(
+                              receipt
+                            )
+                          }
+                          value={
+                            getId(
+                              receipt
+                            )
+                          }
+                        >
+                          {getReceiptLabel(
                             receipt
-                          )
-                        }
-                        value={
-                          getId(
-                            receipt
-                          )
-                        }
-                      >
-                        {getReceiptLabel(
-                          receipt
-                        )}
-                      </option>
+                          )}
+                        </option>
+                      )
+                    )}
 
-                    )
-                  )}
+                  </select>
 
-                </select>
 
-                {receipts.length === 0 && (
+                  {/* Create Receipt */}
 
-                  <p className="text-xs text-gray-500 mt-1.5">
-                    No receipt records are currently available.
-                  </p>
+                  <button
+                    type="button"
+                    onClick={
+                      handleCreateReceipt
+                    }
+                    title="Create a new receipt"
+                    className="shrink-0 inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-purple-800 text-white hover:bg-purple-900"
+                  >
 
-                )}
+                    <Plus
+                      size={17}
+                    />
+
+                    <Receipt
+                      size={17}
+                    />
+
+                  </button>
+
+                </div>
+
+
+                <div className="flex flex-wrap items-center gap-3 mt-2">
+
+                  <button
+                    type="button"
+                    onClick={
+                      handleCreateReceipt
+                    }
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-purple-700 hover:text-purple-900"
+                  >
+
+                    <ExternalLink
+                      size={14}
+                    />
+
+                    Create new receipt
+
+                  </button>
+
+
+                  <button
+                    type="button"
+                    onClick={
+                      handleRefreshReceipts
+                    }
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600 hover:text-gray-900"
+                  >
+
+                    <RefreshCw
+                      size={13}
+                    />
+
+                    Refresh receipts
+
+                  </button>
+
+                </div>
+
+
+                <p className="text-xs text-gray-500 mt-1.5">
+                  After creating a receipt in the new tab, return here and refresh the receipt list.
+                </p>
 
               </div>
 
@@ -1405,6 +1878,7 @@ const MaintenanceFormPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
               {/* Next Date */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -1429,6 +1903,7 @@ const MaintenanceFormPage = () => {
 
 
               {/* Next Mileage */}
+
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -1446,7 +1921,7 @@ const MaintenanceFormPage = () => {
                     formData.mileage ||
                     "0"
                   }
-                  step="1"
+                  step="0.01"
                   placeholder="e.g. 135000"
                   className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
@@ -1512,9 +1987,11 @@ const MaintenanceFormPage = () => {
                 </h3>
 
                 <p className="text-sm text-purple-700 mt-1">
+
                   Each maintenance transaction is stored as a separate historical
                   record. Creating this record will not erase previous service,
                   repair or maintenance history for the vehicle.
+
                 </p>
 
               </div>
@@ -1555,7 +2032,6 @@ const MaintenanceFormPage = () => {
             >
 
               {saving ? (
-
                 <>
 
                   <RefreshCw
@@ -1566,9 +2042,7 @@ const MaintenanceFormPage = () => {
                   Saving...
 
                 </>
-
               ) : (
-
                 <>
 
                   <Check
@@ -1580,7 +2054,6 @@ const MaintenanceFormPage = () => {
                     : "Save Maintenance Record"}
 
                 </>
-
               )}
 
             </button>

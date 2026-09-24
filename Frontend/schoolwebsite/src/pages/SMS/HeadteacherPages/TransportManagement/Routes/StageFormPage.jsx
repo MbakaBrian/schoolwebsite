@@ -13,6 +13,7 @@ import {
   Route as RouteIcon,
   Save,
   XCircle,
+  DollarSign,
 } from "lucide-react";
 
 import {
@@ -32,6 +33,7 @@ const getErrorMessage = (
   error,
   fallback = "Something went wrong."
 ) => {
+
   const data =
     error?.response?.data;
 
@@ -54,22 +56,37 @@ const getErrorMessage = (
   if (
     typeof data === "object"
   ) {
+
     const messages = [];
 
     Object.entries(data).forEach(
       ([field, value]) => {
 
         if (Array.isArray(value)) {
+
           messages.push(
             `${field}: ${value.join(", ")}`
           );
+
         } else if (
           typeof value === "string"
         ) {
+
           messages.push(
             `${field}: ${value}`
           );
+
+        } else if (
+          typeof value === "object" &&
+          value !== null
+        ) {
+
+          messages.push(
+            `${field}: ${JSON.stringify(value)}`
+          );
+
         }
+
       }
     );
 
@@ -85,20 +102,15 @@ const getErrorMessage = (
 const formatTimeForInput = (
   value
 ) => {
+
   if (!value) {
     return "";
   }
 
-  /*
-   * Handles:
-   * 08:30
-   * 08:30:00
-   * ISO datetime values containing a time.
-   */
-
   if (
     typeof value === "string"
   ) {
+
     const timeMatch =
       value.match(
         /T?(\d{2}:\d{2})/
@@ -113,10 +125,12 @@ const formatTimeForInput = (
         value
       )
     ) {
+
       return value.slice(
         0,
         5
       );
+
     }
   }
 
@@ -127,6 +141,7 @@ const formatTimeForInput = (
 const formatNumber = (
   value
 ) => {
+
   if (
     value === null ||
     value === undefined ||
@@ -144,6 +159,7 @@ const formatNumber = (
 // ============================================================
 
 const StageFormPage = () => {
+
   const navigate =
     useNavigate();
 
@@ -162,17 +178,35 @@ const StageFormPage = () => {
 
   const [formData, setFormData] =
     useState({
+
       name: "",
-      stage_type: "pickup",
-      location: "",
-      description: "",
-      sequence: "",
-      pickup_time: "",
-      dropoff_time: "",
-      distance_from_previous: "",
+
+      code: "",
+
+      stage_type: "both",
+
+      sequence: "1",
+
+      location_description: "",
+
+      landmark: "",
+
       latitude: "",
+
       longitude: "",
-      is_active: true,
+
+      distance_from_previous: "",
+
+      pickup_time: "",
+
+      dropoff_time: "",
+
+      monthly_fee: "0.00",
+
+      status: "active",
+
+      notes: "",
+
     });
 
 
@@ -244,33 +278,44 @@ const StageFormPage = () => {
               stageResponse.data;
 
             setFormData({
+
               name:
-                stage?.name ||
-                stage?.stage_name ||
-                "",
+                stage?.name || "",
+
+              code:
+                stage?.code || "",
 
               stage_type:
                 stage?.stage_type ||
-                stage?.type ||
-                "pickup",
-
-              location:
-                stage?.location ||
-                stage?.address ||
-                "",
-
-              description:
-                stage?.description ||
-                stage?.notes ||
-                "",
+                "both",
 
               sequence:
                 formatNumber(
                   stage?.sequence ??
-                    stage?.order ??
-                    stage?.stage_order ??
-                    stage?.position ??
-                    ""
+                  "1"
+                ),
+
+              location_description:
+                stage?.location_description ||
+                "",
+
+              landmark:
+                stage?.landmark ||
+                "",
+
+              latitude:
+                formatNumber(
+                  stage?.latitude
+                ),
+
+              longitude:
+                formatNumber(
+                  stage?.longitude
+                ),
+
+              distance_from_previous:
+                formatNumber(
+                  stage?.distance_from_previous
                 ),
 
               pickup_time:
@@ -283,34 +328,20 @@ const StageFormPage = () => {
                   stage?.dropoff_time
                 ),
 
-              distance_from_previous:
+              monthly_fee:
                 formatNumber(
-                  stage?.distance_from_previous ??
-                    stage?.distance ??
-                    ""
+                  stage?.monthly_fee ??
+                  "0.00"
                 ),
 
-              latitude:
-                formatNumber(
-                  stage?.latitude
-                ),
+              status:
+                stage?.status ||
+                "active",
 
-              longitude:
-                formatNumber(
-                  stage?.longitude
-                ),
+              notes:
+                stage?.notes ||
+                "",
 
-              is_active:
-                stage?.is_active !==
-                undefined
-                  ? Boolean(
-                      stage.is_active
-                    )
-                  : String(
-                      stage?.status ||
-                        "active"
-                    ).toLowerCase() ===
-                    "active",
             });
 
           }
@@ -334,6 +365,7 @@ const StageFormPage = () => {
           setLoading(false);
 
         }
+
       };
 
 
@@ -359,18 +391,12 @@ const StageFormPage = () => {
     const {
       name,
       value,
-      type,
-      checked,
     } = event.target;
 
     setFormData(
       (current) => ({
         ...current,
-
-        [name]:
-          type === "checkbox"
-            ? checked
-            : value,
+        [name]: value,
       })
     );
 
@@ -385,43 +411,70 @@ const StageFormPage = () => {
 
   const validateForm = () => {
 
+    // --------------------------------------------------------
+    // Name
+    // --------------------------------------------------------
+
     if (
       !formData.name.trim()
     ) {
-      return "Stage name is required.";
+
+      return (
+        "Stage name is required."
+      );
+
     }
+
+
+    // --------------------------------------------------------
+    // Code
+    // --------------------------------------------------------
 
     if (
-      !formData.location.trim()
+      !formData.code.trim()
     ) {
-      return "Stage location is required.";
+
+      return (
+        "Stage code is required."
+      );
+
     }
+
+
+    // --------------------------------------------------------
+    // Sequence
+    // --------------------------------------------------------
 
     if (
-      !formData.stage_type
+      formData.sequence === ""
     ) {
-      return "Stage type is required.";
+
+      return (
+        "Stage sequence is required."
+      );
+
     }
+
+    const sequence =
+      Number(
+        formData.sequence
+      );
 
     if (
-      formData.sequence !== ""
+      Number.isNaN(sequence) ||
+      sequence < 1
     ) {
 
-      const sequence =
-        Number(
-          formData.sequence
-        );
+      return (
+        "Stage sequence must be at least 1."
+      );
 
-      if (
-        Number.isNaN(
-          sequence
-        ) ||
-        sequence < 1
-      ) {
-        return "Stage sequence must be a positive number.";
-      }
     }
 
+
+    // --------------------------------------------------------
+    // Distance
+    // --------------------------------------------------------
 
     if (
       formData.distance_from_previous !==
@@ -434,15 +487,22 @@ const StageFormPage = () => {
         );
 
       if (
-        Number.isNaN(
-          distance
-        ) ||
+        Number.isNaN(distance) ||
         distance < 0
       ) {
-        return "Distance must be zero or greater.";
+
+        return (
+          "Distance must be zero or greater."
+        );
+
       }
+
     }
 
+
+    // --------------------------------------------------------
+    // Latitude
+    // --------------------------------------------------------
 
     if (
       formData.latitude !== ""
@@ -454,16 +514,23 @@ const StageFormPage = () => {
         );
 
       if (
-        Number.isNaN(
-          latitude
-        ) ||
+        Number.isNaN(latitude) ||
         latitude < -90 ||
         latitude > 90
       ) {
-        return "Latitude must be between -90 and 90.";
+
+        return (
+          "Latitude must be between -90 and 90."
+        );
+
       }
+
     }
 
+
+    // --------------------------------------------------------
+    // Longitude
+    // --------------------------------------------------------
 
     if (
       formData.longitude !== ""
@@ -475,28 +542,66 @@ const StageFormPage = () => {
         );
 
       if (
-        Number.isNaN(
-          longitude
-        ) ||
+        Number.isNaN(longitude) ||
         longitude < -180 ||
         longitude > 180
       ) {
-        return "Longitude must be between -180 and 180.";
+
+        return (
+          "Longitude must be between -180 and 180."
+        );
+
       }
+
     }
 
 
+    // --------------------------------------------------------
+    // Monthly fee
+    // --------------------------------------------------------
+
     if (
-      formData.pickup_time &&
-      formData.dropoff_time
+      formData.monthly_fee === ""
     ) {
 
-      if (
-        formData.dropoff_time <
-        formData.pickup_time
-      ) {
-        return "Drop-off time cannot be earlier than pickup time.";
-      }
+      return (
+        "Monthly transport fee is required."
+      );
+
+    }
+
+    const monthlyFee =
+      Number(
+        formData.monthly_fee
+      );
+
+    if (
+      Number.isNaN(monthlyFee) ||
+      monthlyFee < 0
+    ) {
+
+      return (
+        "Monthly transport fee cannot be negative."
+      );
+
+    }
+
+
+    // --------------------------------------------------------
+    // Time
+    // --------------------------------------------------------
+
+    if (
+      formData.pickup_time &&
+      formData.dropoff_time &&
+      formData.dropoff_time <
+      formData.pickup_time
+    ) {
+
+      return (
+        "Drop-off time cannot be earlier than pickup time."
+      );
+
     }
 
 
@@ -518,9 +623,11 @@ const StageFormPage = () => {
       validateForm();
 
     if (validationError) {
+
       setError(
         validationError
       );
+
       return;
     }
 
@@ -537,88 +644,108 @@ const StageFormPage = () => {
       // ------------------------------------------------------
 
       const payload = {
+
         route:
           Number(routeId),
 
         name:
           formData.name.trim(),
 
+        code:
+          formData.code.trim(),
+
         stage_type:
           formData.stage_type,
 
-        location:
-          formData.location.trim(),
+        sequence:
+          Number(
+            formData.sequence
+          ),
 
-        description:
-          formData.description.trim(),
+        location_description:
+          formData.location_description.trim(),
 
-        is_active:
-          formData.is_active,
+        landmark:
+          formData.landmark.trim(),
+
+        monthly_fee:
+          Number(
+            formData.monthly_fee
+          ),
+
+        status:
+          formData.status,
+
+        notes:
+          formData.notes.trim(),
+
       };
 
 
       // ------------------------------------------------------
-      // OPTIONAL NUMERIC FIELDS
+      // OPTIONAL DISTANCE
       // ------------------------------------------------------
-
-      if (
-        formData.sequence !== ""
-      ) {
-        payload.sequence =
-          Number(
-            formData.sequence
-          );
-      }
-
 
       if (
         formData.distance_from_previous !==
         ""
       ) {
+
         payload.distance_from_previous =
           Number(
             formData.distance_from_previous
           );
-      }
 
-
-      if (
-        formData.latitude !== ""
-      ) {
-        payload.latitude =
-          Number(
-            formData.latitude
-          );
-      }
-
-
-      if (
-        formData.longitude !== ""
-      ) {
-        payload.longitude =
-          Number(
-            formData.longitude
-          );
       }
 
 
       // ------------------------------------------------------
-      // OPTIONAL TIME FIELDS
+      // OPTIONAL COORDINATES
+      // ------------------------------------------------------
+
+      if (
+        formData.latitude !== ""
+      ) {
+
+        payload.latitude =
+          Number(
+            formData.latitude
+          );
+
+      }
+
+      if (
+        formData.longitude !== ""
+      ) {
+
+        payload.longitude =
+          Number(
+            formData.longitude
+          );
+
+      }
+
+
+      // ------------------------------------------------------
+      // OPTIONAL TIMES
       // ------------------------------------------------------
 
       if (
         formData.pickup_time
       ) {
+
         payload.pickup_time =
           formData.pickup_time;
-      }
 
+      }
 
       if (
         formData.dropoff_time
       ) {
+
         payload.dropoff_time =
           formData.dropoff_time;
+
       }
 
 
@@ -631,9 +758,9 @@ const StageFormPage = () => {
       if (isEditMode) {
 
         /*
-         * Route is intentionally included only if the API
-         * permits route reassignment. Normally the stage
-         * remains attached to the same route.
+         * A stage remains attached to its original route.
+         * Route reassignment should be handled separately if
+         * it is ever required.
          */
 
         delete payload.route;
@@ -658,6 +785,11 @@ const StageFormPage = () => {
       const savedStage =
         response.data;
 
+      console.log(
+        "Saved stage:",
+        savedStage
+      );
+
 
       setSuccess(
         isEditMode
@@ -676,7 +808,7 @@ const StageFormPage = () => {
           `/transport/routes/${routeId}`
         );
 
-      }, 500);
+      }, 600);
 
 
     } catch (err) {
@@ -724,6 +856,7 @@ const StageFormPage = () => {
 
       </div>
     );
+
   }
 
 
@@ -782,6 +915,7 @@ const StageFormPage = () => {
 
       </div>
     );
+
   }
 
 
@@ -791,14 +925,10 @@ const StageFormPage = () => {
 
   const routeName =
     route?.name ||
-    route?.route_name ||
-    route?.title ||
     "Transport Route";
-
 
   const routeCode =
     route?.code ||
-    route?.route_code ||
     "—";
 
 
@@ -971,7 +1101,7 @@ const StageFormPage = () => {
 
 
             {/* ==================================================
-                BASIC STAGE INFORMATION
+                STAGE INFORMATION
             ================================================== */}
 
             <div className="px-5 py-4 border-b border-gray-200">
@@ -993,7 +1123,7 @@ const StageFormPage = () => {
                   </h2>
 
                   <p className="text-sm text-gray-500">
-                    Define the location and position of this stage on the route.
+                    Define the identity, type and position of this stage.
                   </p>
 
                 </div>
@@ -1007,110 +1137,215 @@ const StageFormPage = () => {
 
 
               {/* =================================================
-                  STAGE NAME
+                  NAME + CODE
+              ================================================= */}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                <div>
+
+                  <label
+                    htmlFor="name"
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
+                  >
+                    Stage Name
+                    <span className="text-red-500 ml-1">
+                      *
+                    </span>
+                  </label>
+
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    value={
+                      formData.name
+                    }
+                    onChange={
+                      handleChange
+                    }
+                    placeholder="e.g. Bomet Town"
+                    className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    required
+                  />
+
+                </div>
+
+
+                <div>
+
+                  <label
+                    htmlFor="code"
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
+                  >
+                    Stage Code
+                    <span className="text-red-500 ml-1">
+                      *
+                    </span>
+                  </label>
+
+                  <input
+                    id="code"
+                    name="code"
+                    type="text"
+                    value={
+                      formData.code
+                    }
+                    onChange={
+                      handleChange
+                    }
+                    placeholder="e.g. BMT-01"
+                    className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white uppercase focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    required
+                  />
+
+                  <p className="text-xs text-gray-500 mt-1.5">
+                    Must be unique within this route.
+                  </p>
+
+                </div>
+
+              </div>
+
+
+              {/* =================================================
+                  TYPE + SEQUENCE
+              ================================================= */}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                <div>
+
+                  <label
+                    htmlFor="stage_type"
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
+                  >
+                    Stage Type
+                    <span className="text-red-500 ml-1">
+                      *
+                    </span>
+                  </label>
+
+                  <select
+                    id="stage_type"
+                    name="stage_type"
+                    value={
+                      formData.stage_type
+                    }
+                    onChange={
+                      handleChange
+                    }
+                    className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+
+                    <option value="pickup">
+                      Pickup
+                    </option>
+
+                    <option value="dropoff">
+                      Drop-off
+                    </option>
+
+                    <option value="both">
+                      Pickup & Drop-off
+                    </option>
+
+                    <option value="school">
+                      School
+                    </option>
+
+                    <option value="stop">
+                      General Stop
+                    </option>
+
+                  </select>
+
+                </div>
+
+
+                <div>
+
+                  <label
+                    htmlFor="sequence"
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
+                  >
+                    Sequence / Order
+                    <span className="text-red-500 ml-1">
+                      *
+                    </span>
+                  </label>
+
+                  <div className="relative">
+
+                    <RouteIcon
+                      size={17}
+                      className="absolute left-3 top-3 text-gray-400"
+                    />
+
+                    <input
+                      id="sequence"
+                      name="sequence"
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={
+                        formData.sequence
+                      }
+                      onChange={
+                        handleChange
+                      }
+                      className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      required
+                    />
+
+                  </div>
+
+                </div>
+
+              </div>
+
+
+              {/* =================================================
+                  LOCATION DESCRIPTION
               ================================================= */}
 
               <div>
 
                 <label
-                  htmlFor="name"
+                  htmlFor="location_description"
                   className="block text-sm font-medium text-gray-700 mb-1.5"
                 >
-                  Stage Name
-                  <span className="text-red-500 ml-1">
-                    *
-                  </span>
+                  Location Description
                 </label>
 
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
+                <textarea
+                  id="location_description"
+                  name="location_description"
+                  rows={3}
                   value={
-                    formData.name
+                    formData.location_description
                   }
                   onChange={
                     handleChange
                   }
-                  placeholder="e.g. Bomet Town"
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  required
+                  placeholder="Describe the exact location of the stage..."
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white resize-y focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
 
               </div>
 
 
               {/* =================================================
-                  STAGE TYPE
+                  LANDMARK
               ================================================= */}
 
               <div>
 
                 <label
-                  htmlFor="stage_type"
+                  htmlFor="landmark"
                   className="block text-sm font-medium text-gray-700 mb-1.5"
                 >
-                  Stage Type
-                  <span className="text-red-500 ml-1">
-                    *
-                  </span>
-                </label>
-
-                <select
-                  id="stage_type"
-                  name="stage_type"
-                  value={
-                    formData.stage_type
-                  }
-                  onChange={
-                    handleChange
-                  }
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-
-                  <option value="pickup">
-                    Pickup
-                  </option>
-
-                  <option value="dropoff">
-                    Drop-off
-                  </option>
-
-                  <option value="both">
-                    Pickup & Drop-off
-                  </option>
-
-                  <option value="school">
-                    School
-                  </option>
-
-                  <option value="stop">
-                    General Stop
-                  </option>
-
-                </select>
-
-                <p className="text-xs text-gray-500 mt-1.5">
-                  Select how this location is used during transport operations.
-                </p>
-
-              </div>
-
-
-              {/* =================================================
-                  LOCATION
-              ================================================= */}
-
-              <div>
-
-                <label
-                  htmlFor="location"
-                  className="block text-sm font-medium text-gray-700 mb-1.5"
-                >
-                  Location
-                  <span className="text-red-500 ml-1">
-                    *
-                  </span>
+                  Landmark
                 </label>
 
                 <div className="relative">
@@ -1121,96 +1356,20 @@ const StageFormPage = () => {
                   />
 
                   <input
-                    id="location"
-                    name="location"
+                    id="landmark"
+                    name="landmark"
                     type="text"
                     value={
-                      formData.location
+                      formData.landmark
                     }
                     onChange={
                       handleChange
                     }
-                    placeholder="e.g. Bomet Town Bus Stage"
-                    className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    required
-                  />
-
-                </div>
-
-              </div>
-
-
-              {/* =================================================
-                  DESCRIPTION
-              ================================================= */}
-
-              <div>
-
-                <label
-                  htmlFor="description"
-                  className="block text-sm font-medium text-gray-700 mb-1.5"
-                >
-                  Description
-                </label>
-
-                <textarea
-                  id="description"
-                  name="description"
-                  rows={4}
-                  value={
-                    formData.description
-                  }
-                  onChange={
-                    handleChange
-                  }
-                  placeholder="Additional information about this stage..."
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white resize-y focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-
-              </div>
-
-
-              {/* =================================================
-                  SEQUENCE
-              ================================================= */}
-
-              <div>
-
-                <label
-                  htmlFor="sequence"
-                  className="block text-sm font-medium text-gray-700 mb-1.5"
-                >
-                  Sequence / Order
-                </label>
-
-                <div className="relative">
-
-                  <RouteIcon
-                    size={17}
-                    className="absolute left-3 top-3 text-gray-400"
-                  />
-
-                  <input
-                    id="sequence"
-                    name="sequence"
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={
-                      formData.sequence
-                    }
-                    onChange={
-                      handleChange
-                    }
-                    placeholder="e.g. 1"
+                    placeholder="e.g. Opposite Bomet Green Stadium"
                     className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
 
                 </div>
-
-                <p className="text-xs text-gray-500 mt-1.5">
-                  Determines the order in which stages appear on the route.
-                </p>
 
               </div>
 
@@ -1240,7 +1399,7 @@ const StageFormPage = () => {
                   </h2>
 
                   <p className="text-sm text-gray-500">
-                    Optional pickup and drop-off times.
+                    Set the expected pickup and drop-off times.
                   </p>
 
                 </div>
@@ -1254,8 +1413,6 @@ const StageFormPage = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-
-                {/* Pickup time */}
                 <div>
 
                   <label
@@ -1281,7 +1438,6 @@ const StageFormPage = () => {
                 </div>
 
 
-                {/* Drop-off time */}
                 <div>
 
                   <label
@@ -1334,7 +1490,7 @@ const StageFormPage = () => {
                   </h2>
 
                   <p className="text-sm text-gray-500">
-                    Optional geographic and route-distance information.
+                    Optional geographic information and distance from the previous stage.
                   </p>
 
                 </div>
@@ -1348,8 +1504,8 @@ const StageFormPage = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
-
                 {/* Distance */}
+
                 <div>
 
                   <label
@@ -1387,6 +1543,7 @@ const StageFormPage = () => {
 
 
                 {/* Latitude */}
+
                 <div>
 
                   <label
@@ -1407,7 +1564,7 @@ const StageFormPage = () => {
                     onChange={
                       handleChange
                     }
-                    placeholder="-1.123456"
+                    placeholder="-1.1234567"
                     className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
 
@@ -1415,6 +1572,7 @@ const StageFormPage = () => {
 
 
                 {/* Longitude */}
+
                 <div>
 
                   <label
@@ -1435,7 +1593,7 @@ const StageFormPage = () => {
                     onChange={
                       handleChange
                     }
-                    placeholder="35.123456"
+                    placeholder="35.1234567"
                     className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
 
@@ -1443,9 +1601,95 @@ const StageFormPage = () => {
 
               </div>
 
-              <p className="text-xs text-gray-500 mt-3">
-                Coordinates are optional. They can later be used for route mapping and location-based transport features.
-              </p>
+            </div>
+
+
+            {/* ==================================================
+                PRICING
+            ================================================== */}
+
+            <div className="px-5 py-4 border-t border-b border-gray-200">
+
+              <div className="flex items-center gap-3">
+
+                <div className="w-9 h-9 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center">
+
+                  <DollarSign
+                    size={19}
+                  />
+
+                </div>
+
+                <div>
+
+                  <h2 className="font-semibold text-gray-800">
+                    Transport Pricing
+                  </h2>
+
+                  <p className="text-sm text-gray-500">
+                    Configure the current monthly transport fee for this stage.
+                  </p>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <div className="p-5 md:p-6">
+
+              <div className="max-w-md">
+
+                <label
+                  htmlFor="monthly_fee"
+                  className="block text-sm font-medium text-gray-700 mb-1.5"
+                >
+                  Monthly Transport Fee
+                  <span className="text-red-500 ml-1">
+                    *
+                  </span>
+                </label>
+
+                <div className="relative">
+
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+                    KSh
+                  </span>
+
+                  <input
+                    id="monthly_fee"
+                    name="monthly_fee"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={
+                      formData.monthly_fee
+                    }
+                    onChange={
+                      handleChange
+                    }
+                    placeholder="5000.00"
+                    className="w-full pl-12 pr-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    required
+                  />
+
+                </div>
+
+                <p className="text-xs text-gray-500 mt-1.5">
+                  This is the currently configured transport price for students using this stage.
+                </p>
+
+              </div>
+
+              <div className="mt-4 p-3 rounded-lg bg-purple-50 border border-purple-200">
+
+                <p className="text-sm text-purple-800">
+                  <strong>Important:</strong>{" "}
+                  This price represents the transport service configuration. The Finance module should later use it when creating student transport charges and financial records.
+                </p>
+
+              </div>
 
             </div>
 
@@ -1485,33 +1729,78 @@ const StageFormPage = () => {
 
             <div className="p-5 md:p-6">
 
-              <label className="flex items-start gap-3 cursor-pointer">
+              <div className="max-w-md">
 
-                <input
-                  type="checkbox"
-                  name="is_active"
-                  checked={
-                    formData.is_active
+                <label
+                  htmlFor="status"
+                  className="block text-sm font-medium text-gray-700 mb-1.5"
+                >
+                  Status
+                </label>
+
+                <select
+                  id="status"
+                  name="status"
+                  value={
+                    formData.status
                   }
                   onChange={
                     handleChange
                   }
-                  className="w-4 h-4 mt-1 accent-purple-700"
-                />
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
 
-                <span>
+                  <option value="active">
+                    Active
+                  </option>
 
-                  <span className="block font-medium text-gray-800">
-                    Active Stage
-                  </span>
+                  <option value="inactive">
+                    Inactive
+                  </option>
 
-                  <span className="block text-sm text-gray-500 mt-0.5">
-                    Active stages can be used for current student transport assignments.
-                  </span>
+                </select>
 
-                </span>
+              </div>
 
-              </label>
+            </div>
+
+
+            {/* ==================================================
+                NOTES
+            ================================================== */}
+
+            <div className="px-5 py-4 border-t border-b border-gray-200">
+
+              <div>
+
+                <h2 className="font-semibold text-gray-800">
+                  Additional Information
+                </h2>
+
+                <p className="text-sm text-gray-500 mt-1">
+                  Add any additional notes about this stage.
+                </p>
+
+              </div>
+
+            </div>
+
+
+            <div className="p-5 md:p-6">
+
+              <textarea
+                id="notes"
+                name="notes"
+                rows={4}
+                value={
+                  formData.notes
+                }
+                onChange={
+                  handleChange
+                }
+                placeholder="Additional notes about this stage..."
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white resize-y focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
 
             </div>
 
@@ -1534,7 +1823,9 @@ const StageFormPage = () => {
                   disabled={saving}
                   className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50"
                 >
+
                   Cancel
+
                 </button>
 
 
@@ -1548,6 +1839,7 @@ const StageFormPage = () => {
 
                   {saving ? (
                     <>
+
                       <RefreshCw
                         size={18}
                         className="animate-spin"
@@ -1556,9 +1848,11 @@ const StageFormPage = () => {
                       {isEditMode
                         ? "Updating..."
                         : "Creating..."}
+
                     </>
                   ) : (
                     <>
+
                       <Save
                         size={18}
                       />
@@ -1566,6 +1860,7 @@ const StageFormPage = () => {
                       {isEditMode
                         ? "Update Stage"
                         : "Create Stage"}
+
                     </>
                   )}
 
@@ -1600,13 +1895,19 @@ const StageFormPage = () => {
               </p>
 
               <p className="text-sm text-purple-700 mt-1">
+
                 This stage belongs to{" "}
+
                 <strong>
                   {routeName}
                 </strong>
+
                 {" "}
                 ({routeCode}).
-                After saving, you will return to the route details page.
+
+                After saving, you will return to
+                the route details page.
+
               </p>
 
             </div>
@@ -1623,4 +1924,3 @@ const StageFormPage = () => {
 
 
 export default StageFormPage;
-
